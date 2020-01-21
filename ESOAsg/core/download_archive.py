@@ -63,9 +63,12 @@ def query_from_radec(position,
     Parameters
     ----------
     position : astropy SkyCoord object
-        Coordinates of the sky you wnat to query in the format
-        of an astropy SkyCoord object. For further detail see
-        here: https://docs.astropy.org/en/stable/coordinates/
+        Coordinates of the sky you want to query in the format
+        of an astropy SkyCoord object. Note that at the moment
+        it works for one target at the time. For further detail
+        see here:
+        https://docs.astropy.org/en/stable/coordinates/
+
     instrument : str
         Name of the instrument to query. Default is None, i.e.
         it will collect all the data
@@ -75,21 +78,32 @@ def query_from_radec(position,
     result_from_query
 
     """
+
     # Define TAP SERVICE
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
     msgs.info('Querying the ESO TAP service at:')
     msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
 
-    # converting from array to number
+    # ToDo EMA
+    # This should be more flexible and take lists/arrays as input
+    if len(position.ra.degree)>1:
+        msgs.warning('The position should refer to a single pointing')
+        msgs.warning('only the first location is taken into account')
+        msgs.working('multi pointing will be available in a future release')
+    # Converting from array to number
     RA, Dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
 
     # Define query
     query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
-            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND CONTAINS(POINT('',{},{}), s_region)=1""".format(RA, Dec)
-
+            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id 
+            FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND CONTAINS(POINT('',{},{}),
+            s_region)=1""".format(RA, Dec)
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 
+    # Obtaining query results
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
+
+    msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query))
 
     return result_from_query
