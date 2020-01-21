@@ -32,7 +32,7 @@ from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg import ancillary
 
-from IPython import embed()
+from IPython import embed
 
 def download(dp_id):
     """
