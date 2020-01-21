@@ -15,8 +15,8 @@ __version__ = '0.00'
 
 
 # Import and instantiate the logger
-from pypeit import pypmsgs
-msgs = pypmsgs.Messages()
+from ESOAsg import msgs
+msgs = msgs.Messages()
 
 from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 
