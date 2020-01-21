@@ -11,3 +11,7 @@ min_disk_space::6.
 #
 eso_tap_obs::http://archive.eso.org/tap_obs
 #################################################################
+# define the maximum number of files that a single query can
+# download from the ESO archive
+max_files_downloaded::99
+#################################################################
