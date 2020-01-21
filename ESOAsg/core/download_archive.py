@@ -57,3 +57,4 @@ def query_from_radec(position):
     # Define query
     query = """SELECT {} as target, dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""" % (position, RA, Dec]) 
 
+    print(query)
