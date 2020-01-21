@@ -46,7 +46,7 @@ def download():
     # res['symlink']=''
 
 def query_from_radec(position,
-                     max_files_downloaded=default.get_value('max_files_downloaded')):
+                     maxrec=default.get_value('maxrec')):
     """
     Parameters
     ----------
