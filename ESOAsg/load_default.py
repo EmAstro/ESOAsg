@@ -4,6 +4,8 @@ Load default values
 
 import pkg_resources
 
+from ESOAsg import msgs
+
 class Default:
     """Set default values ESOAsg
     """
