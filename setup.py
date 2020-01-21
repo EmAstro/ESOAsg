@@ -32,7 +32,7 @@ VERSION = '0.00'
 AUTHOR = 'Ema'
 
 
-def run_setup(data_files, scripts, packages, install_requires):
+def run_setup(scripts, packages, install_requires):
 
     # TODO: Are any/all of the *'d keyword arguments needed? I.e., what
     # are the default values?
