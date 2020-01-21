@@ -63,7 +63,8 @@ def query_from_radec(position,
     msgs.info('Querying the ESO TAP service at:')
     msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
 
-    RA, Dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
+    # converting from array to number
+    RA, Dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
 
     # Define query
     query = """SELECT J0100 as target, dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""".format(RA, Dec)
