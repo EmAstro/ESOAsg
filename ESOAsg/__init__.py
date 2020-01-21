@@ -12,11 +12,11 @@ import warnings
 # Set version
 __version__ = '0.00'
 
+from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
+
 # Import and instantiate the logger
 from ESOAsg import msgs
 msgs = msgs.Messages()
-
-from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 
 # Define default values
 from ESOAsg import default

@@ -57,6 +57,7 @@ class Messages:
         """
         premsg = '\n'+self._start + self._white_RD + '[ERROR]   ::' + self._end + ' '
         self._print(premsg, msg)
+        self.newline()
         sys.exit(1)
 
     def info(self, msg):
