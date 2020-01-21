@@ -46,8 +46,7 @@ class Messages:
         """
         Print to standard error
         """
-        devmsg = self._devmsg()
-        _msg = premsg+devmsg+msg
+        _msg = premsg+msg
         print(_msg, file=sys.stderr)
 
     def error(self, msg, usage=False):
