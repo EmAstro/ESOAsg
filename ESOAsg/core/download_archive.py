@@ -43,9 +43,9 @@ def download(dp_id):
     -------
     """
     for file_name in dp_id:
-        print(str(file_name))
+        print(str(file_name.decode('utf-8'))
         # Given a dp_id of a public file, the link to download it is constructed as follows:
-        download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(str(file_name))
+        download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(str(file_name.decode('utf-8')))
         print(download_url)
         #Files are downloaded in a per-position directory structure.
         # All files matching a given position are store under the directory whose name is the composition of the coordinates (underscore separated).
@@ -86,9 +86,5 @@ def query_from_radec(position,
     print(query)
 
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
-    embed()
 
-    print(result_from_query)
-    print(result_from_query.to_table())
-
-    return result_from_query.to_table()
+    return result_from_query
