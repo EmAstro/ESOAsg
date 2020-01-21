@@ -20,6 +20,6 @@ from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 
 # Define default values
 from ESOAsg import load_default
-default = load_default.Default()
-global_default = default._load_from_file()
+global_default = load_default.Default()
+global_default._load_from_file()
 
