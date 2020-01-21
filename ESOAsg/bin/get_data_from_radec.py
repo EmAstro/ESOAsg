@@ -3,6 +3,7 @@
 import argparse
 
 from astropy import coordinates
+from astropy import units as u
 
 from ESOAsg import core
 from ESOAsg import msgs 
