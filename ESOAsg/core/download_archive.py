@@ -33,7 +33,7 @@ from ESOAsg import default
 from ESOAsg import ancillary
 
 
-def download():
+def download(dp_id):
     """
     Parameters
     ----------
@@ -57,6 +57,8 @@ def query_from_radec(position,
 
     Returns
     -------
+    result_from_query
+
     """
     # Define TAP SERVICE
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
@@ -71,6 +73,9 @@ def query_from_radec(position,
 
     print(query)
 
-    res = tapobs.search(query=query, maxrec=maxrec)
-    tab = res.to_table()
-    print(tab)
+    result_from_query = tapobs.search(query=query, maxrec=maxrec)
+
+    print(result_from_query)
+    print(result_from_query.to_table())
+
+    return result_from_query.to_table()
