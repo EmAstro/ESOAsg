@@ -82,8 +82,8 @@ class Messages:
         """
         Print a work in progress message
         """
-        premsgp = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
-        self._print(premsgp+premsgs, msg)
+        premsg = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
+        self._print(premsg, msg)
 
     def prindent(self, msg):
         """
