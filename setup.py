@@ -82,4 +82,4 @@ if __name__ == '__main__':
     install_requires = get_requirements()
     install_requires = []  # Remove this line to enforce actual installation
     # Run setup from setuptools
-run_setup(data_files, scripts, packages, install_requires)
+run_setup(scripts, packages, install_requires)
