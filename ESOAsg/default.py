@@ -4,6 +4,8 @@ Load default values
 
 import pkg_resources
 
+from ESOAsg import msgs
+
 class Default:
     """Set default values ESOAsg
     """
@@ -27,4 +29,7 @@ class Default:
     def get_value(self, card_name):
         """Gets the default value from the parameter: card_name
         """
-        return(self.default_dict[card_name])
+        if card_name in self.default_dict:
+            return(self.default_dict[card_name])
+        else:
+            msgs.error('Key not present in the default dictionary')
