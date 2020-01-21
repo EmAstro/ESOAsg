@@ -30,7 +30,16 @@ from astropy import units
 
 from ESOAsg import msgs
 from ESOAsg import default
+from ESOAsg import ancillary
+
 
 def download():
     # res['symlink']=''
     print(default.get_value('eso_tap_obs'))
+
+def query():
+    """
+    """
+    # Define TAP SERVICE
+    tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
+    msgs.info('Querying the ESO TAP service at {:.10}'.format(str(default.get_value('eso_tap_obs'))))
