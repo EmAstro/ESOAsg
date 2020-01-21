@@ -9,8 +9,7 @@ class Default:
     """
 
     def __init__(self):
-        self.default = {}
-        self.default._load_from_file()
+        self.default_dict = {}
 
     def _load_from_file(self):
         """Load default dict with values in default.txt
@@ -22,9 +21,9 @@ class Default:
 
         for default in default_list:
             default_quantity, default_value = default.split(':')
-            self.default[default_quantity] = default_value
+            self.default_dict[default_quantity] = default_value
 
     def get_value(self, card_name):
         """Gets the default value from the parameter: card_name
         """
-        return(self.default[card_name])
+        return(self.default_dict[card_name])
