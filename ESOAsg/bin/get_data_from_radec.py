@@ -5,7 +5,7 @@ import argparse
 from astropy import coordinates
 from astropy import units as u
 
-from ESOAsg import core
+from ESOAsg.core import download_archive
 from ESOAsg import msgs
 
 def parse_arguments():
@@ -39,5 +39,5 @@ if __name__ == '__main__':
     args = parse_arguments()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     
-    core.download_archive.query_from_radec(position)
+    download_archive.query_from_radec(position)
     msgs.info("End of the script")
