@@ -1,0 +1,3 @@
+# define the minimum amount of space on disk to perform 
+# a download in Gigabytes
+min_disk_space:6.
