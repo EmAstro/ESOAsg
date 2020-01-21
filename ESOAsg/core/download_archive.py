@@ -96,8 +96,8 @@ def query_from_radec(position,
     # Define query
     query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
             em_min, dataproduct_type, instrument_name, abmaglim, proposal_id 
-            FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND CONTAINS(POINT('',{},{}),
-            s_region)=1""".format(RA, Dec)
+            FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND 
+            CONTAINS(POINT('',{},{}), s_region)=1""".format(RA, Dec)
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 
@@ -105,5 +105,7 @@ def query_from_radec(position,
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
 
     msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
+    msgs.info('For the following instrument:')
+    msgs.info('{}'.format(result_from_query['instrument_name']))
 
     return result_from_query
