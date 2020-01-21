@@ -60,12 +60,14 @@ def query_from_radec(position,
     """
     # Define TAP SERVICE
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
-    msgs.info('Querying the ESO TAP service at: \n {}'.format(str(default.get_value('eso_tap_obs'))))
+    msgs.info('Querying the ESO TAP service at:')
+    msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
 
-    RA, Dec = position.ra.degree, position.dec.degree
+    RA, Dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
 
     # Define query
-    query = """SELECT {} as target, dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""".format(position, RA[:], Dec[:])
+    for iii in len(position):
+        query = """SELECT J0100 as target, dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""".format(RA[iii], Dec[iii])
 
     print(query)
 
