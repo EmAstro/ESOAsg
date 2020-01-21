@@ -11,7 +11,7 @@ class Default:
     """
 
     def __init__(self):
-        self._default = {}
+        self.default = {}
 
     def _load_from_file(self):
         """Load default dict with values in default.txt

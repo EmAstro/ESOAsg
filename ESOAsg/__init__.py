@@ -22,3 +22,4 @@ from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 from ESOAsg import load_default
 default = load_default.Default()
 default._load_from_file()
+

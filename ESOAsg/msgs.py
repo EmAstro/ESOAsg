@@ -87,19 +87,12 @@ class Messages:
         premsg = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
         self._print(premsg, msg)
 
-    def prindent(self, msg):
+    def preindent(self, msg):
         """
         Print an indent
         """
         premsg = '             '
         self._print(premsg, msg)
-
-    def input(self):
-        """
-        Return a text string to be used to display input required from the user
-        """
-        premsg = self._start + self._blue_CL + '[INPUT]   ::' + self._end + ' '
-        return premsg
 
     @staticmethod
     def newline():
