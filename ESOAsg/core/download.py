@@ -32,5 +32,5 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 def download():
-    res['symlink']=''
+    # res['symlink']=''
     print(default.get_value('eso_tap_obs'))
