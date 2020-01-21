@@ -21,5 +21,4 @@ from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 # Define default values
 from ESOAsg import load_default
 global_default = load_default.Default()
-global_default._load_from_file()
-
+print(global_default)
