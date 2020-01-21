@@ -35,11 +35,25 @@ from ESOAsg import ancillary
 
 def download():
     # res['symlink']=''
-    print(default.get_value('eso_tap_obs'))
 
-def query():
+def query_from_radec(position):
     """
+    Parameters
+    ----------
+    position : astropy SkyCoord object
+        Coordinates of the sky you wnat to query in the format
+        of an astropy SkyCoord object. For further detail see
+        here: https://docs.astropy.org/en/stable/coordinates/
+
+    Returns
+    -------
     """
     # Define TAP SERVICE
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
-    msgs.info('Querying the ESO TAP service at {:.10}'.format(str(default.get_value('eso_tap_obs'))))
+    msgs.info('Querying the ESO TAP service at: \n {}'.format(str(default.get_value('eso_tap_obs'))))
+
+    RA, Dec = position.ra.degree, position.dec.degree
+
+    # Define query
+    query = """SELECT {} as target, dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""" % (position, RA, Dec]) 
+
