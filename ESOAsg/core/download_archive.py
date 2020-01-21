@@ -104,6 +104,6 @@ def query_from_radec(position,
     # Obtaining query results
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
 
-    msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query))
+    msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
 
     return result_from_query
