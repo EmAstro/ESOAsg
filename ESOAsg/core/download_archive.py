@@ -41,9 +41,9 @@ def download(dp_id):
     Returns
     -------
     """
-    for iii in len(dp_id):
+    for file_name in dp_id:
         # Given a dp_id of a public file, the link to download it is constructed as follows:
-        download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(dp_id[iii])
+        download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(file_name)
         print(download_url)
         #Files are downloaded in a per-position directory structure.
         # All files matching a given position are store under the directory whose name is the composition of the coordinates (underscore separated).
