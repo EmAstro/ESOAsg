@@ -23,5 +23,3 @@ class Default:
             default_quantity, default_value = default.split(':')
             self.default[default_quantity] = default_value
 
-global_default = load_default.Default()
-global_default._load_from_file()
