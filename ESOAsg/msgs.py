@@ -4,6 +4,8 @@ This is inspired by PypeIt:
 https://github.com/pypeit/PypeIt
 """
 
+import sys
+
 from ESOAsg import __version__ 
 
 class Messages:
