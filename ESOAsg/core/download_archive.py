@@ -21,7 +21,7 @@ section.
 import os
 import sys
 import urllib
-
+import numpy as np
 
 from pyvo import dal
 from astropy import coordinates
