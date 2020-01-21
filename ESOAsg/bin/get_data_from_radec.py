@@ -32,7 +32,7 @@ def parse_arguments():
 
 EXAMPLES = """
         Example:
-        get_data_from_radec.py --ra 15.054250 --dec 28.048833
+        get_data_from_radec.py --ra_deg 15.054250 --dec_deg 28.048833
         """
 
 if __name__ == '__main__':
