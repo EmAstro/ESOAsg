@@ -4,7 +4,7 @@ import argparse
 
 from astropy import coordinates
 
-from ESOArg import core
+from ESOAsg import core
 from ESOAsg import msgs 
 
 def parse_arguments():
