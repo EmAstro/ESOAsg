@@ -28,7 +28,7 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
     total = total / (1024**3)
     used  = used / (1024**3)
     free  = free / (1024**3)
-    msgs.info('Your disk shows: Total: {0:.2f} GB, Used: {0:.2f} GB, Free: {0:.2f} GB'.format(total, used, free))
+    msgs.info('Your disk has: Total: {0:.2f} GB, Used: {0:.2f} GB, Free: {0:.2f} GB'.format(total, used, free))
     if (free>min_disk_space):
         enough_space = np.bool(1)
     else:

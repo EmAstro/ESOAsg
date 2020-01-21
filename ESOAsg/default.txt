@@ -1,3 +1,13 @@
+# List of default variable an user can define
+# Rules are:
+# 1. No spaces in the variable names
+# 2. Variable names and values need to be separated by :: or by ==
+#
+#################################################################
 # define the minimum amount of space on disk to perform 
 # a download in Gigabytes
-min_disk_space:6.
+min_disk_space::6.
+#################################################################
+#
+eso_tap_obs::http://archive.eso.org/tap_obs
+#################################################################
