@@ -57,6 +57,7 @@ def download(dp_id):
     # res['symlink']=''
 
 def query_from_radec(position,
+                     instrument=None,
                      maxrec=default.get_value('maxrec')):
     """
     Parameters
@@ -65,6 +66,9 @@ def query_from_radec(position,
         Coordinates of the sky you wnat to query in the format
         of an astropy SkyCoord object. For further detail see
         here: https://docs.astropy.org/en/stable/coordinates/
+    instrument : str
+        Name of the instrument to query. Default is None, i.e.
+        it will collect all the data
 
     Returns
     -------
@@ -80,9 +84,11 @@ def query_from_radec(position,
     RA, Dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
 
     # Define query
-    query = """SELECT dp_id, s_ra, s_dec, em_min*1E9 min_wave_nm, em_max*1E9 max_wave_nm, t_min, abmaglim, proposal_id, access_estsize FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND obs_collection='MUSE' AND CONTAINS(POINT('',{},{}), s_region)=1""".format(RA, Dec)
+    query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
+            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore WHERE obs_release_date < getdate() AND CONTAINS(POINT('',{},{}), s_region)=1""".format(RA, Dec)
 
-    print(query)
+    msgs.info('The query is:')
+    msgs.info('{}'.format(str(query)))
 
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
 
