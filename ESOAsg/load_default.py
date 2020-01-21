@@ -23,6 +23,6 @@ class Default:
 
         msgs.info("Loading default variables")
         for default in default_list:
-            default_quantity, default_value = default_list.split(':')
+            default_quantity, default_value = default.split(':')
             self._default['default_quantity'] = default_value
 
