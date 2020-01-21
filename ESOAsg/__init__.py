@@ -21,4 +21,4 @@ from ESOAsg import check_requirements  # THIS IMPORT DOES THE CHECKING.  KEEP IT
 # Define default values
 from ESOAsg import default
 global_default = default.Default()
-print(global_default.get_value(min_disk_space))
+print(global_default.get_value('min_disk_space'))
