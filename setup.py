@@ -48,15 +48,12 @@ def run_setup(scripts, packages, install_requires):
           keywords='pypeit PypeIt astronomy Keck UCO Lick data reduction',
           url='https://github.com/pypeit/PypeIt',
           packages=packages,
-          package_data={'pypeit': data_files, '': ['*.rst', '*.txt']},
           include_package_data=True,
           scripts=scripts,
           install_requires=install_requires,
           requires=[ 'Python (>3.6.0)' ],                               # *
           zip_safe=False,                                               # *
           use_2to3=False,                                               # *
-          setup_requires=[ 'pytest-runner' ],
-          tests_require=[ 'pytest' ],
           classifiers=[
               'Development Status :: 2 - Pre-Alpha',
               'Intended Audience :: Science/Research',
