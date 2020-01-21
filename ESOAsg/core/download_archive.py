@@ -43,7 +43,7 @@ def download(dp_id):
     -------
     """
     for file_name in dp_id:
-        print(str(file_name.decode("utf-8"))
+        print(file_name)
         # Given a dp_id of a public file, the link to download it is constructed as follows:
         download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(str(file_name.decode("utf-8")))
         print(download_url)
