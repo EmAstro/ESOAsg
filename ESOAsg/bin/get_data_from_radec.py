@@ -39,5 +39,5 @@ if __name__ == '__main__':
     args = parse_arguments()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     
-    query_from_radec(position)
+    core.query_from_radec(position)
     msgs.info("End of the script")
