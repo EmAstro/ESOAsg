@@ -10,6 +10,7 @@ class Default:
 
     def __init__(self):
         self.default_dict = {}
+        self._load_from_file()
 
     def _load_from_file(self):
         """Load default dict with values in default.txt
