@@ -32,6 +32,7 @@ from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg import ancillary
 
+from IPython import embed()
 
 def download(dp_id):
     """
@@ -41,6 +42,7 @@ def download(dp_id):
     Returns
     -------
     """
+    embed()
     for file_name in dp_id:
         print(str(file_name))
         # Given a dp_id of a public file, the link to download it is constructed as follows:
