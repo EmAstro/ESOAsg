@@ -34,6 +34,15 @@ from ESOAsg import ancillary
 
 
 def download():
+    """
+    Parameters
+    ----------
+
+    Returns
+    -------
+    """
+    msgs.info('Downloading data')
+    
     # res['symlink']=''
 
 def query_from_radec(position):
