@@ -4,7 +4,6 @@ This is inspired by PypeIt:
 https://github.com/pypeit/PypeIt
 """
 
-
 from ESOAsg import __version__ 
 
 class Messages:
@@ -87,7 +86,7 @@ class Messages:
         premsgp = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
         self._print(premsgp+premsgs, msg)
 
-     def prindent(self, msg):
+    def prindent(self, msg):
         """
         Print an indent
         """
