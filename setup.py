@@ -74,8 +74,6 @@ def run_setup(data_files, scripts, packages, install_requires):
 #-----------------------------------------------------------------------
 if __name__ == '__main__':
 
-    # Compile the data files to include
-    data_files = get_data_files()
     # Compile the scripts in the bin/ directory
     scripts = get_scripts()
     # Get the packages to include
