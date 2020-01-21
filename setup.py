@@ -43,10 +43,10 @@ def run_setup(scripts, packages, install_requires):
           license='TBD',
           description='ESOAsg Usefull Tools',
           long_description=open('README.md').read(),
-          author='PypeIt Collaboration',
-          author_email='pypeit@ucolick.org',
-          keywords='pypeit PypeIt astronomy Keck UCO Lick data reduction',
-          url='https://github.com/pypeit/PypeIt',
+          author='Ema as part of ESOAsg',
+          author_email='emanuelepaolo.farina@partner.eso.org',
+          keywords='ESOAsg astronomy ESO',
+          url='https://github.com/EmAstro/ESOAsg',
           packages=packages,
           include_package_data=True,
           scripts=scripts,
@@ -77,6 +77,5 @@ if __name__ == '__main__':
     packages = find_packages()
     # Collate the dependencies based on the system text file
     install_requires = get_requirements()
-    install_requires = []  # Remove this line to enforce actual installation
     # Run setup from setuptools
 run_setup(scripts, packages, install_requires)
