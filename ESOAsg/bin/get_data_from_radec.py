@@ -11,11 +11,15 @@ from ESOAsg import msgs
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description="""
-        This macro collect data from the ESO archive given RA and DEC
-        in degrees.
-
-        This ueses ESOAsg version {:s}
+        description=r"""
+        This macro collect data from the ESO archive given RA and Dec in degrees.
+        
+        ..note::
+            ToDo EMA
+            This is still work in progress, the main issue is that, when providing a negative value for Dec, `argparse` 
+            has some troubles. The (ugly) workaround is to pass the argument as --dec_deg=-15.00
+        
+        This uses ESOAsg version {:s}
         """.format(msgs._version),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
@@ -32,15 +36,19 @@ def parse_arguments():
     return parser.parse_args()
 
 
-EXAMPLES = """
+EXAMPLES = r"""
         Example:
         get_data_from_radec.py --ra_deg 15.054250 --dec_deg 28.048833
+        get_data_from_radec.py --ra_deg="15.054250" --dec_deg=-28.048833
         """
 
 if __name__ == '__main__':
     args = parse_arguments()
+    msgs.newline()
+    msgs.info('RA and Dec query for ESO archival data')
+    msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     result_from_query = download_archive.query_from_radec(position)
-    print(result_from_query['dp_id'])
-    download_archive.download(result_from_query['dp_id'])
-    msgs.info("End of the script")
+    if len(result_from_query['dp_id'])>0:
+        download_archive.download(result_from_query['dp_id'])
+    msgs.newline()

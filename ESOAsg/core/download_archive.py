@@ -40,39 +40,40 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
     Given a filename in the ADP format, the code download the file from the `ESO archive <http://archive.eso.org>`_
 
     ..note::
-        the dp_id should contain only one file name.
+        if dp_id is not a `numpy.str`, a WARNING message will be raised and the content of `dp_id` will be
+        converted into a string.
 
     Args:
-        dp_id (`str`):
+        dp_id (`numpy.str`):
             Data product ID to be downloaded.
         min_disk_space (`numpy.float`):
             The file will be downloaded only if there is this amount of space (in Gb) free on the disk.
             By default is set by the `default.txt` file.
 
     Returns:
-        This download a fits ADP file with the same name of the input.
+        This downloads a fits ADP file with the same name of the input.
     """
 
     # Check for disk space
     checks.check_disk_space(min_disk_space=min_disk_space)
 
-    # if the file name is in byte, this decode it.
-    print(type(dp_id))
-
     for file_name in dp_id:
-        print(file_name)
+        # if the file name is in byte, this decode it.
+        if not isinstance(file_name, str):
+            msgs.warning('The content of dp_id is not in a string format.')
+            msgs.warning('The code is trying to fix this.')
+            if isinstance(file_name, bytes):
+                file_name = np.str(file_name.decode("utf-8"))
+                msgs.warning('Converted to {}.'.format(type(file_name)))
+            else:
+                msgs.error('Unable to understand the format of the dp_id entry: {}'.format(type(file_name)))
+
         # Given a dp_id of a public file, the link to download it is constructed as follows:
-        download_url = "http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file".format(
-            str(file_name.decode("utf-8")))
-        # Files are downloaded in a per-position directory structure.
-        # All files matching a given position are store under the directory whose name is the composition of the coordinates (underscore separated).
-        # retrieving:
-        # last_filepath = file_path
-        urllib.request.urlretrieve(download_url, filename=str(file_name.decode("utf-8")) + '.fits')
-
-    msgs.info('Downloading data')
-
-    # res['symlink']=''
+        download_url = 'http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file'.format(
+            str(file_name))
+        msgs.info('Downloading file {}. This may take some time.'.format(file_name+'.fits'))
+        urllib.request.urlretrieve(download_url, filename=file_name + '.fits')
+        msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
 
 def query_from_radec(position, maxrec=default.get_value('maxrec')):
@@ -91,7 +92,9 @@ def query_from_radec(position, maxrec=default.get_value('maxrec')):
             need this. By default is set by the `default.txt` file.
 
     Returns:
-        result_from_query
+        result_from_query (`pyvo.dal.tap.TAPResults`):
+            Result from the query. Currently it contains: target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
+            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id
 
     """
 
@@ -111,17 +114,19 @@ def query_from_radec(position, maxrec=default.get_value('maxrec')):
     ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
 
     # Define query
-    query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
-            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id 
-            FROM ivoa.ObsCore WHERE CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
+    query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
+            dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
+            WHERE CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 
     # Obtaining query results
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
-
-    msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
-    msgs.info('For the following instrument:')
-    msgs.info('{}'.format(result_from_query['instrument_name']))
+    if (len(result_from_query)<1):
+        msgs.warning('No data has been retrieved')
+    else:
+        msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
+        msgs.info('For the following instrument:')
+        msgs.info('{}'.format(result_from_query['instrument_name']))
 
     return result_from_query
