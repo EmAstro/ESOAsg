@@ -30,7 +30,7 @@ from astropy import table
 
 from ESOAsg import msgs
 from ESOAsg import default
-from ESOAsg import ancillary
+from ESOAsg.ancillary import checks
 
 from IPython import embed
 
@@ -54,7 +54,7 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
     """
 
     # Check for disk space
-    ancillary.checks.check_disk_space(min_disk_space=min_disk_space)
+    checks.check_disk_space(min_disk_space=min_disk_space)
 
     # if the file name is in byte, this decode it.
     print(type(dp_id))
