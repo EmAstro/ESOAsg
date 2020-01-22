@@ -8,6 +8,7 @@ from astropy import units as u
 from ESOAsg.core import download_archive
 from ESOAsg import msgs
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description="""
@@ -30,6 +31,7 @@ def parse_arguments():
     parser.add_argument('-v', '--version', action='version', version=msgs._version)
     return parser.parse_args()
 
+
 EXAMPLES = """
         Example:
         get_data_from_radec.py --ra_deg 15.054250 --dec_deg 28.048833
@@ -37,8 +39,7 @@ EXAMPLES = """
 
 if __name__ == '__main__':
     args = parse_arguments()
-    position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree,
-                                    frame='fk5')
+    position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     result_from_query = download_archive.query_from_radec(position)
     print(result_from_query['dp_id'])
     download_archive.download(result_from_query['dp_id'])
