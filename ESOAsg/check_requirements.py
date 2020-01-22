@@ -16,4 +16,4 @@ for requirement in install_requires:
     else:
         if pkg_resources.parse_version(pv) < pkg_resources.parse_version(version):
             raise ImportError('Your version of {0} is incompatible with ESOAsg.  '.format(pkg)
-+ 'Please update to version >= {0}'.format(version))
+                              + 'Please update to version >= {0}'.format(version))
