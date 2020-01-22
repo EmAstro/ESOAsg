@@ -11,8 +11,8 @@ from setuptools import setup, find_packages
 def get_scripts():
     """ Grab all the scripts in the bin directory.  """
     scripts = []
-    if os.path.isdir('bin'):
-        scripts = [ fname for fname in glob.glob(os.path.join('bin', '*'))
+    if os.path.isdir('ESOAsg/bin'):
+        scripts = [ fname for fname in glob.glob(os.path.join('ESOAsg/bin', '*'))
                                 if not os.path.basename(fname).endswith('.rst') ]
     return scripts
 

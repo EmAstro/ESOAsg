@@ -37,7 +37,8 @@ EXAMPLES = """
 
 if __name__ == '__main__':
     args = parse_arguments()
-    position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
+    position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree,
+                                    frame='fk5')
     result_from_query = download_archive.query_from_radec(position)
     print(result_from_query['dp_id'])
     download_archive.download(result_from_query['dp_id'])

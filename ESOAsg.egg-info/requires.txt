@@ -1,0 +1,8 @@
+packaging>=19.0
+numpy>=1.16.0
+scipy>=1.2
+matplotlib>=3.1
+astropy>=4.0
+IPython>=7.2.0
+pytest>=3.0.7
+pyvo>=1.0

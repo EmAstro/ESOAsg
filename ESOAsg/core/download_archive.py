@@ -34,10 +34,14 @@ from ESOAsg import ancillary
 
 from IPython import embed
 
-def download(dp_id):
+def download(dp_id, instrument=None):
     """
     Parameters
     ----------
+
+    instrument : str
+        Name of the instrument to query. Default is None, i.e.
+        it will collect all the data
 
     Returns
     -------
@@ -57,21 +61,27 @@ def download(dp_id):
     # res['symlink']=''
 
 def query_from_radec(position,
-                     instrument=None,
                      maxrec=default.get_value('maxrec')):
-    """
-    Parameters
-    ----------
-    position : astropy SkyCoord object
-        Coordinates of the sky you want to query in the format
-        of an astropy SkyCoord object. Note that at the moment
-        it works for one target at the time. For further detail
-        see here:
-        https://docs.astropy.org/en/stable/coordinates/
+    r"""
+    Query to the ESO TAP service (link defined in `ESOAsg\default.txt`)
+    for a specific location. The `position` needs to be given
+    as an `astropy.coordinates.SkyCoord` object.
 
-    instrument : str
-        Name of the instrument to query. Default is None, i.e.
-        it will collect all the data
+    .. note::
+    
+        This is based on a query that returns different 
+    
+    Args:
+        position (`astropy.coordinates.SkyCoord`):
+            Coordinates of the sky you want to query in the format
+            of an astropy SkyCoord object. Note that at the moment
+            it works for one target at the time. For further detail
+            see here: `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
+
+    maxrec (`numpy.int`):
+        Define the maximum number of file that a single query can
+        return from the ESO archive. You probably never need this.
+        By default is set by the `default.txt` file.
 
     Returns
     -------
