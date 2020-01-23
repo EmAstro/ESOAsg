@@ -57,7 +57,7 @@ if __name__ == '__main__':
         instrument_name = str(args.instrument_name[0])
         msgs.info('Limit search to {} only data'.format(instrument_name))
         select_by_instrument = (result_from_query['instrument_name'].data == instrument_name.encode('ascii'))
-        download_archive.download(result_from_query['dp_id'][(select_by_instrument)])
+        download_archive.download(result_from_query['dp_id'][select_by_instrument])
     if len(result_from_query['dp_id']) > 0:
         download_archive.download(result_from_query['dp_id'])
     msgs.newline()
