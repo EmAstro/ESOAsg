@@ -4,6 +4,7 @@ import argparse
 
 from astropy import coordinates
 from astropy import units as u
+import numpy as np
 
 from ESOAsg.core import download_archive
 from ESOAsg import msgs
@@ -49,17 +50,14 @@ if __name__ == '__main__':
     msgs.info('RA and Dec query for ESO archival data')
     msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
-    result_from_query = download_archive.query_from_radec(position)
+    result_from_query = download_archive.query_from_radec(position, args.radius)
     if args.instrument_name is not None:
         if len(args.instrument_name) > 1:
             msgs.error('Too many instrument. Only one allowed')
         instrument_name = str(args.instrument_name[0])
         msgs.info('Limit search to {} only data'.format(instrument_name))
-        embed()
-
-        select_by_instrument = (result_from_query['instrument_name'].data is instrument_name)
-        result_from_query = result_from_query[select_by_instrument]
-        msgs.info('')
+        select_by_instrument = (result_from_query['instrument_name'].data == instrument_name.encode('ascii'))
+        download_archive.download(result_from_query['dp_id'][(select_by_instrument)])
     if len(result_from_query['dp_id']) > 0:
         download_archive.download(result_from_query['dp_id'])
     msgs.newline()

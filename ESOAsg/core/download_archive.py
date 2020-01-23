@@ -119,13 +119,21 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
 
     # Define query
     if radius is not None:
-        query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
-                dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
-                WHERE CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, np.float32(radius))
+        query = """SELECT
+                      target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
+                      instrument_name, abmaglim, proposal_id
+                   FROM
+                     ivoa.ObsCore
+                   WHERE
+                     CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, np.float32(radius[0]))
     else:
-        query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
-                dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
-                WHERE CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
+        query = """SELECT
+                     target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
+                     instrument_name, abmaglim, proposal_id
+                   FROM
+                     ivoa.ObsCore
+                   WHERE
+                     CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 
@@ -136,5 +144,6 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
     else:
         msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
         msgs.info('For the following instrument:')
-        msgs.info('{}'.format(result_from_query['instrument_name']))
+        for inst_name in np.unique(result_from_query['instrument_name'].data):
+            msgs.info(' - {}'.format(inst_name.decode("utf-8")))
     return result_from_query
