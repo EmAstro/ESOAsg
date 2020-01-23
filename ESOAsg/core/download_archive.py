@@ -76,7 +76,7 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
 
-def query_from_radec(position, maxrec=default.get_value('maxrec')):
+def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
     r"""
     Query to the ESO TAP service (link defined in `ESOAsg\default.txt`) for a specific location. The
     `position` needs to be given as an `astropy.coordinates.SkyCoord` object.
@@ -86,7 +86,11 @@ def query_from_radec(position, maxrec=default.get_value('maxrec')):
             Coordinates of the sky you want to query in the format of an `astropy.coordinates.SkyCoord` object. Note
             that at the moment it works for one target at the time. For further detail see here:
             `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
-
+        radius (`numpy.float`):
+            Search radius you want to query in arcseconds. Note that in case `None` is given, the query will be
+            performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
+            `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
+            `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
         maxrec (`numpy.int`):
             Define the maximum number of file that a single query can return from the ESO archive. You probably never
             need this. By default is set by the `default.txt` file.
@@ -114,19 +118,23 @@ def query_from_radec(position, maxrec=default.get_value('maxrec')):
     ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
 
     # Define query
-    query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
-            dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
-            WHERE CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
+    if radius is not None:
+        query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
+                dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
+                WHERE CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, np.float32(radius))
+    else:
+        query = """SELECT target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, 
+                dataproduct_type, instrument_name, abmaglim, proposal_id FROM ivoa.ObsCore
+                WHERE CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 
     # Obtaining query results
     result_from_query = tapobs.search(query=query, maxrec=maxrec)
-    if (len(result_from_query)<1):
+    if len(result_from_query) < 1:
         msgs.warning('No data has been retrieved')
     else:
         msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
         msgs.info('For the following instrument:')
         msgs.info('{}'.format(result_from_query['instrument_name']))
-
     return result_from_query

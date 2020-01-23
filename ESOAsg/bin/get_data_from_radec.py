@@ -8,6 +8,7 @@ from astropy import units as u
 from ESOAsg.core import download_archive
 from ESOAsg import msgs
 
+from IPython import embed
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -30,7 +31,7 @@ def parse_arguments():
                         help='Dec of the target in degee [J2000]')
     parser.add_argument('-r', '--radius', nargs='+', type=float, default=None,
                         help='Search cone radius in arcsec')
-    parser.add_argument('-i', '--instrument', nargs='+', type=str, default=None,
+    parser.add_argument('-i', '--instrument_name', nargs='+', type=str, default=None,
                         help='ESO instrument')
     parser.add_argument('-v', '--version', action='version', version=msgs._version)
     return parser.parse_args()
@@ -49,6 +50,16 @@ if __name__ == '__main__':
     msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     result_from_query = download_archive.query_from_radec(position)
-    if len(result_from_query['dp_id'])>0:
+    if args.instrument_name is not None:
+        if len(args.instrument_name) > 1:
+            msgs.error('Too many instrument. Only one allowed')
+        instrument_name = str(args.instrument_name[0])
+        msgs.info('Limit search to {} only data'.format(instrument_name))
+        embed()
+
+        select_by_instrument = (result_from_query['instrument_name'].data is instrument_name)
+        result_from_query = result_from_query[select_by_instrument]
+        msgs.info('')
+    if len(result_from_query['dp_id']) > 0:
         download_archive.download(result_from_query['dp_id'])
     msgs.newline()
