@@ -11,6 +11,7 @@ from ESOAsg import msgs
 
 from IPython import embed
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""
@@ -46,7 +47,7 @@ EXAMPLES = r"""
 
 if __name__ == '__main__':
     args = parse_arguments()
-    msgs.newline()
+    msgs.start()
     msgs.info('RA and Dec query for ESO archival data')
     msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
@@ -60,4 +61,4 @@ if __name__ == '__main__':
         download_archive.download(result_from_query['dp_id'][select_by_instrument])
     if len(result_from_query['dp_id']) > 0:
         download_archive.download(result_from_query['dp_id'])
-    msgs.newline()
+    msgs.end()

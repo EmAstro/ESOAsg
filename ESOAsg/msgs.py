@@ -67,6 +67,21 @@ class Messages:
         premsg = self._start + self._green_CL + '[INFO]    ::' + self._end + ' '
         self._print(premsg, msg)
 
+    def start(self):
+        """
+        Print a staring message
+        """
+        premsg = self._start + self._green_CL + '[START]   ::' + self._end + ' '
+        self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+    def end(self):
+        """
+        Print a ending message
+        """
+        premsg = self._start + self._red_CL + '[END]     ::' + self._end + ' '
+        self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+
+
     def warning(self, msg):
         """
         Print a warning message

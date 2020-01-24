@@ -131,7 +131,7 @@ def transfer_header_cards(source_header, output_header, source_cards, output_car
         msgs.error("Incompatible length between output and source cards lists.")
 
     for source_card, output_card in zip(source_cards, output_cards):
-        msgs.info("Transferring header card {} to {}.".format(source_card, output_card))
+        msgs.work("Transferring header card {} to {}.".format(source_card, output_card))
         if with_comment:
             add_header_card(output_header, output_card, source_header[source_card],
                             comment=source_header.comments[source_card])

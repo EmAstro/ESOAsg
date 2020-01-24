@@ -71,7 +71,7 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         # Given a dp_id of a public file, the link to download it is constructed as follows:
         download_url = 'http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file'.format(
             str(file_name))
-        msgs.info('Downloading file {}. This may take some time.'.format(file_name+'.fits'))
+        msgs.work('Downloading file {}. This may take some time.'.format(file_name+'.fits'))
         urllib.request.urlretrieve(download_url, filename=file_name + '.fits')
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
@@ -113,7 +113,7 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
         if np.ndim(position.ra.degree) > 1:
             msgs.warning('The position should refer to a single pointing')
             msgs.warning('only the first location is taken into account')
-            msgs.working('multi pointing will be available in a future release')
+            msgs.warning('multi pointing will be available in a future release')
         # Converting from array to number
         ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
     else:
