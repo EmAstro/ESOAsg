@@ -109,23 +109,29 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
 
     # ToDo EMA
     # This should be more flexible and take lists/arrays as input
-    if len(position.ra.degree) > 1:
-        msgs.warning('The position should refer to a single pointing')
-        msgs.warning('only the first location is taken into account')
-        msgs.working('multi pointing will be available in a future release')
-
-    # Converting from array to number
-    ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
+    if not np.isscalar(position.ra.degree):
+        if np.ndim(position.ra.degree) > 1:
+            msgs.warning('The position should refer to a single pointing')
+            msgs.warning('only the first location is taken into account')
+            msgs.working('multi pointing will be available in a future release')
+        # Converting from array to number
+        ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
+    else:
+        ra, dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
 
     # Define query
     if radius is not None:
+        if not np.isscalar(position.ra.degree):
+            radius_scalar = np.float32(radius[0])
+        else:
+            radius_scalar = np.float32(radius)
         query = """SELECT
                       target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
                       instrument_name, abmaglim, proposal_id
                    FROM
                      ivoa.ObsCore
                    WHERE
-                     CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, np.float32(radius[0]))
+                     CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, radius_scalar)
     else:
         query = """SELECT
                      target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
