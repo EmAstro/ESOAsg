@@ -1,0 +1,54 @@
+#!/usr/bin/env python3
+
+import argparse
+
+import numpy as np
+
+from astropy.io import fits
+from astropy import coordinates
+from astropy import units as u
+
+from ESOAsg.core import fitsfiles
+from ESOAsg.core import download_archive
+
+from IPython import embed
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description=r"""
+        This macro make the data for the SINFONI large program from Vincenzo Mainieri
+        compatible with the Phase3 standard.
+
+        This uses ESOAsg version {:s}
+        """.format(msgs._version),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=EXAMPLES)
+
+    parser.add_argument('-i', '--input_fits', nargs='+', type=str, default=None,
+                        help='Original fits file')
+    parser.add_argument('-o', '--output_fits', nargs='+', type=str, default=None,
+                        help='Output fits file with corrected header and structure')
+    parser.add_argument('-v', '--version', action='version', version=msgs._version)
+    return parser.parse_args()
+
+
+EXAMPLES = r"""
+        Example:
+        fix_mainieri_lp.py --input_fits 
+        """
+
+if __name__ == '__main__':
+    args = parse_arguments()
+
+    # getting fits names
+    input_fits = np.str(args.input_fits[0])
+    if args.output_fits[0] is None:
+        output_fits = input_fits.replace(".fits", "_fixed.fits")
+    else:
+        output_fits = np.str(args.output_fits[0])
+
+    msgs.newline()
+    msgs.info('Working on the file {}')
+    msgs.newline()
+
+    msgs.newline()
