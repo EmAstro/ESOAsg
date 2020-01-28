@@ -43,8 +43,9 @@ class Lists:
 
     Methods:
         get_cards:
-            returns the cards of the list
-
+            returns the cards from a list
+        get_values:
+            returns the values from a list
 
     """
 
@@ -181,13 +182,34 @@ class Lists:
             missing_cards = np.array([])
         return selected_cards, missing_cards
 
-    def get_values(self, cards=None):
-        r"""
+    def get_values(self, check_cards=None):
+        r"""Returns the values associated to the cards in a list. If `check_cards` is defined, only the subset of values
+        selected will be returned.
 
         Args:
-            cards:
+            check_cards (`np.array`):
+                List of cards that needs to be returned.
 
         Returns:
-
+            selected_cards (`np.array`):
+                Cards present in the list.
+            selected_values (`np.array`):
+                Values associated to `check_cards`
+            missing_cards (`np.array`):
+                Subset of `check_cards` not present in the list. It is empty if all cards are present.
         """
-        return self.get_cards(self, cards=cards), np.array(self.values)
+        selected_cards, missing_cards = self.get_cards(check_cards=check_cards)
+        if check_cards is not None:
+            _check_cards = np.isin(self.cards, convert_to_numpy_array(check_cards))
+            if np.size(self.values) == 0:
+                msgs.error('No values present in the list.')
+            else:
+                if np.ndim(self.values) < 2:
+                    selected_values = np.copy(self.values[_check_cards])
+                else:
+                    selected_values = np.copy(self.values[0, :][_check_cards])
+                    for index in np.arange(1, np.size(self.values[:, 0])):
+                        selected_values = np.vstack((selected_values, np.copy(self.values[index, :][_check_cards])))
+        else:
+            selected_values = np.array([])
+        return selected_cards, selected_values, missing_cards
