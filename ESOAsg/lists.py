@@ -42,6 +42,8 @@ class Lists:
             If not `None` these are the values to be associated to `cards`.
 
     Methods:
+        get_cards:
+            returns the cards of the list
 
 
     """
@@ -118,7 +120,6 @@ class Lists:
                 if 'COMMENT' not in index:
                     _cards = np.append(_cards, index)
                     _values = np.append(_values, _hdu[index])
-                    print(index, _hdu[index])
             self.cards = np.array(_cards)
             self.values = np.array(_values)
 
@@ -144,16 +145,41 @@ class Lists:
 
         return
 
-    def get_cards(self, cards=None):
-        r"""
+    def get_cards(self, check_cards=None):
+        r"""Returns the `cards` present in a list object. If `cards` is not `None`, it checks that such cards are
+        contained in the list and return them. If not present an error is raised.
 
         Args:
-            cards:
+            check_cards (`np.array`):
+                List of cards that needs to be checked.
 
         Returns:
-
+            selected_cards (`np.array`):
+                Cards present in the list.
+            missing_cards (`np.array`):
+                Subset of `check_cards` not present in the list. It is empty if all cards are present.
         """
-        return np.array(self.cards)
+        if check_cards is not None:
+            _check_cards = np.isin(self.cards, convert_to_numpy_array(check_cards))
+            selected_cards = np.copy(self.cards[_check_cards])
+            if np.size(selected_cards) < 1:
+                msgs.error('None of the cards in input are present in the list.')
+            else:
+                msgs.info('There are {} occurrences of the {} cards in input.'.format(np.size(selected_cards),
+                                                                                      np.size(check_cards)))
+                if np.all(np.isin(check_cards, selected_cards)):
+                    msgs.info('All cards in input are present in the list.')
+                    missing_cards = np.array([])
+                else:
+                    msgs.info('Not all the cards in input are present in the list.')
+                    missing_cards = check_cards[np.logical_not(np.isin(check_cards, selected_cards))]
+                    msgs.info('The missing cards are:')
+                    for missing_card in missing_cards:
+                        msgs.info(' - {}'.format(missing_card))
+        else:
+            selected_cards = np.copy(self.cards)
+            missing_cards = np.array([])
+        return selected_cards, missing_cards
 
     def get_values(self, cards=None):
         r"""
