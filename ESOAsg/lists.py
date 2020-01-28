@@ -143,3 +143,25 @@ class Lists:
             self.values = np.array([])
 
         return
+
+    def get_cards(self, cards=None):
+        r"""
+
+        Args:
+            cards:
+
+        Returns:
+
+        """
+        return np.array(self.cards)
+
+    def get_values(self, cards=None):
+        r"""
+
+        Args:
+            cards:
+
+        Returns:
+
+        """
+        return self.get_cards(self, cards=cards), np.array(self.values)
