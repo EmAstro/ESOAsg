@@ -128,7 +128,7 @@ if __name__ == '__main__':
     """
 
     # TUCD1
-    msgs.warning("AIR WAVE?!?!?!?!?!")
+    msgs.warning("AIR WAVE? <------------------")
     change1_cards.append('TUCD1')
     change1_values.append('em.wl;obs.atmos')
     change1_comments.append('UCD of field 1')
