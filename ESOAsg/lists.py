@@ -79,7 +79,7 @@ def _print_1cards_2values(cards, values1, values2, on_terminal=True, on_file=Non
             second values to be printed
         on_terminal (`bool`):
             if `True`, the `cards` and the two `values` are printed on the terminal.
-        on_file (`str`):
+        on_file (`str`, `None`):
             if not `None`, `cards` and `values` will be stored in this text file
 
     Returns:
@@ -380,7 +380,7 @@ class Lists:
                 List of cards that needs to be returned.
             on_terminal (`bool`):
                 if `True`, the `cards` and respective `values` are printed on the terminal.
-            on_file (`str`):
+            on_file (`str`, `None`):
                 if not `None`, `cards` and respective `values` will be stored in this text file
 
         Returns:
@@ -478,7 +478,7 @@ class Lists:
                 List of cards that needs to be returned.
             on_terminal (`bool`):
                 if `True`, the `cards` and the respective `values` are printed on the terminal.
-            on_file (`str`):
+            on_file (`str`, `None`):
                 if not `None`, `cards` and respective `values` will be stored in this text file
 
         Returns:

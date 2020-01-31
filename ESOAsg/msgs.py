@@ -8,16 +8,16 @@ import sys
 
 from ESOAsg import __version__ 
 
+
 class Messages:
-    """Create coloured text for messages printed to screen.
+    r"""Create coloured text for messages printed to screen.
     For further details on colours see the following example:
     http://ascii-table.com/ansi-escape-sequences.php
 
-    Parameters
-    ----------
-    colors : bool
-      If true, the screen output will have colors, otherwise
-      normal screen output will be displayed
+    Args:
+        colors (`bool`):
+            If true, the screen output will have colors, otherwise
+            normal screen output will be displayed
     """
 
     def __init__(self, colors=True):
@@ -40,20 +40,19 @@ class Messages:
         self._black_YL = None
         self._yellow_BK = None
 
-        self.disablecolors()
+        self.disable_colors()
         if colors:
-            self.enablecolors()
+            self.enable_colors()
 
-    def _print(self, premsg, msg):
-        """
-        Print to standard error
+    @staticmethod
+    def _print(premsg, msg):
+        r"""Print to standard error
         """
         _msg = premsg+msg
         print(_msg, file=sys.stderr)
 
-    def error(self, msg, usage=False):
-        """
-        Print an error message
+    def error(self, msg):
+        r"""Print an error message
         """
         premsg = '\n'+self._start + self._white_RD + '[ERROR]   ::' + self._end + ' '
         self._print(premsg, msg)
@@ -61,73 +60,62 @@ class Messages:
         sys.exit(1)
 
     def info(self, msg):
-        """
-        Print an information message
+        r"""Print an information message
         """
         premsg = self._start + self._green_CL + '[INFO]    ::' + self._end + ' '
         self._print(premsg, msg)
 
     def start(self):
-        """
-        Print a staring message
+        r"""Print a staring message
         """
         premsg = self._start + self._green_CL + '[START]   ::' + self._end + ' '
         self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     def end(self):
-        """
-        Print a ending message
+        r"""Print a ending message
         """
         premsg = self._start + self._red_CL + '[END]     ::' + self._end + ' '
         self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
-
     def warning(self, msg):
-        """
-        Print a warning message
+        r"""Print a warning message
         """
         premsg = self._start + self._red_CL + '[WARNING] ::' + self._end + ' '
         self._print(premsg, msg)
 
     def bug(self, msg):
-        """
-        Print a bug message
+        r"""Print a bug message
         """
         premsg = self._start + self._white_BK + '[BUG]     ::' + self._end + ' '
         self._print(premsg, msg)
 
     def work(self, msg):
-        """
-        Print a work in progress message
+        r"""Print a work in progress message
         """
         premsg = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
         self._print(premsg, msg)
 
-    def preindent(self, msg):
-        """
-        Print an indent
+    def pre_indent(self, msg):
+        r"""Print an indent
         """
         premsg = '             '
         self._print(premsg, msg)
 
     @staticmethod
     def newline():
-        """
-        Return a text string containing a newline to be used with messages
+        r"""Return a text string containing a newline to be used with messages
         """
         return '\n             '
 
     @staticmethod
     def indent():
-        """
-        Return a text string containing an indent to be used with messages
+        r"""Return a text string containing an indent to be used with messages
         """
         return '             '
 
     # Set the colors
-    def enablecolors(self):
-        """
-        Enable colored output text
+    def enable_colors(self):
+        r"""Enable colored output text
         """
 
         # Start and end coloured text
@@ -149,9 +137,8 @@ class Messages:
         self._black_YL = '1;37;43m'
         self._yellow_BK = '1;33;40m'
 
-    def disablecolors(self):
-        """
-        Disable colored output text
+    def disable_colors(self):
+        r"""Disable colored output text
         """
 
         # Start and end coloured text

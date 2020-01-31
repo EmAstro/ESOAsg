@@ -156,7 +156,7 @@ def add_header_card(header, card, value, comment=None):
             Card to add to the header.
         value (`str`):
             Value to associate to the card.
-        comment (`str`):
+        comment (`str`, `None`):
             If not `None`, comment to be added to the card.
 
     Returns:
@@ -166,4 +166,3 @@ def add_header_card(header, card, value, comment=None):
         header[card] = value
     else:
         header[card] = value, comment
-

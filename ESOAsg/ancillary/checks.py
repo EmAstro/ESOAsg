@@ -36,6 +36,7 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
         msgs.error('Not enough space on disk')
     return enough_space
 
+
 # ToDo:
 def check_instrument(instrument):
     """Given an instrument name, it checks if it is
@@ -51,10 +52,10 @@ def check_instrument(instrument):
     is_instrument : np:bool
         True if it is a valid instrument
     """
-    instrument_list = [MUSE,]
+    instrument_list = ['MUSE', 'SINFONI']
     if instrument in instrument_list:
-        is_instrument = np.bool(1)
+        is_instrument = True
     else:
-        is_instrument = np.bool(0)
+        is_instrument = False
         msgs.error('Wrong instrument name')
-    return enough_space
+    return is_instrument

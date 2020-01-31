@@ -1,6 +1,4 @@
 # Required Packages for ESOAsg
-#
-# Users
 packaging>=19.0
 numpy>=1.16.0
 scipy>=1.2

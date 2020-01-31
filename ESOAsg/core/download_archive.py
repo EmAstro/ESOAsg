@@ -18,26 +18,26 @@ section.
 ----------------------------------------------------------------
 """
 
-import os
-import sys
+# import os
+# import sys
 import urllib
 import numpy as np
 
 from pyvo import dal
-from astropy import coordinates
-from astropy import units
-from astropy import table
+# from astropy import coordinates
+# from astropy import units
+# from astropy import table
 
 from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg.ancillary import checks
 
-from IPython import embed
+# from IPython import embed
 
 
 def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'))):
-    r"""
-    Given a filename in the ADP format, the code download the file from the `ESO archive <http://archive.eso.org>`_
+    r"""Given a filename in the ADP format, the code download the file from the
+    `ESO archive <http://archive.eso.org>`_
 
     ..note::
         if dp_id is not a `numpy.str`, a WARNING message will be raised and the content of `dp_id` will be

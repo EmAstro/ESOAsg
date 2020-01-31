@@ -6,7 +6,7 @@
 #################################################################
 # define the minimum amount of space on disk to perform 
 # a download in Gigabytes
-min_disk_space::6.
+min_disk_space::6.00
 #################################################################
 #
 eso_tap_obs::http://archive.eso.org/tap_obs

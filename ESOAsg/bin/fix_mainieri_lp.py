@@ -5,14 +5,13 @@ import argparse
 import numpy as np
 
 from astropy.io import fits
-from astropy import coordinates
-from astropy import units as u
+# from astropy import coordinates
+# from astropy import units as u
 
 from ESOAsg import msgs
 from ESOAsg.core import fitsfiles
-from ESOAsg.core import download_archive
 
-from IPython import embed
+# from IPython import embed
 
 
 def parse_arguments():

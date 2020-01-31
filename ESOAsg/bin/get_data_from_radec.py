@@ -4,12 +4,12 @@ import argparse
 
 from astropy import coordinates
 from astropy import units as u
-import numpy as np
+# import numpy as np
 
 from ESOAsg.core import download_archive
 from ESOAsg import msgs
 
-from IPython import embed
+# from IPython import embed
 
 
 def parse_arguments():

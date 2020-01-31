@@ -6,6 +6,7 @@ import pkg_resources
 
 from ESOAsg import msgs
 
+
 class Default:
     """Set default values ESOAsg
     """
@@ -19,8 +20,8 @@ class Default:
         """
 
         default_file = pkg_resources.resource_filename('ESOAsg', 'default.txt')
-        default_list = [line.strip().replace('==', '::') for line in open(default_file)
-                   if not line.strip().startswith('#') and line.strip() != '']
+        default_list = [line.strip().replace('==', '::')
+                        for line in open(default_file) if not line.strip().startswith('#') and line.strip() != '']
 
         for default in default_list:
             default_quantity, default_value = default.split('::')
@@ -30,6 +31,6 @@ class Default:
         """Gets the default value from the parameter: card_name
         """
         if card_name in self.default_dict:
-            return(self.default_dict[card_name])
+            return self.default_dict[card_name]
         else:
             msgs.error('Key not present in the default dictionary')
