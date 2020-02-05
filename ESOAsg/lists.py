@@ -129,7 +129,7 @@ def _print_1cards_1values(cards, values1, on_terminal=True, on_file=None):
             first values to be printed
         on_terminal (`bool`):
             if `True`, the `cards` and the `values1` are printed on the terminal.
-        on_file (`str`):
+        on_file (`str`, `None`):
             if not `None`, `cards` and `values1` will be stored in this text file
 
     Returns:
@@ -220,14 +220,14 @@ class Lists:
             which_hdu (`numpy.int`):
                 select from which HDU you are getting the header. See `fitsfiles` in `ESOAsg.core` for further
                 details.
-            from_txt (`str`):
+            from_txt (`str`, `None`):
                 Ascii file from which cards and values will be read. The assumption here is that `cards` are stored
                 in the first column, and `values` in the second one. The options `data_start` and `data_end` will
                 select only the (`data_end`-`data_start`) lines following the line `data_start`. This is the same
                 option present in `ascii.read` from astropy.
-            data_start (`np.int`):
+            data_start (`np.int`, `None`):
                 First line to be read from the file: `from_txt`.
-            data_end (`np.int`):
+            data_end (`np.int`, `None`):
                 Last line to be read from the file: `from_txt`.
 
         Returns:
@@ -298,11 +298,11 @@ class Lists:
         return
 
     def get_cards(self, check_cards=None):
-        r"""Returns the `cards` present in a list object. If `cards` is not `None`, it checks that such cards are
+        r"""Returns the `cards` present in a list object. If `check_cards` is not `None`, it checks that such cards are
         contained in the list and return them. If not present an empty `np.vector` is returned.
 
         Args:
-            check_cards (`np.array`):
+            check_cards (`np.array`, `None`):
                 List of cards that needs to be checked.
 
         Returns:
