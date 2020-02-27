@@ -20,7 +20,15 @@ class Messages:
             normal screen output will be displayed
     """
 
-    def __init__(self, colors=True):
+    def __init__(self, colors=True, verbosity=3):
+
+        # Verbosity level
+        # 0 -> No message displayed
+        # 1 -> Only Error Messages
+        # 2 -> Only Error and Info Messages
+        # 3 -> Everything
+
+        self._verbosity = verbosity
 
         # Initialize variables
         self._version = __version__

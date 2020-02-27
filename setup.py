@@ -15,11 +15,12 @@ def get_scripts():
     scripts, scriptsAsg = [], []
     if os.path.isdir('ESOAsg/bin'):
         scripts = [fname for fname in glob.glob(os.path.join('ESOAsg/bin', '*'))
-                   if not os.path.basename(fname).endswith('.rst')]
+                   if not os.path.basename(fname).endswith('.rst') and not os.path.isdir(fname)]
     if os.path.isdir('ESOAsg/bin/ASGSpecific'):
         scriptsAsg = [fname for fname in glob.glob(os.path.join('ESOAsg/bin/ASGSpecific', '*'))
                       if not os.path.basename(fname).endswith('.rst')]
-    return scripts.extend(scriptsAsg)
+    scripts.extend(scriptsAsg)
+    return scripts
 
 
 def get_requirements():

@@ -24,6 +24,8 @@ import urllib
 import numpy as np
 
 from pyvo import dal
+from astropy.coordinates import ICRS
+
 # from astropy import coordinates
 # from astropy import units
 # from astropy import table
@@ -76,7 +78,7 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
 
-def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
+def query_from_radec(position, radius=None, instrument=None, maxrec=default.get_value('maxrec')):
     r"""
     Query to the ESO TAP service (link defined in `ESOAsg\default.txt`) for a specific location. The
     `position` needs to be given as an `astropy.coordinates.SkyCoord` object.
@@ -91,6 +93,11 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
             performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
             `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
             `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
+        instrument (`str'):
+            Limit the search to the selected instrument
+            ToDo EMA:
+            At the moment this works for a single instrument. Lists of instruments will be added in the
+            future.
         maxrec (`numpy.int`):
             Define the maximum number of file that a single query can return from the ESO archive. You probably never
             need this. By default is set by the `default.txt` file.
@@ -109,6 +116,7 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
 
     # ToDo EMA
     # This should be more flexible and take lists/arrays as input
+    position.transform_to(ICRS)
     if not np.isscalar(position.ra.degree):
         if np.ndim(position.ra.degree) > 1:
             msgs.warning('The position should refer to a single pointing')
@@ -121,25 +129,28 @@ def query_from_radec(position, radius=None, maxrec=default.get_value('maxrec')):
 
     # Define query
     if radius is not None:
-        if not np.isscalar(position.ra.degree):
+        if not np.isscalar(radius):
             radius_scalar = np.float32(radius[0])
         else:
             radius_scalar = np.float32(radius)
         query = """SELECT
-                      target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
-                      instrument_name, abmaglim, proposal_id
+                      target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                      dataproduct_type, instrument_name, abmaglim, proposal_id
                    FROM
                      ivoa.ObsCore
                    WHERE
-                     CONTAINS(s_region,CIRCLE('',{},{},{}/3600.))=1""".format(ra, dec, radius_scalar)
+                     CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1""".format(ra, dec, radius_scalar)
     else:
         query = """SELECT
-                     target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, 
-                     instrument_name, abmaglim, proposal_id
+                     target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                     dataproduct_type, instrument_name, abmaglim, proposal_id
                    FROM
                      ivoa.ObsCore
                    WHERE
-                     CONTAINS(POINT('',{},{}), s_region)=1""".format(ra, dec)
+                     CONTAINS(POINT('ICRS',{},{}), s_region)=1""".format(ra, dec)
+    if instrument is not None:
+        instrument_selection = str("""                     AND instrument_name='{}'""".format(str(instrument)))
+        query = '\n'.join([query, instrument_selection])
     msgs.info('The query is:')
     msgs.info('{}'.format(str(query)))
 

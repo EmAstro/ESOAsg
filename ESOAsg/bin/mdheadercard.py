@@ -16,13 +16,7 @@ from ESOAsg import __version__
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""
-        This macro mimic the behaviour of ESO's `dfits` and `grep`, i.e. to show on terminal (and on a file if
-        requested) the header of a fits file. If the option `check_cards` is enabled, only the selected list of header
-        cards will be printed (i.e., the result of:
-        > `dfits test.fits | grep PRODCATG > test_header.txt `
-        and of
-        > `dfits.py -i test.fits -c ['PRODCATG'] -o test_header.txt`
-        should be identical.
+        This macro modify a card of an header and (if request) updated the value of checksum.
         
         This uses ESOAsg version {:s}
         """.format(__version__),
@@ -32,10 +26,13 @@ def parse_arguments():
     parser.add_argument('-i', '--input_fits', nargs='+', type=str, default=None,
                         help='Fits file name form which read the header')
     parser.add_argument('-hn', '--hdu_number', nargs='+', type=int, default=0,
-                        help='select from which HDU you are getting the header. See `fitsfiles` in `ESOAsg.core` for '
-                             'further details.')
+                        help='select which HDU to be modified. See `fitsfiles` in `ESOAsg.core` for further details.')
     parser.add_argument('-c', '--cards', nargs='+', type=str, default=None,
-                        help='List of header cards to be extracted')
+                        help='List of header cards to be modified')
+    parser.add_argument('-val', '--values', nargs='+', type=str, default=None,
+                        help='List of values to be assigned to the cards')
+    parser.add_argument('-com', '--comments', nargs='+', type=str, default=None,
+                        help='List of the comments to be assigned to the cards')
     parser.add_argument('-o', '--output_text', nargs='+', type=str, default=None,
                         help='Result will be saved in this text file')
     parser.add_argument('-v', '--version', action='version', version=__version__)
@@ -44,13 +41,22 @@ def parse_arguments():
 
 EXAMPLES = r"""
         Example:
-        dfits.py -i test.fits -c ['PRODCATG'] -o test_header.txt
+        mdheadercard.py -i test.fits -c ['CRVAL1'] -val ['0.'] -com ['This is CRVAL1'] -o test_header.txt
         """
 
 if __name__ == '__main__':
-    args = parse_arguments()
     msgs.start()
-    msgs.info('RA and Dec query for ESO archival data')
+    # input arguments and tests
+    args = parse_arguments()
+    input_fits = np.str(args.input_fits[0])
+    if input_fits is None:
+        msgs.error('At least one input file should be given')
+    msgs.end()
+
+
+
+
+'''    msgs.info('RA and Dec query for ESO archival data')
     msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
     result_from_query = download_archive.query_from_radec(position, args.radius)
@@ -63,4 +69,4 @@ if __name__ == '__main__':
         download_archive.download(result_from_query['dp_id'][select_by_instrument])
     if len(result_from_query['dp_id']) > 0:
         download_archive.download(result_from_query['dp_id'])
-    msgs.end()
+'''
