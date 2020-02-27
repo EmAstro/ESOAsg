@@ -37,6 +37,7 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
     return enough_space
 
 
+'''
 def single_value_to_list(single_value):
     """This is useful to transform single strings, integers, floats into python lists. Can be used when the
     input to a function is given by the `parse_arguments()`
@@ -49,11 +50,18 @@ def single_value_to_list(single_value):
         list_value: (list)
             List containing the values given in input
     """
-    if type(single_value) is <class 'list'>:
+    print(single_value)
+    print(type(single_value))
+    if type(single_value) is 'list':
         list_value = single_value
+    elif isinstance(single_value, str):
+        list_value = [single_value]
     else:
-
-
+        print('Noting')
+        list_value = single_value
+    print(' ')
+    print(list_value)
+    print(type(list_value))
     return list_value
 
 
@@ -78,3 +86,4 @@ def check_instrument(instrument):
         is_instrument = False
         msgs.error('Wrong instrument name')
     return is_instrument
+'''
