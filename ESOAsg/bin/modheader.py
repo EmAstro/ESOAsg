@@ -11,6 +11,7 @@ import glob
 from ESOAsg.core import download_archive
 from ESOAsg import msgs
 from ESOAsg import __version__
+from ESOAsg.core import fitsfiles
 
 # from IPython import embed
 
@@ -18,42 +19,47 @@ from ESOAsg import __version__
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""
-        This macro modify a card of an header and (if request) updated the value of checksum.
+        This macro modify a card of an header and (if request) updated the value of checksum. Also, if no value is 
+        given the macro just remove the card.
         
         This uses ESOAsg version {:s}
         """.format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
 
-    parser.add_argument('-in', '--input_fits', nargs='+', type=str, default=None,
+    parser.add_argument('input_fits', nargs='+', type=str,
                         help='Fits file name form which read the header. This may contain wildcards.')
-    parser.add_argument('-hn', '--hdu_number', nargs='+', type=int, default=0,
+    parser.add_argument('-hn', '--hdu_number', nargs='+', type=int, default=1,
                         help='select which HDU to be modified. See `fitsfiles` in `ESOAsg.core` for further details.')
-    parser.add_argument('-car', '--card', nargs='+', type=str, default=None,
-                        help='Header card to be modified')
-    parser.add_argument('-val', '--value', nargs='+', type=str, default=None,
-                        help='Value to be assigned to the card')
-    parser.add_argument('-com', '--comment', nargs='+', type=str, default=None,
+    parser.add_argument('-car', '--cards', nargs='+', type=str, default=None,
+                        help='Header cards to be modified')
+    parser.add_argument('-val', '--values', nargs='+', type=str, default=None,
+                        help='Value to be assigned to the cards')
+    parser.add_argument('-com', '--comments', nargs='+', type=str, default=None,
                         help='Comment to be assigned to the cards')
     parser.add_argument('-out', '--output', nargs='+', type=str, default=None,
                         help='Name of the output modified file')
-    parser.add_argument('-ucks', '--update_checksum', nargs='+', type=bool, default=True,
-                        help='Update the checksum of the file')
+    parser.add_argument('-cks', '--checksum', nargs='+', type=bool, default=True,
+                        help='Verify the checksum of the file')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     return parser.parse_args()
 
 
 EXAMPLES = r"""
-        Example:
-        mdheadercard.py -in test.fits -car CRVAL1 -val 0. -com 'This is CRVAL1' -out test_header.fits
+        Examples:
+        modify the value of CRVAL1 in all the fits files in a directory and save the file putting _header.fits at the
+        end.
+        modheader.py *.fits -car CRVAL1 -val 0. -com 'This is CRVAL1' -out _header.fits
+        
+        delete the value of CRVAL1 from test0.fits and test1.fits and update the files themselves 
+        modheader.py test0.fits test1.fits -car CRVAL1   
         """
 
 if __name__ == '__main__':
     # input arguments and tests
     args = parse_arguments()
 
-    if args.input_fits is None:
-        msgs.error('At least one input file should be given')
+    # File_names
     for file_name in args.input_fits:
         if not os.path.isfile(file_name):
             msgs.error('File {} does not exists'.format(file_name))
@@ -61,53 +67,80 @@ if __name__ == '__main__':
             msgs.error('{} needs to be a fits file'.format(file_name))
     input_fits = args.input_fits
 
-    hdu_number = args.hdu_number
+    # which_hdu
+    if isinstance(args.hdu_number, int):
+        hdu_number = np.array([args.hdu_number], dtype=np.int_)
+    else:
+        hdu_number = np.array(args.hdu_number, dtype=np.int_)
 
-    if args.card is None:
+    # cards
+    if args.cards is None:
         msgs.error('At least one card should be given')
     else:
-        card = args.card
+        cards = args.cards
 
-    if args.value is None:
-        if len(card) == 1:
-            msgs.info('The card {} will be removed'.format(card))
+    # values
+    if args.values is None:
+        if len(cards) == 1:
+            msgs.info('The card {} will be removed'.format(cards))
         else:
             msgs.info('The following cards will be removed:')
-            for card_name in card:
+            for card in cards:
                 msgs.info(' - {}'.format(card_name))
         remove = np.bool(True)
     else:
-        value = args.value
+        values = args.values
         remove = np.bool(False)
-        if len(value) != len(card):
-            msgs.error('There are {} values assigned to the {} cards selected'.format(len(value), len(card)))
+        if len(values) != len(cards):
+            msgs.error('There are {} values assigned to the {} cards selected'.format(len(values), len(cards)))
 
-    if args.comment is not None:
-        comment = args.comment
-        if len(comment) != len(card):
-            msgs.error('There are {} comments assigned to the {} cards selected'.format(len(comment), len(card)))
+    # comments
+    if args.comments is not None:
+        comments = args.comments
+        if len(comments) != len(cards):
+            msgs.error('There are {} comments assigned to the {} cards selected'.format(len(comments), len(cards)))
+    else:
+        comments = [' '] * len(cards)
 
-    update_checksum = args.update_checksum
+    # output
+    if args.output is not None:
+        overwrite = False
+        if len(input_fits) == 1:
+            output_fits = args.output
+        else:
+            output_fits = [output_temp.replace('.fits', np.str(args.output[0])) for output_temp in input_fits]
+    else:
+        output_fits = input_fits
+        overwrite = True
+
+    checksum = args.checksum
 
     msgs.start()
 
+    for fits_file, fits_out in zip(input_fits, output_fits):
+        hdul = fitsfiles.get_hdul(fits_file, mode='update', checksum=checksum)
+        if remove:
+            for card in cards:
+                for hdu in hdu_number:
+                    if card in hdul[hdu].header:
+                        msgs.info('Removing header card {} from HDU N.{}'.format(card, hdu))
+                        del hdul[hdu].header[card]
+                    else:
+                        msgs.info('Header card {} not present in HDU N.{}'.format(card, hdu))
+        else:
+            for card, value, comment in zip(cards, values, comments):
+                for hdu in hdu_number:
+                    if card in hdul[hdu].header:
+                        msgs.info('Updating header card in HDU N.{}: {}'.format(hdu, card))
+                        msgs.info('From {} to {} / {}'.format(hdul[hdu].header[card], value, comment))
+                    else:
+                        msgs.info('Adding header card in HDU N.{}: {}={} / {}'.format(hdu, card , value, comment))
+                    hdul[hdu].header[card] = value, comment
+        hdul.verify('fix')
+        if overwrite:
+            hdul.flush()
+        else:
+            hdul.writeto(fits_out, checksum=checksum, overwrite=True)
+        hdul.close()
 
     msgs.end()
-
-
-
-
-'''    msgs.info('RA and Dec query for ESO archival data')
-    msgs.newline()
-    position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
-    result_from_query = download_archive.query_from_radec(position, args.radius)
-    if args.instrument_name is not None:
-        if len(args.instrument_name) > 1:
-            msgs.error('Too many instrument. Only one allowed')
-        instrument_name = str(args.instrument_name[0])
-        msgs.info('Limit search to {} only data'.format(instrument_name))
-        select_by_instrument = (result_from_query['instrument_name'].data == instrument_name.encode('ascii'))
-        download_archive.download(result_from_query['dp_id'][select_by_instrument])
-    if len(result_from_query['dp_id']) > 0:
-        download_archive.download(result_from_query['dp_id'])
-'''
