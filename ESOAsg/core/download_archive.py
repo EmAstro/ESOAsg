@@ -164,3 +164,14 @@ def query_from_radec(position, radius=None, instrument=None, maxrec=default.get_
         for inst_name in np.unique(result_from_query['instrument_name'].data):
             msgs.info(' - {}'.format(inst_name.decode("utf-8")))
     return result_from_query
+
+def get_header_from_archive(file_id, text_file='header.txt'):
+    r"""Given a file ID the macro download 
+
+    Args:
+        file_id:
+        text_file:
+
+    Returns:
+
+    """

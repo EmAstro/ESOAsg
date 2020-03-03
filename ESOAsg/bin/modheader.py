@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-
-from astropy import coordinates
-from astropy import units as u
+# from astropy import coordinates
+# from astropy import units as u
 import numpy as np
 import os.path
-import glob
+# import glob
 
-from ESOAsg.core import download_archive
+# from ESOAsg.core import download_archive
 from ESOAsg import msgs
 from ESOAsg import __version__
 from ESOAsg.core import fitsfiles
-
 # from IPython import embed
 
 
@@ -86,7 +84,7 @@ if __name__ == '__main__':
         else:
             msgs.info('The following cards will be removed:')
             for card in cards:
-                msgs.info(' - {}'.format(card_name))
+                msgs.info(' - {}'.format(card))
         remove = np.bool(True)
     else:
         values = args.values
@@ -115,6 +113,7 @@ if __name__ == '__main__':
 
     checksum = args.checksum
 
+    # Starting to modify the header(s)
     msgs.start()
 
     for fits_file, fits_out in zip(input_fits, output_fits):
@@ -134,8 +133,9 @@ if __name__ == '__main__':
                         msgs.info('Updating header card in HDU N.{}: {}'.format(hdu, card))
                         msgs.info('From {} to {} / {}'.format(hdul[hdu].header[card], value, comment))
                     else:
-                        msgs.info('Adding header card in HDU N.{}: {}={} / {}'.format(hdu, card , value, comment))
+                        msgs.info('Adding header card in HDU N.{}: {}={} / {}'.format(hdu, card, value, comment))
                     hdul[hdu].header[card] = value, comment
+        # This is an astropy option to  check if the headers are broadly consistent with the standard.
         hdul.verify('fix')
         if overwrite:
             hdul.flush()
