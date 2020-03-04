@@ -7,3 +7,4 @@ astropy>=4.0
 IPython>=7.2.0
 pytest>=3.0.7
 pyvo>=1.0
+argparse>=1.1
