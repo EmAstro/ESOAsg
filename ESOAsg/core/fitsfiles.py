@@ -5,7 +5,9 @@ This is heavily using:
 """
 
 from astropy.io import fits
-from os import path
+import numpy as np
+import os
+import re
 
 from ESOAsg import msgs
 
@@ -32,7 +34,7 @@ def get_hdul(fits_name, mode='readonly', checksum=True):
     """
     if fits_name is None:
         msgs.error('No file selected.')
-    elif not path.exists(fits_name):
+    elif not os.path.exists(fits_name):
         msgs.error('File does not exist.')
     else:
         hdul = fits.open(fits_name, mode=mode, checksum=checksum)
@@ -66,6 +68,158 @@ def header_from_file(fits_name, which_hdu=0, mode='readonly', checksum=True):
     """
     hdul = get_hdul(fits_name, mode=mode, checksum=checksum)
     return hdul[which_hdu].header
+
+
+def header_from_txt_file(txt_file):
+    r"""Load an header from a text file into an `astropy` `hdu.header` object.
+
+    The text file in input should contain the information in the standard header format:
+        SIMPLE  =                T / Standard FITS format
+        BITPIX  =               16 / # of bits storing pix values
+        NAXIS   =                2 / # of axes in frame
+        NAXIS1  =             2148 / # pixels/axis
+        NAXIS2  =             1365 / # pixels/axis
+        ORIGIN  = 'ESO'            / European Southern Observatory.
+        DATE    = '2003-07-25T05:41:32.569' / UT date when this file was written
+        CRVAL1  =              1.0 / value of ref pixel
+        CRPIX1  =              1.0 / Ref. pixel of center of rotation
+        CDELT1  =              2.0 / Binning factor
+        etc..
+    Cards will be read only if there is a value associated (i.e. if they are followed by a = sign). Note that
+    COMMENTS will not be propagated.
+    In case the file does not exist, an empty header will be returned and a warning statement will be
+    raised.
+
+    Args:
+        txt_file (`str`):
+            txt file name
+
+    Returns:
+         header_from_txt (`hdu.header`):
+             an header object
+    """
+
+    # Checks for txt_name
+    assert isinstance(txt_file, str), '`txt_name` needs to be a str'
+
+    # creating hdu object
+    hdu = fits.PrimaryHDU()
+    header_from_txt = hdu.header
+    if not os.path.isfile(txt_file):
+        msgs.warning('File {} not exists. Returning empty header'.format(txt_file))
+    else:
+        with open(txt_file, 'r') as txt_header:
+            for line in txt_header:
+                card, value, comment = from_line_to_header_card(line)
+                if card is None:
+                    msgs.warning('The following line will not be added to the header\n {}'.format(line))
+                else:
+                    add_header_card(header_from_txt, card, value, comment=comment)
+    for card in header_from_txt.cards:
+        print(card)
+    return header_from_txt
+
+
+def from_line_to_header_card(line):  # written by Ema 04.03.2020
+    r"""Given a line of text from an header, it returns card, value (and comment, if present).
+
+    This is a tool to read in headers that have been saved in ascii format. Typically a line will be in the form:
+    `DATE    = '2003-07-25T05:41:32.569' / UT date when this file was written`
+    the code will try to divide the line into:
+     - card = DATE
+     - value = '2003-07-25T05:41:32.569'
+     - comment = UT date when this file was written
+     care is taken for cases in which values and/or comment contains characters like `=` or `/`
+    In the possible case that `line` could no be processed, None, None, None will be returned and a warning statement
+    will be raised.
+
+    Args:
+        line (`str`):
+            input string to be divided into card, value, comment
+
+    Returns:
+        card, value, comment (`str`, `int`, `float`):
+            if there are no comment, a `None` will be returned.
+    """
+
+    # checks for line
+    assert isinstance(line, str), '`line` needs to be a str'
+
+    if '=' not in line:
+        msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
+        card, value, comment = None, None, None
+    else:
+        # taking as card, everything that appears before the first occurrence of `=`
+        card = line[0:re.search(r'=', line).start()].strip()
+        line_leftover = line[re.search(r'=', line).start()+1:].strip()
+        if line_leftover.count('/') == 0:
+            # no comment present
+            value = line_leftover
+            comment = ' '
+            value = check_value(value)
+        elif line_leftover.count('/') == 1:
+            # comment present after /
+            value = line_leftover[0:re.search(r'/', line_leftover).start()].strip()
+            comment = line_leftover[re.search(r'/', line_leftover).start()+1:].strip()
+        else:
+            test_strings = ['pixels/axis', 'PIXELS/AXIS', 'arcsec/mm', 'ARCSEC/MM',
+                            'nm/mm', 'NM/MM', 'grooves/nm', 'GROOVES/NM']
+            if any(test_string in line_leftover for test_string in test_strings):
+                # Checking for typical values in the comments
+                value = line_leftover[0:re.search(r'/', line_leftover).start()].strip()
+                comment = line_leftover[re.search(r'/', line_leftover).start() + 1:].strip()
+            elif line_leftover.startswith("'") and line_leftover.count("'") == 2:
+                # Checking for strings in the values
+                value = line_leftover[1:re.search(r"'", line_leftover[1:]).start()].strip()
+                line_leftover = line_leftover[re.search(r"'", line_leftover[1:]).start()+1:].strip()
+                comment = line_leftover[re.search(r'/', line_leftover).start()+1:].strip()
+            else:
+                # Troubles
+                msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
+                card, value, comment = None, None, None
+        if len(comment) == 0:
+            comment = None
+    return card, check_value(value), comment
+
+
+def check_value(value):  # written by Ema 04.03.2020
+    r"""Guess for the best type of header values
+
+    Args:
+        value (`str`):
+            input string value
+
+    Returns:
+        value (`str`,`int`,`float`,`bool`)
+            output value with (hopefully) the correct type
+
+    """
+
+    if value is not None:
+        if value == 'T':
+            value = np.bool(True)
+        elif value == 'F':
+            value = np.bool(False)
+        elif value.startswith("'") and value.endswith("'"):
+            value = str(value[1:-1])
+        elif any(character.isalpha() for character in value):
+            if value.count('E') == 1 or value.count('e') == 1:
+                value_test = value
+                for exponent in ['e+', 'E+', 'e-', 'E-', 'e', 'E', '.']:
+                    value_test = value_test.replace(exponent, '')
+                    if all(character.isdigit() for character in value_test):
+                        value = np.float(value)
+            else:
+                value = str(value)
+        elif all(character.isdigit() for character in value):
+            value = np.int(value)
+        elif value.startswith('+') or value.startswith('-'):
+            if all(character.isdigit() for character in value[1:]):
+                value = np.int(value)
+        else:
+            value = np.float(value)
+
+    return value
 
 
 def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True):

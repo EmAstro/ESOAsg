@@ -36,7 +36,6 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
         msgs.error('Not enough space on disk')
     return enough_space
 
-
 '''
 def single_value_to_list(single_value):
     """This is useful to transform single strings, integers, floats into python lists. Can be used when the
