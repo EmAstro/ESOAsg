@@ -11,6 +11,8 @@ import os.path
 from ESOAsg import msgs
 from ESOAsg import __version__
 from ESOAsg.core import fitsfiles
+from ESOAsg.core import download_archive
+
 # from IPython import embed
 
 
@@ -26,7 +28,7 @@ def parse_arguments():
 
     parser.add_argument('input_fits', nargs='+', type=str,
                         help='Fits file name form which read the header. This may contain wildcards.')
-    parser.add_argument('-hn', '--hdu_number', nargs='+', type=int, default=1,
+    parser.add_argument('-hn', '--hdu_number', nargs='+', type=int, default=0,
                         help='select which HDU you want to check. See `fitsfiles` in `ESOAsg.core` for details.')
     parser.add_argument('-car', '--cards', nargs='+', type=str, default=None,
                         help='Header cards you want to check')
@@ -48,8 +50,6 @@ if __name__ == '__main__':
     input_fits = args.input_fits
 
     # which_hdu
-    from IPython import embed()
-    embed()
     if isinstance(args.hdu_number, int):
         hdu_number = np.array([args.hdu_number], dtype=np.int_)
     else:
@@ -65,6 +65,23 @@ if __name__ == '__main__':
     msgs.start()
 
     for fits_file in input_fits:
-        hdr = fitsfiles.header_from_fits_file(fits_file, which_hdu=hdu_number, mode='readonly')
+        for which_hdu in hdu_number:
+            hdr = fitsfiles.header_from_fits_file(fits_file, which_hdu=which_hdu, mode='denywrite')
+            original_files, prov_files, original_cards, prov_cards = [], [], [], []
+            if 'PROV1' in hdr:
+                for prov_number in hdr['PROV*']:
+                    file_id = hdr[prov_number].replace('.fits', '')
+                    download_archive.get_header_from_archive(file_id, text_file=file_id+'.hdr')
+                    hdr_prov = fitsfiles.header_from_txt_file(file_id+'.hdr')
+                    for card in cards:
+                        original_files.append(fits_file)
+                        prov_files.append(file_id)
+                        original_cards.append(card)
+                        prov_cards.append( hdr_prov[card])
+    msgs.info('Summary:')
+    msgs.info('Input <- Provenance   -  card -> Value')
+    for original_file, prov_file, original_card, prov_card in zip(original_files, prov_files, original_cards,
+                                                                      prov_cards):
+        print('{} <- {}  -  {} -> {}'.format(original_file, prov_file, original_card, prov_card))
 
     msgs.end()

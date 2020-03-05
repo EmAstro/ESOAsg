@@ -14,7 +14,7 @@ from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
 
-def get_hdul(fits_name, mode='readonly', checksum=True):    # Written by Ema 05.03.2020
+def get_hdul(fits_name, mode='readonly', checksum=True):  # Written by Ema 05.03.2020
     r"""Wrapper for astropy `fits.open`. It checks if the file exists and in case returns its HDUList.
 
     Args:
@@ -67,7 +67,7 @@ def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True
 
     """
 
-    assert isinstance(which_hdu, int), 'which_hdu must be an int'
+    assert isinstance(which_hdu, (int, np.int_)), 'which_hdu must be an int'
     if not checks.fits_file_is_valid(fits_name):
         msgs.error('Fits file not valid')
     else:
@@ -104,7 +104,7 @@ def header_from_txt_file(txt_file):  # written by Ema 05.03.2020
     """
 
     # Checks for txt_name
-    assert isinstance(txt_file, str), '`txt_name` needs to be a str'
+    assert isinstance(txt_file, (str, np.str)), '`txt_name` needs to be a str'
 
     # creating hdu object
     hdu = fits.PrimaryHDU()
@@ -116,7 +116,8 @@ def header_from_txt_file(txt_file):  # written by Ema 05.03.2020
             for line in txt_header:
                 card, value, comment = from_line_to_header_card(line)
                 if card is None:
-                    msgs.warning('The following line will not be added to the header\n {}'.format(line))
+                    if 'END' not in line and 'END\n' not in line:
+                        msgs.warning('The following line will not be added to the header\n {}'.format(line))
                 else:
                     add_header_card(header_from_txt, card, value, comment=comment)
 
@@ -147,10 +148,11 @@ def from_line_to_header_card(line):  # written by Ema 05.03.2020
     """
 
     # checks for line
-    assert isinstance(line, str), '`line` needs to be a str'
+    assert isinstance(line, (str, np.str)), '`line` needs to be a str'
 
     if '=' not in line:
-        msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
+        if 'END' in line and 'END\n' not in line:
+            msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
         card, value, comment = None, None, None
     else:
         # taking as card, everything that appears before the first occurrence of `=`
@@ -167,14 +169,15 @@ def from_line_to_header_card(line):  # written by Ema 05.03.2020
             if len(comment) == 0:
                 comment = None
         else:
-            # Troubles
-            msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
-            card, value, comment = None, None, None
+            # Troubles but fingers crossed
+            value, comment = re.split(" / ", line_leftover, maxsplit=1)
+            value, comment = value.strip(), comment.strip()
+            msgs.warning('The following line should be double checked:\n {}'.format(line))
 
     return card, check_value(value), comment
 
 
-def check_value(value):   # written by Ema 05.03.2020
+def check_value(value):  # written by Ema 05.03.2020
     r"""Guess for the best type of header values.
 
     This is based on `ast.literal_eval`

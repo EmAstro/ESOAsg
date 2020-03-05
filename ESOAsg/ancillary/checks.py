@@ -90,7 +90,7 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
     # Checks for url
     assert isinstance(fits_file, str), 'input fits needs to be a string'
     # Check for ending
-    if not fits_file.endswith('.fits') or not fits_file.endswith('.fits.fz'):
+    if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz'):
         msgs.warning('File: {} does not end with `.fits` or .`fits.fz`'.format(fits_file))
         return False
     # Check for existence

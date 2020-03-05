@@ -181,7 +181,7 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
         msgs.error('Cannot connect to the ESO archive website:\n {}'.format(archive_url))
 
     # checks for file id
-    assert isinstance(file_id, list) or isinstance(file_id, str), 'file_id needs to be a str or a list'
+    assert isinstance(file_id, list) or isinstance(file_id, (str, np.str)), 'file_id needs to be a str or a list'
     if isinstance(file_id, str):
         list_of_files = [file_id]
     else:
@@ -189,8 +189,8 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
     list_of_files = [files if not files.endswith('.fits') else files.replace('.fits', '') for files in list_of_files]
 
     # checks for text_file
-    assert isinstance(text_file, list) or isinstance(text_file, str) or isinstance(text_file, (type(None), bytes)), \
-        'text_file needs to be a str or a list'
+    assert isinstance(text_file, list) or isinstance(text_file, (str, np.str)) or \
+           isinstance(text_file, (type(None), bytes)), 'text_file needs to be a str or a list'
     if isinstance(text_file, str):
         if len(list_of_files) == 1:
             list_of_outputs = [text_file]
