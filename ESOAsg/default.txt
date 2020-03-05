@@ -8,10 +8,13 @@
 # a download in Gigabytes
 min_disk_space::6.00
 #################################################################
-#
-eso_tap_obs::http://archive.eso.org/tap_obs
-#################################################################
 # define the maximum number of files that a single query can
 # recover from the ESO archive
 maxrec::999
+#################################################################
+# Link to ESO tap service
+eso_tap_obs::http://archive.eso.org/tap_obs
+#################################################################
+# Link to ESO archive
+eso_archive_url::http://archive.eso.org/
 #################################################################

@@ -266,7 +266,7 @@ class Lists:
         # Loading from fits file
         elif from_fits is not None:
             msgs.work('Loading header from fits file: {}'.format(from_fits))
-            _hdu = fitsfiles.header_from_file(from_fits, which_hdu=which_hdu)
+            _hdu = fitsfiles.header_from_fits_file(from_fits, which_hdu=which_hdu)
             _cards, _values = np.zeros_like(0), np.zeros_like(0)
             for index in list(_hdu.keys()):
                 if 'COMMENT' not in index:

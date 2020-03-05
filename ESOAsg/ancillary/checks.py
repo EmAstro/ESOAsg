@@ -3,8 +3,9 @@ Module that performs some useful and basic checks
 """
 
 # import sys
-import shutil
 import numpy as np
+import shutil
+import urllib
 
 # ESOAsg imports
 from ESOAsg import msgs
@@ -35,6 +36,41 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
         enough_space = np.bool(0)
         msgs.error('Not enough space on disk')
     return enough_space
+
+
+def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
+    r"""Check there is an active connection to a website
+
+    Args:
+        url (`str`):
+            link to the website you want to check
+        timeout (`int`, `float`):
+            timeout waiting for the website to respond
+
+    Returns:
+        `boolean`:
+            `True` if there is an active connection, `False` and error raised if not.
+    """
+    # Checks for url
+    assert isinstance(url, str), 'The url needs to be a string'
+    if url.startswith('www'):
+        url_clean = 'http://'+url
+        msgs.warning('Modifying url to: {}'.format(url_clean))
+    else:
+        url_clean = url
+
+    request = urllib.request.Request(url_clean)
+    try:
+        urllib.request.urlopen(request, timeout=timeout)
+    except urllib.error.HTTPError as err:
+        msgs.warning('HTTP Error: {}'.format(err.code))
+        return False
+    except urllib.error.URLError as err:
+        msgs.warning('URL Error: {}'.format(err.reason))
+        return False
+    else:
+        return True
+
 
 '''
 def single_value_to_list(single_value):

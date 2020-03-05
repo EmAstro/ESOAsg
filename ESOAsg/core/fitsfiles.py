@@ -8,8 +8,10 @@ from astropy.io import fits
 import numpy as np
 import os
 import re
+import ast
 
 from ESOAsg import msgs
+from ESOAsg.ancillary import checks
 
 
 def get_hdul(fits_name, mode='readonly', checksum=True):
@@ -44,7 +46,7 @@ def get_hdul(fits_name, mode='readonly', checksum=True):
         return hdul
 
 
-def header_from_file(fits_name, which_hdu=0, mode='readonly', checksum=True):
+def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True):
     r"""
     Load an header with the information from a fits file
 
@@ -70,7 +72,7 @@ def header_from_file(fits_name, which_hdu=0, mode='readonly', checksum=True):
     return hdul[which_hdu].header
 
 
-def header_from_txt_file(txt_file):
+def header_from_txt_file(txt_file):  # written by Ema 05.03.2020
     r"""Load an header from a text file into an `astropy` `hdu.header` object.
 
     The text file in input should contain the information in the standard header format:
@@ -85,10 +87,8 @@ def header_from_txt_file(txt_file):
         CRPIX1  =              1.0 / Ref. pixel of center of rotation
         CDELT1  =              2.0 / Binning factor
         etc..
-    Cards will be read only if there is a value associated (i.e. if they are followed by a = sign). Note that
-    COMMENTS will not be propagated.
-    In case the file does not exist, an empty header will be returned and a warning statement will be
-    raised.
+    Cards will be read only if there is a value associated (i.e. if they are followed by a = sign). In case the file
+    does not exist, an empty header will be returned and a warning statement will be raised.
 
     Args:
         txt_file (`str`):
@@ -97,6 +97,7 @@ def header_from_txt_file(txt_file):
     Returns:
          header_from_txt (`hdu.header`):
              an header object
+
     """
 
     # Checks for txt_name
@@ -115,12 +116,11 @@ def header_from_txt_file(txt_file):
                     msgs.warning('The following line will not be added to the header\n {}'.format(line))
                 else:
                     add_header_card(header_from_txt, card, value, comment=comment)
-    for card in header_from_txt.cards:
-        print(card)
+
     return header_from_txt
 
 
-def from_line_to_header_card(line):  # written by Ema 04.03.2020
+def from_line_to_header_card(line):  # written by Ema 05.03.2020
     r"""Given a line of text from an header, it returns card, value (and comment, if present).
 
     This is a tool to read in headers that have been saved in ascii format. Typically a line will be in the form:
@@ -129,7 +129,7 @@ def from_line_to_header_card(line):  # written by Ema 04.03.2020
      - card = DATE
      - value = '2003-07-25T05:41:32.569'
      - comment = UT date when this file was written
-     care is taken for cases in which values and/or comment contains characters like `=` or `/`
+     Care is taken for cases in which values and/or comment contains characters like `=` or `/`
     In the possible case that `line` could no be processed, None, None, None will be returned and a warning statement
     will be raised.
 
@@ -140,6 +140,7 @@ def from_line_to_header_card(line):  # written by Ema 04.03.2020
     Returns:
         card, value, comment (`str`, `int`, `float`):
             if there are no comment, a `None` will be returned.
+
     """
 
     # checks for line
@@ -150,41 +151,30 @@ def from_line_to_header_card(line):  # written by Ema 04.03.2020
         card, value, comment = None, None, None
     else:
         # taking as card, everything that appears before the first occurrence of `=`
-        card = line[0:re.search(r'=', line).start()].strip()
-        line_leftover = line[re.search(r'=', line).start()+1:].strip()
-        if line_leftover.count('/') == 0:
-            # no comment present
-            value = line_leftover
-            comment = ' '
-            value = check_value(value)
-        elif line_leftover.count('/') == 1:
-            # comment present after /
-            value = line_leftover[0:re.search(r'/', line_leftover).start()].strip()
-            comment = line_leftover[re.search(r'/', line_leftover).start()+1:].strip()
+        card, line_leftover = re.split("=", line, maxsplit=1)
+        card = card.strip()
+        # now check how many occurrences of ` \ ` are in line_leftover and split values from comments
+        if line_leftover.count(' / ') == 0:
+            # good splitting and no comment present
+            value, comment = line_leftover.strip(), None
+        elif line_leftover.count(' / ') == 1:
+            # good splitting
+            value, comment = re.split(" / ", line_leftover, maxsplit=1)
+            value, comment = value.strip(), comment.strip()
+            if len(comment) == 0:
+                comment = None
         else:
-            test_strings = ['pixels/axis', 'PIXELS/AXIS', 'arcsec/mm', 'ARCSEC/MM',
-                            'nm/mm', 'NM/MM', 'grooves/nm', 'GROOVES/NM']
-            if any(test_string in line_leftover for test_string in test_strings):
-                # Checking for typical values in the comments
-                value = line_leftover[0:re.search(r'/', line_leftover).start()].strip()
-                comment = line_leftover[re.search(r'/', line_leftover).start() + 1:].strip()
-            elif line_leftover.startswith("'") and line_leftover.count("'") == 2:
-                # Checking for strings in the values
-                value = line_leftover[1:re.search(r"'", line_leftover[1:]).start()].strip()
-                line_leftover = line_leftover[re.search(r"'", line_leftover[1:]).start()+1:].strip()
-                comment = line_leftover[re.search(r'/', line_leftover).start()+1:].strip()
-            else:
-                # Troubles
-                msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
-                card, value, comment = None, None, None
-        if len(comment) == 0:
-            comment = None
+            # Troubles
+            msgs.warning('The following line could not be interpreted as header:\n {}'.format(line))
+            card, value, comment = None, None, None
+
     return card, check_value(value), comment
 
 
-def check_value(value):  # written by Ema 04.03.2020
-    r"""Guess for the best type of header values
+def check_value(value):   # written by Ema 05.03.2020
+    r"""Guess for the best type of header values.
 
+    This is based on `ast.literal_eval`
     Args:
         value (`str`):
             input string value
@@ -200,24 +190,8 @@ def check_value(value):  # written by Ema 04.03.2020
             value = np.bool(True)
         elif value == 'F':
             value = np.bool(False)
-        elif value.startswith("'") and value.endswith("'"):
-            value = str(value[1:-1])
-        elif any(character.isalpha() for character in value):
-            if value.count('E') == 1 or value.count('e') == 1:
-                value_test = value
-                for exponent in ['e+', 'E+', 'e-', 'E-', 'e', 'E', '.']:
-                    value_test = value_test.replace(exponent, '')
-                    if all(character.isdigit() for character in value_test):
-                        value = np.float(value)
-            else:
-                value = str(value)
-        elif all(character.isdigit() for character in value):
-            value = np.int(value)
-        elif value.startswith('+') or value.startswith('-'):
-            if all(character.isdigit() for character in value[1:]):
-                value = np.int(value)
         else:
-            value = np.float(value)
+            value = ast.literal_eval(value)
 
     return value
 

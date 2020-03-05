@@ -28,15 +28,10 @@ from pyvo import dal
 from astropy.coordinates import ICRS
 import requests
 
-# from astropy import coordinates
-# from astropy import units
-# from astropy import table
 
 from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg.ancillary import checks
-
-# from IPython import embed
 
 
 def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'))):
@@ -180,6 +175,11 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
 
     """
 
+    # checks for connection to ESO archive
+    archive_url = default.get_value('eso_archive_url')
+    if not checks.connection_to_website(archive_url, timeout=1):
+        msgs.error('Cannot connect to the ESO archive website:\n {}'.format(archive_url))
+
     # checks for file id
     assert isinstance(file_id, list) or isinstance(file_id, str), 'file_id needs to be a str or a list'
     if isinstance(file_id, str):
@@ -209,7 +209,7 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
         if os.path.isfile(file_out):
             msgs.warning('Overwriting existing text file: {}'.format(file_out))
             os.remove(file_out)
-        url_for_header = 'http://archive.eso.org/hdr?DpId='+file_name
+        url_for_header = archive_url+'hdr?DpId='+file_name
         response_url = requests.get(url_for_header, allow_redirects=True)
         # Removing html from text
         header_txt = response_url.text.split('<pre>')[1].split('</pre>')[0]
