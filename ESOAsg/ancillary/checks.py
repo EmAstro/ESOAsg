@@ -6,6 +6,7 @@ Module that performs some useful and basic checks
 import numpy as np
 import shutil
 import urllib
+import os.path
 
 # ESOAsg imports
 from ESOAsg import msgs
@@ -50,6 +51,7 @@ def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
     Returns:
         `boolean`:
             `True` if there is an active connection, `False` and error raised if not.
+
     """
     # Checks for url
     assert isinstance(url, str), 'The url needs to be a string'
@@ -70,6 +72,33 @@ def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
         return False
     else:
         return True
+
+
+def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
+    r"""Check if a file exists and has a valid extension
+
+    Args:
+        fits_file (`str`):
+            fits file you would like to check
+
+    Returns:
+        boolean`:
+            `True` if exists `False` and error raised if not.
+
+    """
+
+    # Checks for url
+    assert isinstance(fits_file, str), 'input fits needs to be a string'
+    # Check for ending
+    if not fits_file.endswith('.fits') or not fits_file.endswith('.fits.fz'):
+        msgs.warning('File: {} does not end with `.fits` or .`fits.fz`'.format(fits_file))
+        return False
+    # Check for existence
+    if os.path.exists(fits_file):
+        return True
+    else:
+        msgs.warning('File: {} does not exists'.format(fits_file))
+        return False
 
 
 '''

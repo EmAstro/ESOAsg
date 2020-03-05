@@ -30,7 +30,7 @@ def parse_arguments():
     parser.add_argument('-ra', '--ra_deg', nargs='+', type=float, default=None,
                         help='RA of the target in degree [J2000]')
     parser.add_argument('-dec', '--dec_deg', nargs='+', type=float, default=None,
-                        help='Dec of the target in degee [J2000]')
+                        help='Dec of the target in degree [J2000]')
     parser.add_argument('-r', '--radius', nargs='+', type=float, default=None,
                         help='Search cone radius in arcsec')
     parser.add_argument('-i', '--instrument_name', nargs='+', type=str, default=None,

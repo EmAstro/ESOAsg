@@ -14,30 +14,28 @@ from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
 
-def get_hdul(fits_name, mode='readonly', checksum=True):
-    r"""
-    Wrapper for astropy `fits.open`. It checks if the file exists and in case returns its HDUList.
+def get_hdul(fits_name, mode='readonly', checksum=True):    # Written by Ema 05.03.2020
+    r"""Wrapper for astropy `fits.open`. It checks if the file exists and in case returns its HDUList.
 
     Args:
         fits_name (`str`):
             fits file name
         mode (`str`):
-            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`.
+            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`
         checksum (`bool`):
             If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU header)
             match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
             will preserve and update the existing checksums unless this argument is given a value of `remove`,
             in which case the `CHECKSUM` and `DATASUM` values are not checked, and are removed when saving
-            changes to the file.
+            changes to the file
 
     Returns:
         hdul (`hdul`):
-            list-like collection of HDU objects.
+            list-like collection of HDU objects
+
     """
-    if fits_name is None:
-        msgs.error('No file selected.')
-    elif not os.path.exists(fits_name):
-        msgs.error('File does not exist.')
+    if not checks.fits_file_is_valid(fits_name):
+        msgs.error('Fits file not valid')
     else:
         hdul = fits.open(fits_name, mode=mode, checksum=checksum)
         msgs.info('The fits file {} contains {} HDUs'.format(fits_name, len(hdul)))
@@ -46,30 +44,35 @@ def get_hdul(fits_name, mode='readonly', checksum=True):
         return hdul
 
 
-def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True):
-    r"""
-    Load an header with the information from a fits file
+def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True):  # Written by Ema 05.03.2020
+    r"""Load an header with the information from a fits file
 
     Args:
         fits_name (`str`):
             fits file name
         which_hdu (`numpy.int`):
-            select from which HDU you are getting the header
+            select from which HDU you are getting the header. Default = 1
         mode (`str`):
-            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`.
+            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`
         checksum (`bool`):
             If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU header)
             match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
             will preserve and update the existing checksums unless this argument is given a value of `remove`,
             in which case the `CHECKSUM` and `DATASUM` values are not checked, and are removed when saving
-            changes to the file.
+            changes to the file
 
     Returns:
          header (`hdu.header`):
              the header corresponding to `which_hdu` from `fits_name`
+
     """
-    hdul = get_hdul(fits_name, mode=mode, checksum=checksum)
-    return hdul[which_hdu].header
+
+    assert isinstance(which_hdu, int), 'which_hdu must be an int'
+    if not checks.fits_file_is_valid(fits_name):
+        msgs.error('Fits file not valid')
+    else:
+        hdul = get_hdul(fits_name, mode=mode, checksum=checksum)
+        return hdul[which_hdu].header
 
 
 def header_from_txt_file(txt_file):  # written by Ema 05.03.2020

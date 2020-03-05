@@ -130,7 +130,8 @@ if __name__ == '__main__':
             for card, value, comment in zip(cards, values, comments):
                 for hdu in hdu_number:
                     if card in hdul[hdu].header:
-                        msgs.info('Updating header card in HDU N.{}: {}'.format(hdu, card))
+                        msgs.info('Updating header card in HDU N.{}: {}'.format(hdu, card)
+                                  )
                         msgs.info('From {} to {} / {}'.format(hdul[hdu].header[card], value, comment))
                     else:
                         msgs.info('Adding header card in HDU N.{}: {}={} / {}'.format(hdu, card, value, comment))
