@@ -49,7 +49,7 @@ def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
             timeout waiting for the website to respond
 
     Returns:
-        `boolean`:
+         is_active (`boolean`):
             `True` if there is an active connection, `False` and error raised if not.
 
     """
@@ -66,12 +66,13 @@ def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
         urllib.request.urlopen(request, timeout=timeout)
     except urllib.error.HTTPError as err:
         msgs.warning('HTTP Error: {}'.format(err.code))
-        return False
+        is_active = False
     except urllib.error.URLError as err:
         msgs.warning('URL Error: {}'.format(err.reason))
-        return False
+        is_active = False
     else:
-        return True
+        is_active = True
+    return is_active
 
 
 def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
@@ -82,7 +83,7 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
             fits file you would like to check
 
     Returns:
-        boolean`:
+        is_fits (`boolean`):
             `True` if exists `False` and error raised if not.
 
     """
@@ -92,14 +93,37 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
     # Check for ending
     if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz'):
         msgs.warning('File: {} does not end with `.fits` or .`fits.fz`'.format(fits_file))
-        return False
+        is_fits = False
     # Check for existence
     if os.path.exists(fits_file):
-        return True
+        is_fits = True
     else:
         msgs.warning('File: {} does not exists'.format(fits_file))
-        return False
+        is_fits = False
+    return is_fits
 
+
+def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
+    r"""Check if a 2D image is valid
+
+    Args:
+        image2d (np.array):
+            image that you would like to check
+
+    Returns:
+        is_image2d (`boolean`):
+            `True` if a valid 2D image `False` and error raised if not.
+    """
+    # Checks if it is a numpy array
+    assert isinstance(image2d, np.ndarray), 'The image is not a `numpy array`'
+    # Check for dimensions
+    if not image2d.ndim == 2:
+        msgs.warning('The image is not two dimensional (NDIM={})'.format(image2d.ndim))
+        is_image2d = False
+    else:
+        is_image2d = True
+
+    return is_image2d
 
 '''
 def single_value_to_list(single_value):
