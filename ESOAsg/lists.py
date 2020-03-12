@@ -174,12 +174,12 @@ class Lists:
     For instance:
     Cards:      Values1:    Values2:
     -----       -------     -------
-    JE      	ICH	        IO
-    TU          DU	        TU
+    JE          ICH             IO
+    TU          DU              TU
     ELLES       SIE         LEI
-    NOUS        WIR	        NOI
-    VOUS        IHR	        VOI
-    ELLES   	SIE	        ESSE
+    NOUS        WIR             NOI
+    VOUS        IHR             VOI
+    ELLES       SIE             ESSE
     -----       -------     -------
 
     Attributes:
