@@ -1,6 +1,5 @@
 # ESOAsg
-This is a collection of useful packages used to validate
-data for the ESO archive.
+This is a collection of useful packages that can be used to validate data for the ESO archive [http://archive.eso.org/cms.html]
 
 # Requiements
 see ./ESOAsg/requirements.txt
