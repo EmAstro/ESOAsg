@@ -17,9 +17,8 @@ from ESOAsg.core import fitsfiles
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""
-        This macro make the data for the SINFONI large program from Vincenzo Mainieri
-        compatible with the Phase3 standard.
-
+        Manipulates SINFONI cubes from the pipeline to become compliant with the Phase 3 standard
+        
         This uses ESOAsg version {:s}
         """.format(msgs._version),
         formatter_class=argparse.RawDescriptionHelpFormatter,
