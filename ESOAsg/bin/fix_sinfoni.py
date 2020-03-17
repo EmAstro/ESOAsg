@@ -5,11 +5,14 @@ import argparse
 import numpy as np
 
 from astropy.io import fits
+
 # from astropy import coordinates
 # from astropy import units as u
 
+from ESOAsg import __version__
 from ESOAsg import msgs
 from ESOAsg.core import fitsfiles
+from ESOAsg.ancillary import checks
 
 # from IPython import embed
 
@@ -20,37 +23,48 @@ def parse_arguments():
         Manipulates SINFONI cubes from the pipeline to become compliant with the Phase 3 standard
         
         This uses ESOAsg version {:s}
-        """.format(msgs._version),
+        """.format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
 
-    parser.add_argument('-i', '--input_fits', nargs='+', type=str, default=None,
-                        help='Original fits file')
-    parser.add_argument('-o', '--output_fits', nargs='+', type=str, default=None,
-                        help='Output fits file with corrected header and structure')
-    parser.add_argument('-v', '--version', action='version', version=msgs._version)
+    parser.add_argument('input_fits', nargs='+', type=str,
+                        help='Sinfoni fits file to be modified. This may contain wildcards.')
+    parser.add_argument('-out', '--output', nargs='+', type=str, default=None,
+                        help='Name of the output modified file')
+    parser.add_argument('-v', '--version', action='version', version=__version__)
     return parser.parse_args()
 
 
 EXAMPLES = r"""
         Example:
-        fix_mainieri_lp.py --input_fits 
+        fix_sinfoni.py input_fits.fits 
         """
 
 if __name__ == '__main__':
     args = parse_arguments()
 
-    # getting fits names
-    input_fits = np.str(args.input_fits[0])
-    if args.output_fits is None:
-        output_fits = input_fits.replace(".fits", "_fixed.fits")
+    # File_names
+    for file_name in args.input_fits:
+        if not checks.fits_file_is_valid(file_name):
+            msgs.error('File {} is not a valid fits file'.format(file_name))
+    input_fits_files = args.input_fits
+
+    # output
+    if args.output is not None:
+        overwrite = False
+        if len(input_fits_files) == 1:
+            output_fits_files = args.output
+        else:
+            output_fits_files = [output_temp.replace('.fits', np.str(args.output[0])) for output_temp in input_fits]
     else:
-        output_fits = np.str(args.output_fits[0])
+        output_fits_files = input_fits_files
+        overwrite = True
 
     msgs.start()
 
     # Copy relevant information from input into output file
-    fitsfiles.new_fits_like(input_fits, [0], output_fits, overwrite=True)
+    for fits_in, fits_out in zip(input_fits_files, output_fits_files):
+        fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite)
 
     # This file will be modified in place
     hdul = fits.open(output_fits, 'update', checksum=True)
