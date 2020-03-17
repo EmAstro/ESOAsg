@@ -9,6 +9,7 @@ import numpy as np
 import os
 import re
 import ast
+import time
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
@@ -71,8 +72,8 @@ def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True
     if not checks.fits_file_is_valid(fits_name):
         msgs.error('Fits file not valid')
     else:
-        hdul = get_hdul(fits_name, mode=mode, checksum=checksum)
-        return hdul[which_hdu].header
+        header = fits.getheader(fits_name, which_hdu)
+        return header
 
 
 def header_from_txt_file(txt_file):  # written by Ema 05.03.2020
@@ -200,7 +201,6 @@ def check_value(value):  # written by Ema 05.03.2020
             value = str(value)
         else:
             value = ast.literal_eval(value)
-
     return value
 
 
