@@ -6,13 +6,14 @@ import numpy as np
 import os
 
 from astropy.io import fits
+from astropy import units as u
 
 # from astropy import coordinates
-# from astropy import units as u
 
 from ESOAsg import __version__
 from ESOAsg import msgs
 from ESOAsg import images
+from ESOAsg.core import astro
 from ESOAsg.core import fitsfiles
 from ESOAsg.core import download_archive
 from ESOAsg.ancillary import checks
@@ -111,7 +112,6 @@ if __name__ == '__main__':
         hdr1 = hdul[1].header
 
         # 1.1 Check for HISTORY
-
 
         if 'HISTORY' in hdr0.keys():
             history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
@@ -231,7 +231,12 @@ if __name__ == '__main__':
         # 4. create white light image
         image_hdu = fits.PrimaryHDU()
         image_hdul = fits.HDUList([image_hdu])
-        image_hdul.append(fits.ImageHDU(np.nansum(hdul[1].data, axis=0, dtype=np.float_)))
+        if hdr1['CUNIT3'].startswith('um'):
+            to_ang = 1000.
+        else:
+            msgs.error('Spectral unit: {} not recognized'.format(hdr1['CUNIT3']))
+        delta_wave_bin = hdr1['CDELT3']
+        image_hdul.append(fits.ImageHDU(to_ang*delta_wave_bin*np.nansum(hdul[1].data, axis=0, dtype=np.float_)))
         image_hdr0 = image_hdul[0].header
         image_hdr1 = image_hdul[1].header
         card_for_image0 = ['WAVELMIN', 'WAVELMAX', 'OBJECT', 'TELESCOP', 'INSTRUME', 'RADECSYS', 'RA', 'DEC',
@@ -251,15 +256,21 @@ if __name__ == '__main__':
                 msgs.warning('Inconsiste value for EXPTIME: {}. Tying to fix it with provenances'.format(hdr0[
                                                                                                             'EXPTIME']))
                 msgs.work('Downloading {} headers'.format(len(get_prov)))
-                EXPTIME = 0
+                EXPTIME_sec = 0
                 for prov_number in hdr0['PROV*']:
                     file_id = hdr0[prov_number].replace('.fits', '')
                     download_archive.get_header_from_archive(file_id, text_file=file_id+'.hdr')
                     hdr_prov = fitsfiles.header_from_txt_file(file_id+'.hdr')
                     msgs.work('{} has EXPTIME of: {}'.format(file_id, hdr_prov['EXPTIME']))
-                    EXPTIME = EXPTIME+hdr_prov['EXPTIME']
-                msgs.warning('Updating value for EXPTIME to: {}'.format(EXPTIME))
-                hdr0['EXPTIME'] = np.float(EXPTIME)
+                    EXPTIME_sec = EXPTIME_sec+hdr_prov['EXPTIME']
+                hdr0['EXPTIME'] = np.float(EXPTIME_sec)
+                msgs.warning('Updating value for EXPTIME to: {}'.format(EXPTIME_sec))
+                fitsfiles.add_header_card(hdr0, 'TEXPTIME', EXPTIME_sec)
+                msgs.warning('Updating value for TEXPTIME to: {}'.format(MJDEND))
+                EXPTIME_day = np.float(EXPTIME_sec) / (60. * 60. * 24.)
+                MJDEND = np.float32(hdr0['MJD-OBS']) + EXPTIME_day
+                fitsfiles.add_header_card(hdr0, 'MJD-END', MJDEND, 'End of observation')
+                msgs.warning('Updating value for MJD-END to: {}'.format(MJDEND))
             else:
                 msgs.error('Inconsiste value for EXPTIME: {}'.format(hdr0['EXPTIME']))
         # FLUXCAL
@@ -267,9 +278,12 @@ if __name__ == '__main__':
             if 'ABMAGLIM' not in hdr0.keys():
                 msgs.warning('Missing ABMAGLIM keyword')
                 msgs.warning('Trying to estimate it from whitelight image')
-                whitelight = images.Images(data=np.nansum(hdul[1].data, axis=0, dtype=np.float_))
-                mean, med, dev = whitelight.calc_background()
-
+                whitelight = images.Images(data=image_hdul[1].data)
+                mean, med, dev = whitelight.calc_background(find_sources=False)
+                # ToDO
+                # Finalize abmaglim
+                # ABMAGLIM = astro.abmaglim(rms=dev*u.erg/(u.cm**2*u.s), seeing_fwhm=3.)
+                hdr0['ABMAGLIM'] = dev
 
         # 6. update checksum and datasum
         msgs.work('Updating checksum and datasum')
