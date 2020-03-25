@@ -502,4 +502,3 @@ class Lists:
             return diff_first_cards, diff_first_values, diff_second_values
         else:
             print('WORK IN PROGRESS')
-

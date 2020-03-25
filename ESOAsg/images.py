@@ -10,7 +10,7 @@ from ESOAsg.core import fitsfiles
 from ESOAsg.ancillary import checks
 
 
-class Image:
+class Images:
     r"""A class used to define and make simple operations on images
 
     This allows to perform some basic checks on a 2D image.
@@ -63,10 +63,10 @@ class Image:
         hdul = fitsfiles.get_hdul(fits_name)
 
         for attribute, value in zip(self.__dict__.keys(), self.__dict__.values()):
-            which_hdu = vars()[attribute+'_hdu']
+            which_hdu = vars()[attribute + '_hdu']
             if which_hdu is not None:
                 assert isinstance(which_hdu, (int, np.int_)), r'{} must be an integer'.format(
-                    attribute+'_hdu')
+                    attribute + '_hdu')
                 setattr(self, attribute, hdul[which_hdu].data)
 
         if not self._check_image():
@@ -100,10 +100,13 @@ class Image:
         if find_sources:
             if self.sources_mask is not None:
                 msgs.warning('The sources_mask will be overwritten')
-            msgs.work('Searching for bright sources with a {}-sigma clipping algorithm'.format(sigma))
-            mean, median, std = sigma_clipped_stats(self.data, mask=self.get_full_mask(), sigma=sigma)
-            print(mean, median, std)
-        return True
+            # ToDo
+            msgs.error('Not implemented yet')
+            msgs.work('Not impleSearching for bright sources with a {}-sigma clipping algorithm'.format(sigma))
+        msgs.work('Finding background with a {}-sigma clipping algorithm'.format(sigma))
+        mean, median, std = sigma_clipped_stats(self.data, mask=self.get_full_mask(), sigma=sigma)
+        msgs.info('Mean={}, Median={}, Std={}'.format(mean, median, std))
+        return mean, median, std
 
     def get_full_mask(self, mask_bad_pixels=True, mask_quality=True, mask_sources=True, mask_nans=True):
         r"""
@@ -128,4 +131,3 @@ class Image:
             if mask_nans:
                 full_mask[np.isnan(self.data)] = True
         return full_mask
-

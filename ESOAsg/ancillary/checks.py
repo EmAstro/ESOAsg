@@ -13,6 +13,22 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 
+def remove_non_ascii(text_string):
+    r"""Replace non ascii characters from a string
+
+    Args:
+        text_string (`str`):
+            input string from which the non ascii characters will be removed
+
+    Returns:
+        text_string_cleaned ('str'):
+            string from which the non ASCII characters have been removed.
+
+    """
+    text_string_cleaned = "".join(character for character in text_string if 31 < ord(character) < 123)
+    text_string_cleaned.replace('\\', '').strip()
+    return text_string_cleaned
+
 def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space'))):
     r"""
     Given a limit in GB in the variable min_disk_space the macro returns `True` if there is enough space and rises
