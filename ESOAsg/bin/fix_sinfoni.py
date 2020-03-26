@@ -13,7 +13,7 @@ from astropy import units as u
 from ESOAsg import __version__
 from ESOAsg import msgs
 from ESOAsg import images
-from ESOAsg.core import astro
+# from ESOAsg.core import astro
 from ESOAsg.core import fitsfiles
 from ESOAsg.core import download_archive
 from ESOAsg.ancillary import checks
@@ -58,7 +58,7 @@ def parse_arguments():
                         help='Value for the header keyword: `FLUXCAL`')
     parser.add_argument('-r', '--referenc', nargs='+', type=str, default=None,
                         help='DOI of the related scientific publication')
-    parser.add_argument('-m', '--abmaglim', nargs='+', type=float, default=None,
+    parser.add_argument('-mlim', '--abmaglim', nargs='+', type=float, default=None,
                         help='5-sigma detection limit in the AB system')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     return parser.parse_args()
@@ -117,7 +117,7 @@ if __name__ == '__main__':
     else:
         msgs.error('Possible values for fluxcal are: `ABSOLUTE` or `UNCALIBRATED`')
 
-    # fluxcal
+    # abmaglim
     if args.abmaglim is not None:
         abmaglim = args.abmaglim
         assert isinstance(abmaglim, (int, np.float_)), 'ABMAGLIM must be a float'
@@ -322,11 +322,16 @@ if __name__ == '__main__':
                 msgs.warning('Missing ABMAGLIM keyword')
                 msgs.warning('Trying to estimate it from whitelight image')
                 whitelight = images.Images(data=image_hdul[1].data)
-                mean, med, dev = whitelight.calc_background(find_sources=False)
+                whitelight.calc_background(method='median', nsigma=3., find_sources=True, src_nsigma=3.,
+                                           src_npixels=5, src_dilate_size=2)
+                whitelight_mean, whitelight_median, whitelight_std = whitelight.get_clean_stats(nsigma=3.)
                 # ToDO
-                # Finalize abmaglim
-                # ABMAGLIM = astro.abmaglim(rms=dev*u.erg/(u.cm**2*u.s), seeing_fwhm=3.)
-                hdr0['ABMAGLIM'] = dev
+                # Improve on this
+                n_pixels_psf = np.pi*(3)**2.
+                five_sigma_nu = 5.*3.34e4*np.power((WAVELMAX+WAVELMIN)*to_ang/2.,
+                                                   2.)*whitelight_std*n_pixels_psf/(delta_wave_bin*to_ang)
+                hdr0['ABMAGLIM'] = -2.5*np.log10(five_sigma_nu/3631.)
+                msgs.warning('ABMAGLIM={}. This is most probably not correct at the moment'.format(hdr0['ABMAGLIM'] ))
 
         # 6. update checksum and datasum
         msgs.work('Updating checksum and datasum')
