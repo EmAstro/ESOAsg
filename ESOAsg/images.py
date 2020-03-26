@@ -1,8 +1,10 @@
-"""
-Class to work on images
+r"""Class to work on images
+
+This includes some photutils code: `https://photutils.readthedocs.io/en/stable/index.html`
 """
 
 from astropy.stats import sigma_clipped_stats
+from photutils import make_source_mask
 import numpy as np
 
 from ESOAsg import msgs
@@ -100,6 +102,7 @@ class Images:
         if find_sources:
             if self.sources_mask is not None:
                 msgs.warning('The sources_mask will be overwritten')
+                self.find_sources()
             # ToDo
             msgs.error('Not implemented yet')
             msgs.work('Not impleSearching for bright sources with a {}-sigma clipping algorithm'.format(sigma))
@@ -131,3 +134,12 @@ class Images:
             if mask_nans:
                 full_mask[np.isnan(self.data)] = True
         return full_mask
+
+    def find_sources(self, sigma=3., remove_background=True, mask_radius=2.):
+        r"""Filling source mask with a sigma detection algorithm
+
+        """
+        if self.data is None:
+            msgs.warning('data is empty, mask_sources set to None')
+            return None
+

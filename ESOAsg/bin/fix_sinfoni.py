@@ -18,8 +18,6 @@ from ESOAsg.core import fitsfiles
 from ESOAsg.core import download_archive
 from ESOAsg.ancillary import checks
 
-# from IPython import embed
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
@@ -31,8 +29,24 @@ def parse_arguments():
         to get all the keywords properly, however, the user should always double check the outcome to be sure that 
         everything is on place.
         
-        This uses ESOAsg version {:s}
-        """.format(__version__),
+        To summarize the steps:
+            1. Creates a PrimaryHDU and put the data in the `DATA` extension (similar to MUSE datacubes).
+            2. Places properly header cards into the PrimaryHDU and in `DATA`
+            3. Creates the white-light image 
+            4. Performs few consistency checks for header values:
+                * EXPTIME > 0 : If not, an attempt is made to recover the error from the PROV-j entries
+        
+        The following header keywords can be added by user. We refer to the `ESO Science Data Products Standard` for a
+        exhaustive explanation of meanings and rules associated to them.
+            * PrimaryHDU:
+                * `FLUXCAL`  : either `ABSOLUTE` (`default`) or `UNCALIBRATED`
+                * `REFERENC` : DOI to the related scientific publication
+                * `ABMAGLIM` : 5-sigma detection limit derived from the white-light image
+        
+        Note that, if `output` is not defined, the fits file will be overwritten. 
+        
+        This uses ESOAsg version {__version__:s}
+        """,
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
 
@@ -42,8 +56,10 @@ def parse_arguments():
                         help='Name of the output modified file')
     parser.add_argument('-cal', '--fluxcal', type=str, default='ABSOLUTE',
                         help='Value for the header keyword: `FLUXCAL`')
-    parser.add_argument('-r', '--reference', nargs='+', type=str, default=None,
+    parser.add_argument('-r', '--referenc', nargs='+', type=str, default=None,
                         help='DOI of the related scientific publication')
+    parser.add_argument('-m', '--abmaglim', nargs='+', type=float, default=None,
+                        help='5-sigma detection limit in the AB system')
     parser.add_argument('-v', '--version', action='version', version=__version__)
     return parser.parse_args()
 
@@ -51,6 +67,7 @@ def parse_arguments():
 EXAMPLES = r"""
         Example:
         fix_sinfoni.py input_fits.fits 
+        fix_sinfoni.py input_fits.fits -out _cleaned -cal ABSOLUTE
         """
 
 if __name__ == '__main__':
@@ -86,8 +103,8 @@ if __name__ == '__main__':
         overwrite = True
 
     # reference
-    if args.reference is not None:
-        reference = str(args.reference[0])
+    if args.referenc is not None:
+        reference = str(args.referenc[0])
     else:
         reference = str(' ')
     msgs.start()
@@ -99,6 +116,15 @@ if __name__ == '__main__':
         fluxcal = 'UNCALIBRATED'
     else:
         msgs.error('Possible values for fluxcal are: `ABSOLUTE` or `UNCALIBRATED`')
+
+    # fluxcal
+    if args.abmaglim is not None:
+        abmaglim = args.abmaglim
+        assert isinstance(abmaglim, (int, np.float_)), 'ABMAGLIM must be a float'
+        if abmaglim < 0:
+            msgs.error('ABMAGLIM must be positive')
+    else:
+        abmaglim = np.float_(-1.)
 
     msgs.start()
 
@@ -134,7 +160,7 @@ if __name__ == '__main__':
                 else:
                     hdr1['HISTORY'][history_number] = str(' ')
 
-        # 2. update cards for primary header:
+        # 2. update cards for headers:
 
         # Updating values with different CARD in the header
         CARDS_INPUT = ['ESO OBS ID', 'ESO OBS PROG ID', 'ESO PRO ANCESTOR', 'ESO PRO DATANCOM',
@@ -170,6 +196,7 @@ if __name__ == '__main__':
         hdr0['COMMENT'] = "  FITS (Flexible Image Transport System) format is defined in 'Astronomy" \
                           + "  and Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H"
 
+        # Including specific cards
         msgs.work('Updating SPEC_RES')
         if hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'J':
             hdr0['SPEC_RES'] = 2000.
@@ -184,6 +211,10 @@ if __name__ == '__main__':
 
         msgs.work('Updating PRODCATG')
         hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
+
+        if abmaglim > 0.:
+            msgs.work('Updating ABMAGLIM')
+            hdr0['ABMAGLIM'] = abmaglim
 
         msgs.work('Updating REFERENC')
         hdr0['REFERENC'] = reference
@@ -220,7 +251,7 @@ if __name__ == '__main__':
         msgs.work('Updating FLUXCAL')
         fitsfiles.add_header_card(hdr0, 'FLUXCAL', fluxcal)
 
-        # 3. update cards for `DATA` header
+        # update cards for `DATA` header
         fitsfiles.add_header_card(hdr1, 'EXTNAME', 'DATA', 'This extension contains data value')
         fitsfiles.add_header_card(hdr1, 'XTENSION', 'IMAGE', 'IMAGE extension')
 
@@ -232,7 +263,7 @@ if __name__ == '__main__':
                     and '2001A&A...376..359H' not in comments_to_be_kept:
                 hdr1['COMMENT'] = str('  ' + comments_to_be_kept)
 
-        # 4. create white light image
+        # 3. create white light image
 
         # Updating ASSON value in the header
         msgs.work('Updating ASSON')
@@ -259,6 +290,7 @@ if __name__ == '__main__':
         fitsfiles.transfer_header_cards(hdr1, image_hdr1, card_for_image1, with_comment=True, delete_card=False)
 
         # 5. few checks
+
         # EXPTIME
         if hdr0['EXPTIME'] <= 0:
             get_prov = [hdr0[prov] for prov in hdr0 if prov.startswith('PROV')]
@@ -283,7 +315,8 @@ if __name__ == '__main__':
                 msgs.warning('Updating value for MJD-END to: {}'.format(MJDEND))
             else:
                 msgs.error('Inconsiste value for EXPTIME: {}'.format(hdr0['EXPTIME']))
-        # FLUXCAL
+
+        # ABMAGLIM
         if hdr0['FLUXCAL'] is 'ABSOLUTE':
             if 'ABMAGLIM' not in hdr0.keys():
                 msgs.warning('Missing ABMAGLIM keyword')
