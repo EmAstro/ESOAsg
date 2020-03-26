@@ -26,6 +26,11 @@ def parse_arguments():
         description=r"""
         Manipulates SINFONI cubes to become compliant with the Phase 3 standard
         
+        This code takes care of a series of simple rearrangements that transform SINFONI cube coming from the pipeline
+        into (almost) Phase 3 compliant cubes (almost) ready to be ingested on the ESO Archive. The code trys its best
+        to get all the keywords properly, however, the user should always double check the outcome to be sure that 
+        everything is on place.
+        
         This uses ESOAsg version {:s}
         """.format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -138,6 +143,7 @@ if __name__ == '__main__':
                         'OBSTECH', 'PROCSOFT']
         fitsfiles.transfer_header_cards(hdr1, hdr0, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
 
+        # Transfer cards from HDU1 to the PrimaryHDU
         not_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if
                               hdr1_card.startswith('COMMENT') or
                               hdr1_card.startswith('NAXIS') or
@@ -160,11 +166,9 @@ if __name__ == '__main__':
         cards_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if hdr1_card not in not_to_be_transfer]
         fitsfiles.transfer_header_cards(hdr1, hdr0, cards_to_be_transfer, with_comment=True, delete_card=True)
 
+        # Updating the FITS file definition comment line
         hdr0['COMMENT'] = "  FITS (Flexible Image Transport System) format is defined in 'Astronomy" \
                           + "  and Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H"
-
-        msgs.work('Updating ASSON')
-        hdr0['ASSON1'] = str(image_out)
 
         msgs.work('Updating SPEC_RES')
         if hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'J':
@@ -229,6 +233,12 @@ if __name__ == '__main__':
                 hdr1['COMMENT'] = str('  ' + comments_to_be_kept)
 
         # 4. create white light image
+
+        # Updating ASSON value in the header
+        msgs.work('Updating ASSON')
+        hdr0['ASSON1'] = str(image_out)
+
+        # Actually creating the white-light image
         image_hdu = fits.PrimaryHDU()
         image_hdul = fits.HDUList([image_hdu])
         if hdr1['CUNIT3'].startswith('um'):
