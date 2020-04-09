@@ -8,6 +8,8 @@ import shutil
 import urllib
 import os.path
 
+from astropy.io import fits
+
 # ESOAsg imports
 from ESOAsg import msgs
 from ESOAsg import default
@@ -28,6 +30,7 @@ def remove_non_ascii(text_string):
     text_string_cleaned = "".join(character for character in text_string if 31 < ord(character) < 123)
     text_string_cleaned.replace('\\', '').strip()
     return text_string_cleaned
+
 
 def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space'))):
     r"""
@@ -140,6 +143,24 @@ def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
         is_image2d = True
 
     return is_image2d
+
+
+def table_is_valid(table):  # Written by Ema 08.04.2020
+    r"""Check if a table is valid
+
+    Args:
+        table (`fits.BinTableHDU` or `fits.TableHDU`):
+            table that you would like to check
+
+    Returns:
+        is_table (`boolean`):
+            `True` if a valid table format `False` and error raised if not.
+    """
+    # Checks if it is an astropy table
+    assert isinstance(table, (fits.BinTableHDU, fits.TableHDU)), 'The table is not a `fits.BinTableHDU` or a `fits.TableHDU`'
+    is_table = True
+
+    return is_table
 
 '''
 def single_value_to_list(single_value):
