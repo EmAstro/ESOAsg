@@ -1,9 +1,9 @@
 r"""Class to work on light curves
 """
 
-
 import numpy as np
 from astropy.io import fits
+from astropy.io.fits.column import NUMPY2FITS
 from astropy.table import Column, Table
 
 from ESOAsg import msgs
@@ -57,68 +57,120 @@ def _return_attribute_from_column(table, col_name, attribute):
     return attribute_value
 
 
-def save_into_fits(fits_file_name, primary_header, light_curve_names, light_curves):
+def _check_attribute_is_in_light_curve_columns(attribute): # Written by Ema 16.04.2020
+    r"""Check if an attribute of a `LightCurves` object is not `header`, `primary_header`, `other`, or `_datatype`
+
+    Args:
+        attribute (`str`):
+            attribute of the `LightCurves` object you want to check
+
+    Returns:
+        is_in_column (`bool`):
+            `True` if the `attribute` is not `header`, `primary_header`, `other`, or `_datatype`
+
+    """
+    assert isinstance(attribute, (str, np.str)), 'Not valid string for `attribute`'
+    is_in_column = not attribute.endswith('header') and attribute is not 'others' and not attribute.startswith('_')
+    return is_in_column
+
+
+def _return_format_column(column):
+    r"""Returns format of a column in the fits format
+
+    see https://docs.astropy.org/en/stable/io/fits/usage/table.html : column creation for further details.
+
+    Args:
+        column (`astropy.table.Column`):
+            a `Column` object
+
+    Returns:
+        column_format (`str`):
+            a string containing the size and the dtype of of `column`
+    """
+    assert isinstance(column, Column), r"Not a valid `column`"
+    column_size = str(column.size)
+    #
+    if column.dtype.str.startswith(('<','>','=')):
+        column_dtype = column.dtype.str[1:]
+    else:
+        column_dtype = column.dtype.str
+    column_type = NUMPY2FITS[column_dtype]
+    column_format = column_size + column_type
+    return column_format
+
+def save_into_fits(fits_file_name, primary_header, light_curve_headers, light_curve_names, light_curves,
+                   overwrite=True):
     r"""
 
     Args:
+        light_curves:
+        light_curve_names:
+        light_curve_headers:
         fits_file_name:
         primary_header:
         lightcurves:
+        overwrite (`bool`):
 
     Returns:
 
     """
-    assert isinstance(fits_file_name, (str, np.str)), 'Not a valid name for the fits file'
+    assert isinstance(fits_file_name, (str, np.str)), r'Not a valid name for the fits file'
     if not fits_file_name.endswith('.fits'):
         fits_files_name = fits_file_name + '.fits'
 
     if not isinstance(light_curves, list):
-        assert isinstance(light_curves, LightCurves), 'Not a LightCurves object'
+        assert isinstance(light_curves, LightCurves), r'Not a LightCurves object'
         light_curves_list = [light_curves]
     else:
         for light_curve in light_curves:
-            assert isinstance(light_curve, LightCurves), 'Not a LightCurves object'
+            assert isinstance(light_curve, LightCurves), r'Not a LightCurves object'
         light_curves_list = light_curves
 
-    if not isinstance(light_curve_names, list):
-        assert isinstance(light_curve_names, (str, np.str)), 'Not a valid name'
+    if light_curve_names is None:
+        light_curves_names_list = [None] * len(light_curves_list)
+    elif not isinstance(light_curve_names, list):
+        assert isinstance(light_curve_names, (str, np.str)), r'Not a valid name'
         light_curves_names_list = [light_curve_names]
     else:
         for light_curve_name in light_curve_names:
-            assert isinstance(light_curve, (str, np.str)), 'Not a valid name'
+            assert isinstance(light_curve, (str, np.str)), r'Not a valid name'
         light_curves_names_list = light_curve_name
 
+    if light_curve_headers is None:
+        light_curve_headers_list = [None] * len(light_curves_list)
+    elif not isinstance(light_curve_headers, list):
+        assert isinstance(light_curve_headers, fits.Header), r'Not a valid header'
+        light_curve_headers_list = [light_curve_headers]
+    else:
+        for light_curve_header in light_curve_headers:
+            assert isinstance(light_curve_header, fits.Header), r'Not a valid header'
+        light_curve_headers_list = light_curves
+
     if len(light_curves_names_list) != len(light_curves_list):
-        msgs.error('`light_curve_names` and `light_curves` must have the same length')
+        msgs.error(r'`light_curve_names` and `light_curves` must have the same length')
+
+    if len(light_curve_headers_list) != len(light_curves_list):
+        msgs.error(r'`light_curve_headers` and `light_curves` must have the same length')
 
     # Primary HDU
     primary_hdu = fits.PrimaryHDU()
-    primary_hdu.header = primary_header
+    if primary_header is not None:
+        assert isinstance(primary_header, fits.Header), r'Not a valid header'
+        primary_hdu.header = primary_header
 
     hdul = fits.HDUList(primary_hdu)
 
     # saving the lightcurves:
-    for light_curve_name, light_curve in zip(light_curves_names_list, light_curves_list):
+    for light_curve_name, light_curve, light_curve_header in zip(light_curves_names_list, light_curves_list, light_curve_headers_list):
+        msgs.info('Saving {}'.format(light_curve_name))
         list_of_columns = []
         for attribute in light_curve.__dict__.keys():
-            if attribute is not 'header' and attribute is not 'others' and not attribute.startswith('_'):
+            if _check_attribute_is_in_light_curve_columns(attribute):
                 if getattr(light_curve, attribute) is not None:
                     # Name
                     col_name = attribute.upper()
                     # Format
-                    # ToDo allow for other possibilities
-                    # see https://docs.astropy.org/en/stable/io/fits/usage/table.html : column creation
-                    if getattr(light_curve, attribute).dtype.type in (np.float_, np.float64, float):
-                        col_format = str(getattr(light_curve, attribute).size) + 'D'
-                    elif getattr(light_curve, attribute).dtype.type is np.float32:
-                        col_format = str(getattr(light_curve, attribute).size) + 'E'
-                    elif getattr(light_curve, attribute).dtype.type in (np.int_, int):
-                        col_format = str(getattr(light_curve, attribute).size) + 'K'
-                    elif getattr(light_curve, attribute).dtype.type in (np.bool, bool):
-                        col_format = str(getattr(light_curve, attribute).size) + 'L'
-                    else:
-                        msgs.error('Type {} not accepted for column {}'.format(getattr(light_curve, attribute).dtype.type,
-                                                                      attribute))
+                    col_format = _return_format_column(getattr(light_curve, attribute))
                     # Units
                     # ToDo Units
                     col_units = getattr(light_curve, attribute).unit
@@ -127,9 +179,29 @@ def save_into_fits(fits_file_name, primary_header, light_curve_names, light_curv
                     # ToDo Units
                     col = fits.Column(name=col_name, format=col_format, array=[col_array])
                     list_of_columns.append(col)
-        hdu = fits.BinTableHDU.from_columns(list_of_columns, nrows=1)
+        if light_curve.others is not None:
+            for other_attribute in light_curve.others.colnames:
+                # Name
+                col_name = other_attribute.upper()
+                # Format
+                col_format = _return_format_column(light_curve.others[other_attribute])
+                # Units
+                # ToDo Units
+                col_units = light_curve.others[other_attribute].unit
+                # Data
+                col_array = np.array(light_curve.others[other_attribute].data)
+                # ToDo Units
+                col = fits.Column(name=col_name, format=col_format, array=[col_array])
+                list_of_columns.append(col)
+        if light_curve_header is not None:
+            hdu = fits.BinTableHDU.from_columns(list_of_columns, header=light_curve_header, nrows=1)
+        else:
+            hdu = fits.BinTableHDU.from_columns(list_of_columns,nrows=1)
+        if light_curve_name is not None:
+            hdu.header['EXTNAME'] = light_curve_name
         hdul.append(hdu)
-    hdul.writeto(fits_file_name)
+    hdul.writeto(fits_file_name, overwrite=overwrite)
+
 
 class LightCurves:
     r"""A class used to define and make simple operations on time series
@@ -143,14 +215,14 @@ class LightCurves:
 
     """
 
-    def __init__(self, header=None, time=None, flux=None, error=None, time_bin=None, background=None, quality=None,
-                 others=None):
+    def __init__(self, primary_header=None, header=None, time=None, flux=None, error=None, time_bin=None,
+                 background=None, quality=None, others=None):
         r"""Instantiate the class LightCurves
 
 
         Each field of the BINTABLE shall be further described in the extension header. Mandatory fields shall be:
         * time
-        * flux (or mag)
+        * flux
         * error
         in that particular order.
         Additional fields may be added.
@@ -158,6 +230,7 @@ class LightCurves:
 
 
         """
+        self.primary_header = primary_header
         self.header = header
         self.time = time
         self.time_bin = time_bin
@@ -171,12 +244,29 @@ class LightCurves:
             self.others = Table()
         self._datatype = 'LightCurves'
 
-    def load_from_table(self, table, copy_header=True, where_time='TIME', where_time_bin='TIME_BIN', where_flux='FLUX',
+    def load_from_table(self, table, primary_header=None, copy_header=True, where_time='TIME',
+                        where_time_bin='TIME_BIN', where_flux='FLUX',
                         where_error='ERROR', where_background='BACKGROUND', where_quality='QUAL'):
         r"""Given a table put it in a LightCurves object
+
+        Args:
+            where_quality:
+            where_background:
+            where_error:
+            where_time_bin:
+            where_time:
+            copy_header:
+            primary_header:
+            where_flux :
         """
         if checks.table_is_valid(table):
             msgs.work('Reading input table')
+
+        if primary_header is not None:
+            if len(primary_header) > 0:
+                self.primary_header = primary_header
+            else:
+                msgs.warning('Empty `primary_header` provided')
 
         if copy_header:
             if len(table.header) > 0:
@@ -206,7 +296,7 @@ class LightCurves:
 
         #  Loading time, time_bin, flux, error, background, qual (if possible)
         for attribute, value in zip(self.__dict__.keys(), self.__dict__.values()):
-            if attribute is not 'header' and attribute is not 'others' and not attribute.startswith('_'):
+            if _check_attribute_is_in_light_curve_columns(attribute):
                 where_attribute = vars()['where_' + attribute]
 
                 # Loading attributes from table columns
@@ -240,7 +330,7 @@ class LightCurves:
                 column_loaded[column_names.index(other_attribute)] = True
 
     def check(self):
-        r"""Checks that a LighCurves objects is in a format compatible with the ESO standard
+        r"""Checks that a LightCurves objects is in a format compatible with the ESO standard
         """
         good_light_curve = True
 
@@ -258,7 +348,7 @@ class LightCurves:
         # Check that all columns have the same length
         test_length = self.time.size
         for attribute in self.__dict__.keys():
-            if attribute is not 'header' and attribute is not 'others' and not attribute.startswith('_'):
+            if _check_attribute_is_in_light_curve_columns(attribute):
                 if getattr(self, attribute) is not None:
                     if getattr(self, attribute).size != test_length:
                         msgs.warning('Inconsistent length in {}'.format(attribute))
@@ -279,9 +369,9 @@ class LightCurves:
 
         # Check that there are no +/-inf
         for attribute in self.__dict__.keys():
-            if attribute is not 'header' and attribute is not 'others' and not attribute.startswith('_'):
+            if _check_attribute_is_in_light_curve_columns(attribute):
                 if getattr(self, attribute) is not None:
-                    if np.any(np.isinf(getattr(self, attribute).data)) :
+                    if np.any(np.isinf(getattr(self, attribute).data)):
                         msgs.warning('{} contains +/-inf values'.format(attribute))
                         good_light_curve = False
         for other_attribute in self.others.colnames:
@@ -291,7 +381,7 @@ class LightCurves:
 
         return good_light_curve
 
-    def to_fits(self, fits_file_name):
+    def to_fits(self, fits_file_name, light_curve_name='LIGHTCURVE', overwrite=True):
         if not self.check():
             msgs.error('the LightCurve object does not respect the requirements from ESO')
-        save_into_fits(fits_file_name, self.header, 'LIGHTCURVE', self)
+        save_into_fits(fits_file_name, self.primary_header, self.header, light_curve_name, self, overwrite=overwrite)
