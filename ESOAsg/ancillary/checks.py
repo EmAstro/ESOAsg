@@ -106,6 +106,7 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
             `True` if exists `False` and error raised if not.
 
     """
+    is_fits = True
 
     # Checks for url
     assert isinstance(fits_file, str), 'input fits needs to be a string'
@@ -114,11 +115,10 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
         msgs.warning('File: {} does not end with `.fits` or .`fits.fz`'.format(fits_file))
         is_fits = False
     # Check for existence
-    if os.path.exists(fits_file):
-        is_fits = True
-    else:
+    if not os.path.exists(fits_file):
         msgs.warning('File: {} does not exists'.format(fits_file))
         is_fits = False
+
     return is_fits
 
 
@@ -133,14 +133,14 @@ def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
         is_image2d (`boolean`):
             `True` if a valid 2D image `False` and error raised if not.
     """
+    is_image2d = True
+
     # Checks if it is a numpy array
     assert isinstance(image2d, np.ndarray), 'The image is not a `numpy array`'
     # Check for dimensions
     if not image2d.ndim == 2:
         msgs.warning('The image is not two dimensional (NDIM={})'.format(image2d.ndim))
         is_image2d = False
-    else:
-        is_image2d = True
 
     return is_image2d
 
@@ -156,11 +156,27 @@ def table_is_valid(table):  # Written by Ema 08.04.2020
         is_table (`boolean`):
             `True` if a valid table format `False` and error raised if not.
     """
-    # Checks if it is an astropy table
-    assert isinstance(table, (fits.BinTableHDU, fits.TableHDU)), 'The table is not a `fits.BinTableHDU` or a `fits.TableHDU`'
     is_table = True
 
+    # Checks if it is an astropy table
+    assert isinstance(table, (fits.BinTableHDU, fits.TableHDU)), 'The table is not a `fits.BinTableHDU` or a `fits.TableHDU`'
+
     return is_table
+
+
+def header_is_valid(header):
+    r"""Check if an header is valid
+
+    """
+    is_header = True
+
+    # Check if is a fits.header
+    assert isinstance(header, fits.Header), 'The header is not an instance of `astropy.fits.io.header`'
+    if len(header) == 0:
+        msgs.warning('Empty Header')
+        is_header = False
+
+    return is_header
 
 '''
 def single_value_to_list(single_value):
