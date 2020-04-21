@@ -10,6 +10,7 @@ from ESOAsg import msgs
 from ESOAsg.core import fitsfiles
 from ESOAsg.ancillary import checks
 
+MANDATORY_HEADER_KEYWORD = []
 
 def _return_data_from_column(table, col_name):
     r"""Check that data are present in the `col_name` column of a table.
@@ -97,6 +98,7 @@ def _return_format_column(column):
     column_type = NUMPY2FITS[column_dtype]
     column_format = column_size + column_type
     return column_format
+
 
 def save_into_fits(fits_file_name, primary_header, light_curve_headers, light_curve_names, light_curves,
                    overwrite=True):
@@ -200,7 +202,7 @@ def save_into_fits(fits_file_name, primary_header, light_curve_headers, light_cu
         if light_curve_name is not None:
             hdu.header['EXTNAME'] = light_curve_name
         hdul.append(hdu)
-    hdul.writeto(fits_file_name, overwrite=overwrite)
+    hdul.writeto(fits_file_name, overwrite=overwrite, checksum=True)
 
 
 class LightCurves:
@@ -329,7 +331,7 @@ class LightCurves:
                 self.others.add_column(other_attribute_column)
                 column_loaded[column_names.index(other_attribute)] = True
 
-    def check(self):
+    def check(self, autocorrect=False):
         r"""Checks that a LightCurves objects is in a format compatible with the ESO standard
         """
         good_light_curve = True
@@ -379,9 +381,21 @@ class LightCurves:
                 msgs.warning('`others[{}]` contains +/-inf values'.format(other_attribute))
                 good_light_curve = False
 
+        # Check that primary HEADERS exists and do not contain null:
+        if not checks.header_is_valid(self.primary_header):
+            msgs.warning('Primary Header not valid')
+            good_light_curve = False
+
+        if self.primary_header is not None and 'PRODCATG' not in self.primary_header and autocorrect:
+            msgs.warning('AUTOCORRECT: Setting `PRODCATG` keyword to:`SCIENCE.LIGHTCURVE`')
+            self.primary_header['PRODCATG'] = 'SCIENCE.LIGHTCURVE'
+
+        # if autocorrect:
+        #    fitsfiles.clean_header_null(self.primary_header)
+
         return good_light_curve
 
-    def to_fits(self, fits_file_name, light_curve_name='LIGHTCURVE', overwrite=True):
-        if not self.check():
+    def to_fits(self, fits_file_name, light_curve_name='LIGHTCURVE', overwrite=True, autocorrect=False):
+        if not self.check(autocorrect=autocorrect):
             msgs.error('the LightCurve object does not respect the requirements from ESO')
         save_into_fits(fits_file_name, self.primary_header, self.header, light_curve_name, self, overwrite=overwrite)
