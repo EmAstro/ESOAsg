@@ -10,7 +10,8 @@ from ESOAsg import msgs
 from ESOAsg.core import fitsfiles
 from ESOAsg.ancillary import checks
 
-MANDATORY_HEADER_KEYWORD = []
+MANDATORY_PRIMARY_HEADER_KEYWORDS = ['TELESCOP', 'INSTRUME']
+
 
 def _return_data_from_column(table, col_name):
     r"""Check that data are present in the `col_name` column of a table.
@@ -58,7 +59,7 @@ def _return_attribute_from_column(table, col_name, attribute):
     return attribute_value
 
 
-def _check_attribute_is_in_light_curve_columns(attribute): # Written by Ema 16.04.2020
+def _check_attribute_is_in_light_curve_columns(attribute):  # Written by Ema 16.04.2020
     r"""Check if an attribute of a `LightCurves` object is not `header`, `primary_header`, `other`, or `_datatype`
 
     Args:
@@ -91,7 +92,7 @@ def _return_format_column(column):
     assert isinstance(column, Column), r"Not a valid `column`"
     column_size = str(column.size)
     #
-    if column.dtype.str.startswith(('<','>','=')):
+    if column.dtype.str.startswith(('<', '>', '=')):
         column_dtype = column.dtype.str[1:]
     else:
         column_dtype = column.dtype.str
@@ -163,7 +164,8 @@ def save_into_fits(fits_file_name, primary_header, light_curve_headers, light_cu
     hdul = fits.HDUList(primary_hdu)
 
     # saving the lightcurves:
-    for light_curve_name, light_curve, light_curve_header in zip(light_curves_names_list, light_curves_list, light_curve_headers_list):
+    for light_curve_name, light_curve, light_curve_header in zip(light_curves_names_list, light_curves_list,
+                                                                 light_curve_headers_list):
         msgs.info('Saving {}'.format(light_curve_name))
         list_of_columns = []
         for attribute in light_curve.__dict__.keys():
@@ -198,7 +200,7 @@ def save_into_fits(fits_file_name, primary_header, light_curve_headers, light_cu
         if light_curve_header is not None:
             hdu = fits.BinTableHDU.from_columns(list_of_columns, header=light_curve_header, nrows=1)
         else:
-            hdu = fits.BinTableHDU.from_columns(list_of_columns,nrows=1)
+            hdu = fits.BinTableHDU.from_columns(list_of_columns, nrows=1)
         if light_curve_name is not None:
             hdu.header['EXTNAME'] = light_curve_name
         hdul.append(hdu)
@@ -390,6 +392,9 @@ class LightCurves:
             msgs.warning('AUTOCORRECT: Setting `PRODCATG` keyword to:`SCIENCE.LIGHTCURVE`')
             self.primary_header['PRODCATG'] = 'SCIENCE.LIGHTCURVE'
 
+        for MANDATORY_PRIMARY_HEADER_KEYWORD in MANDATORY_PRIMARY_HEADER_KEYWORDS:
+            if MANDATORY_PRIMARY_HEADER_KEYWORD not in self.primary_header:
+                msgs.warning('Keyword: {} missing from the Primary Header'.format(MANDATORY_PRIMARY_HEADER_KEYWORD))
         # if autocorrect:
         #    fitsfiles.clean_header_null(self.primary_header)
 
