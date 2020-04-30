@@ -9,7 +9,7 @@ import numpy as np
 import os
 import re
 import ast
-import time
+# import time
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
