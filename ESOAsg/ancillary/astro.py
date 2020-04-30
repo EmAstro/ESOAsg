@@ -3,6 +3,7 @@ Module to perform some quick astronomical calculations
 """
 
 import numpy as np
+import requests
 from astropy import units as u
 from astropy import constants
 
@@ -10,13 +11,13 @@ from astroquery.mast import Mast
 from astroquery.mast import Observations
 
 from ESOAsg import msgs
+from ESOAsg.ancillary import checks
 
 
 def download_kepler_data(target_name):
     r"""Run a query to MAST to obtain the kepler data of an object. Date are saved in the directories:
     `./mastDownload/Kepler/<target_name>_*/*.fits`
 
-ligth
     Args:
         target_name (`str`):
             Name of the target: e.g., 'kplr011446443'
@@ -33,6 +34,28 @@ ligth
         keplerProds = Observations.get_product_list(keplerObs[idx])
         keplerFitsProds = Observations.filter_products(keplerProds, extension='fits', mrp_only=False)
         Observations.download_products(keplerFitsProds, mrp_only=False, cache=False)
+    return True
+
+
+def download_gw_bayestar(superevent_name):
+    r"""Download the bayestar.fits.gz of a GW superevent
+
+    This is simply grabbing the file from:
+    `https://gracedb.ligo.org/superevents/<superevent_name>/files/`
+
+    Args:
+        superevent_name (`str`):
+            Name of the superevent: e.g., 'S191205ah'
+
+    Returns:
+        The code returns `True` if data are retrieved and `False` otherwise.
+
+    """
+    # https://gracedb.ligo.org/superevents/S191205ah/files/
+    gw_url = 'https://gracedb.ligo.org/superevents/S191205ah/files/'+superevent_name+'/files/bayestar.fits.gz'
+    checks.connection_to_website(gw_url)
+    r = requests.get(gw_url, allow_redirects=True)
+    open(superevent_name+'_bayestar.fits.gz', 'wb').write(r.content)
     return True
 
 # ToDo
