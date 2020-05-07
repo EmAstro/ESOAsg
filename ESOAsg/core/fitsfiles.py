@@ -45,7 +45,7 @@ def get_hdul(fits_name, mode='readonly', checksum=True):  # Written by Ema 05.03
         return hdul
 
 
-def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True):  # Written by Ema 05.03.2020
+def header_from_fits_file(fits_name, which_hdu=0):  # Written by Ema 05.03.2020
     r"""Load an header with the information from a fits file
 
     Args:
@@ -53,14 +53,6 @@ def header_from_fits_file(fits_name, which_hdu=0, mode='readonly', checksum=True
             fits file name
         which_hdu (`numpy.int`):
             select from which HDU you are getting the header. Default = 1
-        mode (`str`):
-            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`
-        checksum (`bool`):
-            If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU header)
-            match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
-            will preserve and update the existing checksums unless this argument is given a value of `remove`,
-            in which case the `CHECKSUM` and `DATASUM` values are not checked, and are removed when saving
-            changes to the file
 
     Returns:
          header (`hdu.header`):

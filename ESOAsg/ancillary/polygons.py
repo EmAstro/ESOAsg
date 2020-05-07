@@ -20,8 +20,9 @@ from copy import copy, deepcopy
 import numpy as np
 
 # LOCAL
-import great_circle_arc
-import vector
+from ESOAsg.ancillary import great_circle_arc
+from ESOAsg.ancillary import vector
+from ESOAsg.ancillary import graph
 
 __all__ = ['SingleSphericalPolygon', 'SphericalPolygon']
 
@@ -528,7 +529,6 @@ class SingleSphericalPolygon(object):
         For implementation details, see the
         :mod:`~spherical_geometry.graph` module.
         """
-        import graph
         if len(self._points) < 3:
             return SphericalPolygon([other.copy()])
         elif len(other._points) < 3:
@@ -601,7 +601,6 @@ class SingleSphericalPolygon(object):
         For implementation details, see the
         :mod:`~spherical_geometry.graph` module.
         """
-        import graph
         if len(self._points) < 3 or len(other._points) < 3:
             return SphericalPolygon([])
 
@@ -692,7 +691,6 @@ class SphericalPolygon(SingleSphericalPolygon):
             If *init* is an array of points, this point must be inside
             the polygon.  If it is not provided, one will be created.
         """
-        import graph
         for polygon in init:
             if not isinstance(polygon, (SphericalPolygon, SingleSphericalPolygon)):
                 break
@@ -788,7 +786,6 @@ class SphericalPolygon(SingleSphericalPolygon):
         Return true if the path defined by a list of points
         intersects itself
         """
-        import graph
         polygon = SingleSphericalPolygon(points)
         g = graph.Graph((polygon,))
         return g._find_all_intersections()
@@ -1029,8 +1026,6 @@ class SphericalPolygon(SingleSphericalPolygon):
         For implementation details, see the :mod:`~spherical_geometry.graph`
         module.
         """
-        import graph
-
         if self.area() == 0.0:
             return other.copy()
         elif other.area() == 0.0:
@@ -1058,8 +1053,6 @@ class SphericalPolygon(SingleSphericalPolygon):
         assert len(polygons)
         for polygon in polygons:
             assert isinstance(polygon, SphericalPolygon)
-
-        import graph
 
         all_polygons = []
         for polygon in polygons:
