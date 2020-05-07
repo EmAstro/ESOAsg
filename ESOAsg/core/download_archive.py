@@ -27,6 +27,7 @@ import os
 from pyvo import dal
 from astropy.coordinates import ICRS
 import requests
+import webbrowser
 
 
 from ESOAsg import msgs
@@ -223,3 +224,127 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
             msgs.warning('{} is not present in the ESO archive'.format(file_name))
 
     return
+
+
+def query_ASP_from_polygons(polygons=None, open_link=False, show_link=False):
+    if polygons is not None:
+        for iii, polygon in enumerate(polygons):
+            url = 'http://aspint.hq.eso.org/scienceportal/home?' + 'poly='+polygon + '&sort=-obs_date'
+            if show_link:
+                msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii+1),url))
+            if open_link:
+                webbrowser.open(url)
+
+
+def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=default.get_value('maxrec'),
+                            verbose=False):
+
+    tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
+    msgs.info('Querying the ESO TAP service at:')
+    msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
+
+    result = []
+
+    if polygons is not None:
+        polygon_union = ''
+        for iii, polygon in enumerate(polygons):
+            polygon_union += """intersects(s_region, POLYGON('', """ + polygon + """)) = 1 OR """
+            if not merge:
+                query = """SELECT
+                               target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                               dataproduct_type, instrument_name, abmaglim, proposal_id
+                           FROM
+                               ivoa.ObsCore
+                           WHERE
+                               intersects(s_region, POLYGON('', """ + polygon + """)) = 1 """
+                if instrument is not None:
+                    instrument_selection = str(
+                        """                     AND instrument_name='{}'""".format(str(instrument)))
+                    query = '\n'.join([query, instrument_selection])
+                if verbose:
+                    msgs.info('The query is:')
+                    msgs.info('{}'.format(str(query)))
+
+                # Obtaining query results
+                result_from_query = tapobs.search(query=query, maxrec=maxrec)
+                if len(result_from_query) < 1:
+                    msgs.warning('No data has been retrieved')
+                else:
+                    msgs.info('A total of {} entries has been retrieved for polygon N.{}'.format(len(
+                        result_from_query), iii))
+                    msgs.info('For the following instrument:')
+                    for inst_name in np.unique(result_from_query['instrument_name'].data):
+                        msgs.info(' - {}'.format(inst_name.decode("utf-8")))
+                    if verbose:
+                        result_from_query.to_table().pprint(max_width=-1)
+                result.append(result_from_query)
+
+        polygon_union = polygon_union[:-4]
+        if merge:
+            query = """SELECT
+                           target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                           dataproduct_type, instrument_name, abmaglim, proposal_id
+                       FROM
+                           ivoa.ObsCore
+                       WHERE
+                            (""" + polygon_union + """)"""
+            if instrument is not None:
+                instrument_selection = str(
+                    """                     AND instrument_name='{}'""".format(str(instrument)))
+                query = '\n'.join([query, instrument_selection])
+            if verbose:
+                msgs.info('The query is:')
+                msgs.info('{}'.format(str(query)))
+            # Obtaining query results
+            result_from_query = tapobs.search(query=query, maxrec=maxrec)
+            if len(result_from_query) < 1:
+                msgs.warning('No data has been retrieved')
+            else:
+                msgs.info('A total of {} entries has been retrieved for polygon N.{}'.format(len(
+                    result_from_query), iii))
+                msgs.info('For the following instrument:')
+                for inst_name in np.unique(result_from_query['instrument_name'].data):
+                    msgs.info(' - {}'.format(inst_name.decode("utf-8")))
+                if verbose:
+                    result_from_query.to_table().pprint(max_width=-1)
+            result.append(result_from_query)
+        return result
+
+        '''
+        query="""SELECT count(*) from ivoa.ObsCore
+                 WHERE (""" + polygon_union + """)"""
+        msgs.info('The query is:')
+        msgs.info('{}'.format(str(query)))
+        # Obtaining query results
+        result_from_query = tapobs.search(query=query, maxrec=maxrec)
+        if len(result_from_query) < 1:
+            msgs.warning('No data has been retrieved')
+        else:
+            msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
+            msgs.info('For the following instrument:')
+            for inst_name in np.unique(result_from_query['instrument_name'].data):
+                msgs.info(' - {}'.format(inst_name.decode("utf-8")))
+        '''
+
+def contours_to_polygons(contours, max_vertices=30):
+    r"""
+
+    Args:
+        contours:
+        max_vertices (`int`):
+
+    Returns:
+        polygons:
+
+    """
+    polygons = []
+    for iii, contour in enumerate(contours):
+        if len(contour) > max_vertices:
+            contour_clean = contour[0: len(contour): int(len(contour) / max_vertices + 1)]
+        else:
+            contour_clean = contour
+        # Construct the polygon as a string in the right format
+        polygon = ' '.join(['%.4f, %.4f,' % (ra, dec) for ra, dec in contour_clean])[:-1] # Remove the last character, which is an unwanted extra comma
+        polygons.append(polygon)
+
+    return polygons

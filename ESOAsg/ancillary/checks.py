@@ -103,7 +103,7 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
 
     Returns:
         is_fits (`boolean`):
-            `True` if exists `False` and error raised if not.
+            `True` if exists `False` and warning raised if not.
 
     """
     is_fits = True
@@ -111,8 +111,8 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
     # Checks for url
     assert isinstance(fits_file, str), 'input fits needs to be a string'
     # Check for ending
-    if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz'):
-        msgs.warning('File: {} does not end with `.fits` or .`fits.fz`'.format(fits_file))
+    if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz') and not fits_file.endswith('.fits.gz'):
+        msgs.warning('File: {} does not end with `fits` or `fits.fz` or `fits.gz`'.format(fits_file))
         is_fits = False
     # Check for existence
     if not os.path.exists(fits_file):
