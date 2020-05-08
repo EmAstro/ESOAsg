@@ -229,7 +229,7 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
 def query_ASP_from_polygons(polygons=None, open_link=False, show_link=False):
     if polygons is not None:
         for iii, polygon in enumerate(polygons):
-            url = 'http://aspint.hq.eso.org/scienceportal/home?' + 'poly='+polygon + '&sort=-obs_date'
+            url = 'http://archive.eso.org/scienceportal/home?' + 'poly='+polygon + '&sort=-obs_date'
             if show_link:
                 msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii+1),url))
             if open_link:

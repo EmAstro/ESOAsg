@@ -217,8 +217,9 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
     r"""Show sky credibility from the input healpix map and plot the contours created with `contours_from_gw_bayestar`
 
     Args:
-        file_name:
-        contours:
+        file_name (`str`):
+            Fits files containing the HEALPix mask you would like to show.
+        contours (`list`):
         cmap:
         contours_color:
         show_figure (`bool`):
