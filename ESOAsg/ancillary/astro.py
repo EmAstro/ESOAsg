@@ -213,7 +213,7 @@ def _array_split(array_in, thr):
 
 
 def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', contours_color='C3',
-                                   show_figure=True, save_figure=None):
+                                   show_figure=True, save_figure=None, matplotlib_backend=None):
     r"""Show sky credibility from the input healpix map and plot the contours created with `contours_from_gw_bayestar`
 
     Args:
@@ -244,24 +244,30 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
     # get it running.
     importlib.reload(matplotlib)
     from matplotlib import pyplot as plt
-    try:
-        # check if the script runs on a notebook.
-        # https://stackoverflow.com/questions/23883394/detect-if-python-script-is-run-from-an-ipython-shell-or-run-from
-        # -the-command-li
-        __IPYTHON__
-    except NameError:
-        # Try to get a working gui
-        # https://stackoverflow.com/questions/39026653/programmatically-choose-correct-backend-for-matplotlib-on-mac-os-x
-        gui_env = matplotlib.rcsetup.all_backends
-        for gui in gui_env:
-            try:
-                matplotlib.use(gui, force=True)
-                print(gui)
-                break
-            except:
-                continue
+    if matplotlib_backend is None:
+        matplotlib.use(STARTING_MATPLOTLIB_BACKEND)
+        try:
+            # check if the script runs on a notebook.
+            # https://stackoverflow.com/questions/23883394/detect-if-python-script-is-run-from-an-ipython-shell-or-run-from
+            # -the-command-li
+            __IPYTHON__
+        except NameError:
+            # Try to get a working gui
+            # https://stackoverflow.com/questions/39026653/programmatically-choose-correct-backend-for-matplotlib-on-mac-os-x
+            gui_env = matplotlib.rcsetup.all_backends
+            for gui in gui_env:
+                try:
+                    matplotlib.use(gui, force=True)
+                    break
+                except:
+                    continue
+        else:
+            matplotlib.use('nbAgg')
     else:
-        matplotlib.use('nbAgg')
+        if matplotlib_backend in matplotlib.rcsetup.all_backends:
+            matplotlib.use(matplotlib_backend)
+        else:
+            msgs.error('{} is not a valid `matplolib` backend'.format(matplotlib_backend))
 
     # Read map and get object name
     map_data, map_header = healpy.read_map(file_name, h=True, verbose=False, dtype=None)
