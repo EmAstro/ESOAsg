@@ -326,6 +326,7 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
                 msgs.info(' - {}'.format(inst_name.decode("utf-8")))
         '''
 
+
 def contours_to_polygons(contours, max_vertices=30):
     r"""
 
