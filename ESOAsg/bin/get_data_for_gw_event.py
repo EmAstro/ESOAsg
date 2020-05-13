@@ -58,7 +58,7 @@ EXAMPLES = r"""
         on the sky, open links to the ESO ASP webpages showing data within each of the retrieved contours,
         and download the first `MUSE` cube present.
         
-        get_data_for_ge_event.py S191205ah_bayestar.fits.gz -l 50. -s True -a True -d True -i MUSE -m 1
+        get_data_from_gw_event.py S191205ah_bayestar.fits.gz -l 50. -s True -a True -d True -i MUSE -m 1
         """
 
 if __name__ == '__main__':
@@ -81,8 +81,8 @@ if __name__ == '__main__':
     # download_archive.query_ASP_from_polygons(polygons=polygons, open_link=True)
 
     # results_from_TAP = download_archive.query_TAP_from_polygons(polygons=polygons,
-                                                                merge=False, maxrec=maxrec,
-                                                                verbose=False)
+    #                                                            merge=False, maxrec=maxrec,
+    #                                                            verbose=False)
     # for idx_poly in range(0, len(results_from_TAP)):
     #     download_archive.download(results_from_TAP[0]['dp_id'])
     msgs.end()
