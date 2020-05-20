@@ -74,10 +74,16 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     # File_names
+    input_fits_files = []
     for file_name in args.input_fits:
         if not checks.fits_file_is_valid(file_name):
-            msgs.error('File {} is not a valid fits file'.format(file_name))
-    input_fits_files = args.input_fits
+            msgs.warning('File {} is not a valid fits file. Skipping the procedure'.format(file_name))
+        elif len(fitsfiles.get_hdul(file_name)) > 1:
+            msgs.warning('{} cube already processed? Skipping the procedure'.format(file_name))
+        else:
+            input_fits_files.append(file_name)
+    if len(input_fits_files) == 0:
+        msgs.error('No valid file to process')
 
     # output
     if args.output is not None:
@@ -93,11 +99,11 @@ if __name__ == '__main__':
             else:
                 output_ending = np.str(args.output[0])+'.fits'
             output_fits_files = [output_temp.replace('.fits', output_ending) for output_temp in input_fits_files]
-            output_fits_images = [output_fits_image.replace('.fits', '_whitelight_'+output_ending) for output_fits_image
+            output_fits_images = [output_fits_image.replace('.fits', '_whitelight'+output_ending) for output_fits_image
                                   in input_fits_files]
 
     else:
-        output_fits_files = input_fits_files
+        output_fits_files = input_fits_files.copy()
         output_fits_images = [output_fits_image.replace('.fits', '_whitelight.fits') for output_fits_image in
                               input_fits_files]
         overwrite = True
@@ -107,12 +113,11 @@ if __name__ == '__main__':
         reference = str(args.referenc[0])
     else:
         reference = str(' ')
-    msgs.start()
 
     # fluxcal
-    if args.fluxcal is 'ABSOLUTE':
+    if args.fluxcal == 'ABSOLUTE':
         fluxcal = 'ABSOLUTE'
-    elif args.fluxcal is 'UNCALIBRATED':
+    elif args.fluxcal == 'UNCALIBRATED':
         fluxcal = 'UNCALIBRATED'
     else:
         msgs.error('Possible values for fluxcal are: `ABSOLUTE` or `UNCALIBRATED`')
@@ -198,13 +203,14 @@ if __name__ == '__main__':
 
         # Including specific cards
         msgs.work('Updating SPEC_RES')
-        if hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'J':
+        if hdr0['HIERARCH ESO INS GRAT1 NAME'].strip() == 'J':
             hdr0['SPEC_RES'] = 2000.
-        elif hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'H':
+        elif hdr0['HIERARCH ESO INS GRAT1 NAME'].strip() == 'H':
             hdr0['SPEC_RES'] = 3000.
-        elif hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'K':
+        elif hdr0['HIERARCH ESO INS GRAT1 NAME'].strip() == 'K':
             hdr0['SPEC_RES'] = 4000.
-        elif hdr0['HIERARCH ESO INS GRAT1 NAME'] is 'H + K':
+        elif hdr0['HIERARCH ESO INS GRAT1 NAME'].strip() == 'H + K' or hdr0['HIERARCH ESO INS GRAT1 NAME'].strip() == \
+                'H+K':
             hdr0['SPEC_RES'] = 1500.
         else:
             msgs.error('GRAT1 name: {} not recognized'.format(hdr0['HIERARCH ESO INS GRAT1 NAME']))
@@ -343,7 +349,6 @@ if __name__ == '__main__':
         image_hdul[1].add_datasum()
         image_hdul[0].add_checksum(override_datasum=True)
         image_hdul[1].add_checksum(override_datasum=True)
-
 
         """
         # CARDS are already present in hdr0

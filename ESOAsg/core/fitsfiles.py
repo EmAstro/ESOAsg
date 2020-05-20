@@ -226,15 +226,18 @@ def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True):
 
 def transfer_header_cards(source_header, output_header, source_cards, output_cards=None,
                           with_comment=True, delete_card=True):
-    r"""
-    Copy cards, values (and optionally comments, if `with_comment`=`True`) from the header `source_header` to the
-    header `output_header`. `source_cards` is a list containing all the cards you would like to transfer.
-    If `output_cards` is defined, the cards from `source_cards[i]` will be saved in the `output_header` has
-    `output_cards[i]`. If `delete_card`=`True` the card will be removed from the `source_header`.
+    r"""Transfer header cards from one header to another
+
+    Cards, values (and optionally comments, if `with_comment`=`True`) from the header `source_header`  will be
+    transfer to the header `output_header`.
+    `source_cards` is a list containing all the cards that needs to be transfer. If `output_cards` is defined, the cards
+    from `source_cards[i]` will be saved in the `output_header` has `output_cards[i]`. If `delete_card`=`True` the
+    card will be removed from the `source_header`.
 
     ..note ::
         Both `source_header` and `output_header` are modified in place. I.e. there is no backup option for the
         original values.
+        If a card is not present in `source_header` a warning is raised and will not be transferred to `output_header`
 
     Args:
         source_header (`hdu.header'):
@@ -260,6 +263,9 @@ def transfer_header_cards(source_header, output_header, source_cards, output_car
 
     for source_card, output_card in zip(source_cards, output_cards):
         msgs.work("Transferring header card {} to {}.".format(source_card, output_card))
+        if source_card not in source_header:
+            msgs.warning('{} not present in `source_header`. The card will not be transferred'.format(source_card))
+            continue
         if with_comment:
             add_header_card(output_header, output_card, source_header[source_card],
                             comment=source_header.comments[source_card])
