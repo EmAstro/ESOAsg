@@ -15,6 +15,29 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 
+def from_bytes_to_string(input_in_bytes):
+    r"""Given an input in `bytes` return it the corresponding `str`
+
+    This is mainly to deal with the fact that TAP queries return a list in bytes format that might be annoying. If
+    the input is already a `str` nothing is changed.
+
+    Args:
+        input_in_bytes (`bytes`)
+            Input in bytes
+
+    Returns:
+        output_as_str (`str`)
+            Output converted to a string
+    """
+    if isinstance(input_in_bytes, (str, np.str)):
+        output_as_str = input_in_bytes
+    elif isinstance(input_in_bytes, bytes):
+        output_as_str = np.str(input_in_bytes.decode("utf-8"))
+    else:
+        msgs.error('Unable to understand the format of the entry: {}'.format(type(input_in_bytes)))
+    return output_as_str
+
+
 def remove_non_ascii(text_string):
     r"""Replace non ascii characters from a string
 
