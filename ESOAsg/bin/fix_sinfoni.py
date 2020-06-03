@@ -314,7 +314,6 @@ if __name__ == '__main__':
                 hdr0['EXPTIME'] = np.float(EXPTIME_sec)
                 msgs.warning('Updating value for EXPTIME to: {}'.format(EXPTIME_sec))
                 fitsfiles.add_header_card(hdr0, 'TEXPTIME', EXPTIME_sec)
-                msgs.warning('Updating value for TEXPTIME to: {}'.format(MJDEND))
                 EXPTIME_day = np.float(EXPTIME_sec) / (60. * 60. * 24.)
                 MJDEND = np.float32(hdr0['MJD-OBS']) + EXPTIME_day
                 fitsfiles.add_header_card(hdr0, 'MJD-END', MJDEND, 'End of observation')
