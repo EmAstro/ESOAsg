@@ -12,6 +12,7 @@ from ESOAsg import default
 
 STARTING_MATPLOTLIB_BACKEND = matplotlib.rcParams["backend"]
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""

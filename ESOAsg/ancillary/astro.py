@@ -308,11 +308,9 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
     # Bringing back the previously used matplotlib backend
     matplotlib.use(STARTING_MATPLOTLIB_BACKEND)
 
+# ToDo -> ABMAGLIM
 
 
-
-
-# ToDo
 def abmaglim(rms, seeing_fwhm, exptime=None, zero_point=None, sigma=5.):
     r"""Calculate the N-sigma magnituide limit.
 

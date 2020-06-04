@@ -31,6 +31,13 @@ def from_bytes_to_string(input_in_bytes):
     """
     if isinstance(input_in_bytes, bytes):
         output_as_str = np.str(input_in_bytes.decode("utf-8"))
+    elif isinstance(input_in_bytes, np.ndarray) and len(input_in_bytes.shape) == 1:
+        output_as_str = np.empty_like(input_in_bytes)
+        for idx in np.arange(0, np.size(output_as_str)):
+            if isinstance(input_in_bytes[idx], bytes):
+                output_as_str[idx] = np.str(input_in_bytes[idx].decode("utf-8"))
+            else:
+                output_as_str[idx] = input_in_bytes[idx]
     else:
         output_as_str = input_in_bytes
     return output_as_str
@@ -67,9 +74,9 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
             True if there is enough space on disk
     """
     total, used, free = shutil.disk_usage("./")
-    total = total / (1024**3)
-    used = used / (1024**3)
-    free = free / (1024**3)
+    total = total / (1024 ** 3)
+    used = used / (1024 ** 3)
+    free = free / (1024 ** 3)
     msgs.info('Your disk has: Total: {0:.2f} GB, Used: {0:.2f} GB, Free: {0:.2f} GB'.format(total, used, free))
     if free > min_disk_space:
         enough_space = np.bool(1)
@@ -79,7 +86,7 @@ def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space
     return enough_space
 
 
-def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
+def connection_to_website(url, timeout=1):  # written by Ema 05.03.2020
     r"""Check there is an active connection to a website
 
     Args:
@@ -96,7 +103,7 @@ def connection_to_website(url, timeout=1):   # written by Ema 05.03.2020
     # Checks for url
     assert isinstance(url, str), 'The url needs to be a string'
     if url.startswith('www'):
-        url_clean = 'http://'+url
+        url_clean = 'http://' + url
         msgs.warning('Modifying url to: {}'.format(url_clean))
     else:
         url_clean = url
@@ -180,7 +187,8 @@ def table_is_valid(table):  # Written by Ema 08.04.2020
     is_table = True
 
     # Checks if it is an astropy table
-    assert isinstance(table, (fits.BinTableHDU, fits.TableHDU)), 'The table is not a `fits.BinTableHDU` or a `fits.TableHDU`'
+    assert isinstance(table,
+                      (fits.BinTableHDU, fits.TableHDU)), 'The table is not a `fits.BinTableHDU` or a `fits.TableHDU`'
 
     return is_table
 
@@ -198,6 +206,7 @@ def header_is_valid(header):
         is_header = False
 
     return is_header
+
 
 '''
 def single_value_to_list(single_value):
