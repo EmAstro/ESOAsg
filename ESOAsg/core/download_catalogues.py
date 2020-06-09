@@ -20,15 +20,15 @@ section.
 
 # import os
 # import sys
-import urllib
+# import urllib
 import numpy as np
-import os
+# import os
 
 from astropy.table import MaskedColumn
 from pyvo import dal
-from astropy.coordinates import ICRS
-import requests
-import webbrowser
+# from astropy.coordinates import ICRS
+# import requests
+# import webbrowser
 
 
 from ESOAsg import msgs
