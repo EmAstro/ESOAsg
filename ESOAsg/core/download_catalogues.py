@@ -93,10 +93,17 @@ def _is_table_at_eso(table_name):
     """
     is_at_eso = True
     # Check for presence of `table_name` on the ESO archive
-    eso_catalogues = all_catalogues(verbose=False)['table_name'].data.data.tolist()
+    eso_catalogues_all = all_catalogues(verbose=False, all_versions=True)
+    eso_catalogues = eso_catalogues_all['table_name'].data.data.tolist()
+    eso_version = eso_catalogues_all['last_version'].data.data.tolist()
+
     if table_name not in eso_catalogues:
         msgs.warning('Catalogue: {} not recognized. Possible values are:\n{}'.format(table_name, eso_catalogues))
         is_at_eso = False
+    else:
+        if not eso_version[eso_catalogues.index(table_name)]:
+            msgs.warning('{} is not the most recent version of the queried catalogue'.format(table_name))
+
     return is_at_eso
 
 
@@ -128,24 +135,43 @@ def _are_columns_in_table(column_list, table_name):
     return are_in_table
 
 
-def all_catalogues(verbose=False):
+def all_catalogues(verbose=False, all_versions=False):
     r"""Load a list with all ESO catalogues
 
     For further information check `https://www.eso.org/qi/`
 
+    Args:
+        verbose (`bool`):
+            if set to `True` additional info will be displayed
+        all_versions (`bool`):
+            if set to `True` also obsolete versions of the catalogues are listed. If `False` only catalogues with the
+            `last_version` = `True` are loaded.
+
     Returns:
         all_catalogues_table (`astropy.table`):
-            `astropy.table` containing: `collection`, `table_name`, `title`, `number_rows`, `version`, `acknowledgment`
-            of all catalogues currently present at ESO. In addition the column `last_version` is added. This is an
-            attempt to remove obsolete catalogues based on the version number and the title of the catalogue.
+            `astropy.table` containing: `cat_id`, `collection`, `table_name`, `title`, `number_rows`, `version`,
+            `acknowledgment` of all catalogues currently present at ESO. In addition the column `last_version` is added.
+            This is an attempt to remove obsolete catalogues based on the version number and the title of the catalogue.
     """
-    query = """SELECT
-                    collection, table_name, title, number_rows, version, acknowledgment
-               FROM 
+    if all_versions:
+        query = '''
+                SELECT
+                    cat_id, collection, table_name, title, number_rows, version, acknowledgment
+                FROM 
                     TAP_SCHEMA.tables 
-               WHERE 
-                    schema_name='safcat'
-             """
+                WHERE 
+                    schema_name = 'safcat'
+                '''
+    else:
+        query = '''
+                SELECT
+                    t1.cat_id, t1.collection, t1.table_name, t1.title, t1.number_rows, t1.version, t1.acknowledgment
+                FROM
+                    tables t1
+                    left outer JOIN tables t2 ON (t1.title = t2.title AND t1.version < t2.version)
+                WHERE
+                    t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat'
+                '''
     # Obtaining query results
     all_catalogues_table = _run_query(query, verbose=verbose)
     # Sorting
@@ -160,7 +186,6 @@ def all_catalogues(verbose=False):
                      (all_catalogues_table['version'].data == most_recent_version)] = True
     all_catalogues_table.add_column(MaskedColumn(data=last_version, name='last_version', dtype=bool,
                                                  description='True if this is the latest version of the catalog'))
-
     all_catalogues_table['table_name'].data.data[:] = checks.from_bytes_to_string(all_catalogues_table[
                                                                                       'table_name'].data.data)
     return all_catalogues_table
@@ -183,13 +208,14 @@ def columns_in_catalogue(table_name, verbose=False):
     # Check for the table
     if not _is_table_at_eso(table_name):
         msgs.error('{} is not a valid table'.format(table_name))
-    query = """SELECT
-                    column_name, datatype, description, table_name, unit 
-               FROM
-                    columns
-               WHERE
-                    table_name='{}'
-            """.format(table_name)
+    query = '''
+            SELECT
+                column_name, datatype, description, table_name, unit 
+            FROM
+                columns
+            WHERE
+                table_name='{}'
+            '''.format(table_name)
     # Obtaining query results
     columns_table = _run_query(query, maxrec=None, verbose=verbose)
     columns_table['column_name'].data.data[:] = checks.from_bytes_to_string(columns_table['column_name'].data.data)
@@ -237,11 +263,12 @@ def query_catalogue(table_name, which_columns=None, maxrec=default.get_value('ma
         good_columns_string = good_columns_string + str(good_column) + ', '
     good_columns_string = good_columns_string.strip()[:-1]
     # query
-    query = """SELECT 
-                    {} 
-               FROM 
-                    {}
-            """.format(good_columns_string, table_name)
+    query = '''
+            SELECT 
+                {} 
+            FROM 
+                {}
+            '''.format(good_columns_string, table_name)
 
     # Obtaining query results
     result_from_query = _run_query(query, maxrec=maxrec, verbose=True)
