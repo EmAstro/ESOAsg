@@ -146,7 +146,7 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
             need this. By default is set by the `default.txt` file.
 
     Returns:
-        result_from_query (`pyvo.dal.tap.TAPResults`):
+        results_from_query (`pyvo.dal.tap.TAPResults`):
             Result from the query. Currently it contains: target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
             em_min, dataproduct_type, instrument_name, abmaglim, proposal_id
 
@@ -174,44 +174,63 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
         else:
             assert isinstance(radius, float), r'Input radius is not a number'
 
-    # Define TAP SERVICE
-    tapobs = _define_tap_service(verbose=verbose)
-
     # Running over all positions
     if verbose:
         how_many_positions = len(positions_list)
         if how_many_positions > 1:
-            msgs.working('Exploring ESO archive around {} locations in the sky'.format(how_many_positions))
+            msgs.work('Exploring ESO archive around {} locations in the sky'.format(how_many_positions))
         else:
-            msgs.working('Exploring ESO archive around the input location in the sky')
+            msgs.work('Exploring ESO archive around the input location in the sky')
 
-    for position in positions_list:
+    results_from_query = []
+
+    for position, idx in zip(positions_list, range(len(positions_list))):
         position.transform_to(ICRS)
         ra, dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
-
+        msgs.working('Running query {} out of {} to the ESO'.format(idx+1,len(positions_list)))
         # Define query
-        if radius is not None:
-            query = """SELECT
-                          target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                          dataproduct_type, instrument_name, abmaglim, proposal_id
-                       FROM
-                         ivoa.ObsCore
-                       WHERE
-                         CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1""".format(ra, dec, radius_scalar)
+        if radius is None:
+            query = '''
+                    SELECT
+                        target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                        dataproduct_type, instrument_name, abmaglim, proposal_id
+                    FROM
+                        ivoa.ObsCore
+                    WHERE
+                        CONTAINS(POINT('ICRS',{},{}), s_region)=1
+                    '''.format(ra, dec)
         else:
-            query = """SELECT
-                         target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                         dataproduct_type, instrument_name, abmaglim, proposal_id
-                       FROM
-                         ivoa.ObsCore
-                       WHERE
-                         CONTAINS(POINT('ICRS',{},{}), s_region)=1""".format(ra, dec)
+            query = '''
+                    SELECT
+                        target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                        dataproduct_type, instrument_name, abmaglim, proposal_id
+                    FROM
+                        ivoa.ObsCore
+                    WHERE
+                        CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1
+                    '''.format(ra, dec, radius)
         if instruments is not None:
-            instrument_selection = str("""                     AND instrument_name='{}'""".format(str(instruments)))
-        query = '\n'.join([query, instrument_selection])
+            if len(instruments_list) == 1:
+                instruments_selection = '''
+                                        AND
+                                            instrument_name="{}"
+                                        '''.format(instruments_list[0])
+            else:
+                instruments_selection = '''
+                                        AND
+                                            ('''
+                for instrument_name in instruments_list:
+                    instruments_selection = instruments_selection + '''instrument_name="{}" OR '''.format(
+                        instrument_name)
+                instruments_selection = instruments_selection[0:-3] + ')'
+            query = '\n'.join([query, instruments_selection])
         msgs.info('The query is:')
         msgs.info('{}'.format(str(query)))
+        results_from_query.append(_run_query(query, verbose=verbose))
+    return results_from_query
 
+    """
+    
         # Obtaining query results
         result_from_query = tapobs.search(query=query, maxrec=maxrec)
         if len(result_from_query) < 1:
@@ -222,7 +241,7 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
             for inst_name in np.unique(result_from_query['instrument_name'].data):
                 msgs.info(' - {}'.format(inst_name.decode("utf-8")))
     return result_from_query
-
+    """
 
 def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2020
     r"""Given a file ID the macro download the corresponding header.
