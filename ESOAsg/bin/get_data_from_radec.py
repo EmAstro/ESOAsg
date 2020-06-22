@@ -47,11 +47,16 @@ EXAMPLES = r"""
 
 if __name__ == '__main__':
     args = parse_arguments()
+    # Check on radius
+    if args.radius is None:
+        radius = None
+    else:
+        radius = args.radius[0]
     msgs.start()
     msgs.info('RA and Dec query for ESO archival data')
     msgs.newline()
     position = coordinates.SkyCoord(ra=args.ra_deg*u.degree, dec=args.dec_deg*u.degree, frame='fk5')
-    result_from_query = archive_observations.query_from_radec(position, args.radius)
+    result_from_query = archive_observations.query_from_radec(position, radius)[0]
     if args.instrument_name is not None:
         if len(args.instrument_name) > 1:
             msgs.error('Too many instrument. Only one allowed')

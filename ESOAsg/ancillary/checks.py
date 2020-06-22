@@ -60,17 +60,17 @@ def remove_non_ascii(text_string):
     return text_string_cleaned
 
 
-def check_disk_space(min_disk_space=np.float32(default.get_value('min_disk_space'))):
+def check_disk_space(min_disk_space=float(default.get_value('min_disk_space'))):
     r"""
     Given a limit in GB in the variable min_disk_space the macro returns `True` if there is enough space and rises
     an error otherwise.
 
     Args:
-        min_disk_space (`numpy.float32`):
+        min_disk_space (`float`):
             Size of free space on disk required
 
     Returns:
-        enough_space (`numpy.bool`):
+        enough_space (`bool`):
             True if there is enough space on disk
     """
     total, used, free = shutil.disk_usage("./")

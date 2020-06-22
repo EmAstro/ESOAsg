@@ -56,7 +56,7 @@ def _define_tap_service(verbose=False):
     return tapobs
 
 
-def _run_query(query, verbose=False, maxrec=default.get_value('maxrec')):
+def _run_query(query, verbose=False, remove_bytes=True, maxrec=default.get_value('maxrec')):
     r"""Run tap query and return result as a table
 
     Args:
@@ -64,7 +64,9 @@ def _run_query(query, verbose=False, maxrec=default.get_value('maxrec')):
             Query to be run
         verbose (`bool`):
             if set to `True` additional info will be displayed
-        maxrec (`int`, `None`):
+        remove_bytes ('bool')
+            if set to True, it converts all bytes entries to standard strings
+        maxrec (`int`):
             Define the maximum number of entries that a single query can return
 
     Returns:
@@ -74,10 +76,14 @@ def _run_query(query, verbose=False, maxrec=default.get_value('maxrec')):
     # Load tap service
     tapobs = _define_tap_service(verbose=False)
     if verbose:
-        msgs.info('The query is:')
-        msgs.info('{}'.format(str(query)))
+        msgs.info('The query is: \n {} \n'.format(str(query)))
     # Obtaining query results and convert it to an astropy table
     result_from_query = tapobs.search(query=query, maxrec=maxrec).to_table()
+    # removing bytes code from some columns:
+    if remove_bytes:
+        for column_name in result_from_query.colnames:
+            result_from_query[column_name].data.data[:] = checks.from_bytes_to_string(result_from_query[
+                                                                                          column_name].data.data)
     return result_from_query
 
 
@@ -142,14 +148,14 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
         verbose (`bool`):
             if set to `True` additional info will be displayed
         maxrec (`int`):
-            Define the maximum number of file that a single query can return from the ESO archive. You probably never
-            need this. By default is set by the `default.txt` file.
+            Define the maximum number of file that a single query can return from the ESO archive. The default values
+            is set in the `default.txt` file.
 
     Returns:
-        results_from_query (`pyvo.dal.tap.TAPResults`):
-            Result from the query. Currently it contains: target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
-            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id
-
+        results_from_query (`list`):
+            Results from the query in a list with the same length of the input position. Currently it contains:
+            target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, instrument_name,
+            abmaglim, proposal_id, obs_collection
     """
     # Check inputs:
     # Working on positions
@@ -186,62 +192,54 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
 
     for position, idx in zip(positions_list, range(len(positions_list))):
         position.transform_to(ICRS)
-        ra, dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
-        msgs.working('Running query {} out of {} to the ESO'.format(idx+1,len(positions_list)))
+        ra, dec = np.float_(position.ra.degree), np.float_(position.dec.degree)
+        msgs.work('Running query {} to the ESO archive (out of {} total)'.format(idx+1, len(positions_list)))
         # Define query
+        query = '''
+                SELECT
+                    target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                    dataproduct_type, instrument_name, obstech, abmaglim,
+                    proposal_id, obs_collection
+                FROM
+                    ivoa.ObsCore'''
+        # selection of the location:
         if radius is None:
-            query = '''
-                    SELECT
-                        target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                        dataproduct_type, instrument_name, abmaglim, proposal_id
-                    FROM
-                        ivoa.ObsCore
-                    WHERE
-                        CONTAINS(POINT('ICRS',{},{}), s_region)=1
-                    '''.format(ra, dec)
+            location_selection = '''
+                WHERE
+                    CONTAINS(POINT('ICRS',{},{}), s_region)=1'''.format(str(ra), str(dec))
         else:
-            query = '''
-                    SELECT
-                        target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                        dataproduct_type, instrument_name, abmaglim, proposal_id
-                    FROM
-                        ivoa.ObsCore
-                    WHERE
-                        CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1
-                    '''.format(ra, dec, radius)
+            location_selection = '''
+                WHERE
+                    CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
+        query = query + location_selection
+        # selection of the instrument(s)
         if instruments is not None:
             if len(instruments_list) == 1:
                 instruments_selection = '''
-                                        AND
-                                            instrument_name="{}"
-                                        '''.format(instruments_list[0])
+                AND
+                    instrument_name='{}' '''.format(instruments_list[0])
             else:
                 instruments_selection = '''
-                                        AND
-                                            ('''
+                AND
+                    ('''
                 for instrument_name in instruments_list:
-                    instruments_selection = instruments_selection + '''instrument_name="{}" OR '''.format(
+                    instruments_selection = instruments_selection + '''instrument_name='{}' OR '''.format(
                         instrument_name)
-                instruments_selection = instruments_selection[0:-3] + ')'
-            query = '\n'.join([query, instruments_selection])
-        msgs.info('The query is:')
-        msgs.info('{}'.format(str(query)))
-        results_from_query.append(_run_query(query, verbose=verbose))
-    return results_from_query
-
-    """
-    
-        # Obtaining query results
-        result_from_query = tapobs.search(query=query, maxrec=maxrec)
+                instruments_selection = instruments_selection[0:-4] + ')'
+            query = query + instruments_selection
+        # running query and append results to the list
+        result_from_query = _run_query(query, verbose=verbose, remove_bytes=True, maxrec=maxrec)
         if len(result_from_query) < 1:
             msgs.warning('No data has been retrieved')
         else:
             msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
-            msgs.info('For the following instrument:')
-            for inst_name in np.unique(result_from_query['instrument_name'].data):
-                msgs.info(' - {}'.format(inst_name.decode("utf-8")))
-    return result_from_query
-    """
+            if verbose:
+                msgs.info('For the following instrument:')
+                for inst_name in np.unique(result_from_query['instrument_name'].data):
+                    msgs.info(' - {}'.format(inst_name))
+        results_from_query.append(result_from_query)
+    return results_from_query
+
 
 def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2020
     r"""Given a file ID the macro download the corresponding header.
@@ -322,7 +320,7 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
     msgs.info('Querying the ESO TAP service at:')
     msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
 
-    result = []
+    results_from_query = []
 
     if polygons is not None:
         polygon_union = ''
@@ -356,7 +354,7 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
                         msgs.info(' - {}'.format(inst_name.decode("utf-8")))
                     if verbose:
                         result_from_query.to_table().pprint(max_width=-1)
-                result.append(result_from_query)
+                results_from_query.append(result_from_query)
 
         polygon_union = polygon_union[:-4]
         if merge:
@@ -386,8 +384,8 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
                     msgs.info(' - {}'.format(inst_name.decode("utf-8")))
                 if verbose:
                     result_from_query.to_table().pprint(max_width=-1)
-            result.append(result_from_query)
-        return result
+            results_from_query.append(result_from_query)
+        return results_from_query
 
         '''
         query="""SELECT count(*) from ivoa.ObsCore
