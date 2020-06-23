@@ -4,11 +4,11 @@ import argparse
 
 from astropy import coordinates
 from astropy import units as u
-# import numpy as np
+import numpy as np
 
-from ESOAsg.core import download_archive
 from ESOAsg import msgs
 from ESOAsg import __version__
+from ESOAsg.ancillary import checks
 
 # from IPython import embed
 
@@ -52,10 +52,8 @@ if __name__ == '__main__':
 
     # File_names
     for file_name in args.input_fits:
-        if not os.path.isfile(file_name):
-            msgs.error('File {} does not exists'.format(file_name))
-        elif not file_name.endswith('.fits'):
-            msgs.error('{} needs to be a fits file'.format(file_name))
+        if not checks.fits_file_is_valid(file_name):
+            msgs.error('{} is not valid'.format(file_name))
     input_fits = args.input_fits
 
     # which_hdu

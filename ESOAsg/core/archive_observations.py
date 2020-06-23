@@ -25,6 +25,7 @@ import numpy as np
 import os
 
 from pyvo import dal
+from astropy import coordinates
 from astropy.coordinates import ICRS
 import requests
 import webbrowser
@@ -33,6 +34,57 @@ import webbrowser
 from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg.ancillary import checks
+
+
+def _define_tap_service(verbose=False):
+    r"""Load tap service from defaults
+
+    The TAP service for raw. reduced, and ambient data is defined in `ESOAsg\default.txt` as `eso_tap_obs`
+
+    Args:
+        verbose (`bool`):
+            if set to `True` additional info will be displayed
+
+    Returns:
+        tapcat (`pyvo.dal.tap.TAPService`)
+            TAP service that will be used for the queries
+    """
+    if verbose:
+        msgs.info('Querying the ESO TAP service at:')
+        msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
+    tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
+    return tapobs
+
+
+def _run_query(query, verbose=False, remove_bytes=True, maxrec=default.get_value('maxrec')):
+    r"""Run tap query and return result as a table
+
+    Args:
+        query (`str`):
+            Query to be run
+        verbose (`bool`):
+            if set to `True` additional info will be displayed
+        remove_bytes ('bool')
+            if set to True, it converts all bytes entries to standard strings
+        maxrec (`int`):
+            Define the maximum number of entries that a single query can return
+
+    Returns:
+        result_from_query (`astropy.Table`):
+            Result from the query to the TAP service
+    """
+    # Load tap service
+    tapobs = _define_tap_service(verbose=False)
+    if verbose:
+        msgs.info('The query is: \n {} \n'.format(str(query)))
+    # Obtaining query results and convert it to an astropy table
+    result_from_query = tapobs.search(query=query, maxrec=maxrec).to_table()
+    # removing bytes code from some columns:
+    if remove_bytes:
+        for column_name in result_from_query.colnames:
+            result_from_query[column_name].data.data[:] = checks.from_bytes_to_string(result_from_query[
+                                                                                          column_name].data.data)
+    return result_from_query
 
 
 def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'))):
@@ -76,92 +128,164 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
 
-def query_from_radec(position, radius=None, instrument=None, maxrec=default.get_value('maxrec')):
-    r"""
-    Query to the ESO TAP service (link defined in `ESOAsg\default.txt`) for a specific location. The
-    `position` needs to be given as an `astropy.coordinates.SkyCoord` object.
+def query_from_radec(positions, radius=None, instruments=None, verbose=False, maxrec=default.get_value('maxrec')):
+    r"""Query the ESO TAP service given a position in RA and Dec.
+
+     The `positions` value (or list) needs to be given as an `astropy.coordinates.SkyCoord` object.
     
     Args:
-        position (`astropy.coordinates.SkyCoord`):
-            Coordinates of the sky you want to query in the format of an `astropy.coordinates.SkyCoord` object. Note
-            that at the moment it works for one target at the time. For further detail see here:
+        positions (`astropy.coordinates.SkyCoord`):
+            Coordinates (or list of coordinates) of the sky you want to query in the format of an
+            `astropy.coordinates.SkyCoord` object. For further detail see here:
             `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
-        radius (`numpy.float`):
+        radius (`float`):
             Search radius you want to query in arcseconds. Note that in case `None` is given, the query will be
             performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
             `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
             `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
-        instrument (`str'):
-            Limit the search to the selected instrument
-            ToDo EMA:
-            At the moment this works for a single instrument. Lists of instruments will be added in the
-            future.
-        maxrec (`numpy.int`):
-            Define the maximum number of file that a single query can return from the ESO archive. You probably never
-            need this. By default is set by the `default.txt` file.
+        instruments (`list'):
+            Limit the search to the selected list of instruments
+        verbose (`bool`):
+            if set to `True` additional info will be displayed
+        maxrec (`int`):
+            Define the maximum number of file that a single query can return from the ESO archive. The default values
+            is set in the `default.txt` file.
 
     Returns:
-        result_from_query (`pyvo.dal.tap.TAPResults`):
-            Result from the query. Currently it contains: target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
-            em_min, dataproduct_type, instrument_name, abmaglim, proposal_id
+        results_from_query (`list`):
+            Results from the query in a list with the same length of the input position. Currently it contains:
+            target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, em_min, dataproduct_type, instrument_name,
+            abmaglim, proposal_id, obs_collection
+    """
+    # Check inputs:
+    # Working on positions
+    if isinstance(positions, list):
+        positions_list = positions
+    else:
+        positions_list = [positions]
+    for position in positions_list:
+        assert isinstance(position, coordinates.SkyCoord), r'Input positions not a SkyCoord object'
+    # Working on instruments
+    if instruments is not None:
+        if isinstance(instruments, list):
+            instruments_list = instruments
+        else:
+            instruments_list = [instruments]
+        for instrument in instruments_list:
+            assert isinstance(instrument, str), r'Input instrument: {} not valid'.format(instrument)
+    # Working on radius
+    if radius is not None:
+        if isinstance(radius, int):
+            radius = float(radius)
+        else:
+            assert isinstance(radius, float), r'Input radius is not a number'
+
+    # Running over all positions
+    if verbose:
+        how_many_positions = len(positions_list)
+        if how_many_positions > 1:
+            msgs.work('Exploring ESO archive around {} locations in the sky'.format(how_many_positions))
+        else:
+            msgs.work('Exploring ESO archive around the input location in the sky')
+
+    results_from_query = []
+
+    for position, idx in zip(positions_list, range(len(positions_list))):
+        position.transform_to(ICRS)
+        ra, dec = np.float_(position.ra.degree), np.float_(position.dec.degree)
+        msgs.work('Running query {} to the ESO archive (out of {} total)'.format(idx+1, len(positions_list)))
+        # Define query
+        query = '''
+                SELECT
+                    target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                    dataproduct_type, instrument_name, obstech, abmaglim,
+                    proposal_id, obs_collection
+                FROM
+                    ivoa.ObsCore'''
+        # selection of the location:
+        if radius is None:
+            location_selection = '''
+                WHERE
+                    CONTAINS(POINT('ICRS',{},{}), s_region)=1'''.format(str(ra), str(dec))
+        else:
+            location_selection = '''
+                WHERE
+                    CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
+        query = query + location_selection
+        # selection of the instrument(s)
+        if instruments is not None:
+            if len(instruments_list) == 1:
+                instruments_selection = '''
+                AND
+                    instrument_name='{}' '''.format(instruments_list[0])
+            else:
+                instruments_selection = '''
+                AND
+                    ('''
+                for instrument_name in instruments_list:
+                    instruments_selection = instruments_selection + '''instrument_name='{}' OR '''.format(
+                        instrument_name)
+                instruments_selection = instruments_selection[0:-4] + ')'
+            query = query + instruments_selection
+        # running query and append results to the list
+        result_from_query = _run_query(query, verbose=verbose, remove_bytes=True, maxrec=maxrec)
+        if len(result_from_query) < 1:
+            msgs.warning('No data has been retrieved')
+        else:
+            msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
+            if verbose:
+                msgs.info('For the following instrument:')
+                for inst_name in np.unique(result_from_query['instrument_name'].data):
+                    msgs.info(' - {}'.format(inst_name))
+        results_from_query.append(result_from_query)
+    return results_from_query
+
+
+def query_ASP_from_radec(positions, radius=None, open_link=False, show_link=False):
+    r"""Query the ESO ASP service given a position in RA and Dec.
+
+     The `positions` value (or list) needs to be given as an `astropy.coordinates.SkyCoord` object.
+
+    Args:
+        positions (`astropy.coordinates.SkyCoord`):
+            Coordinates (or list of coordinates) of the sky you want to query in the format of an
+            `astropy.coordinates.SkyCoord` object. For further detail see here:
+            `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
+        radius (`float`):
+            Search radius you want to query in arcseconds. Note that in case `None` is given, the query will be
+            performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
+            `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
+            `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
+        open_link (`bool'):
+            open a link to the ASP page
+        show_link (`bool`):
+            show the link on the terminal
 
     """
-
-    # Define TAP SERVICE
-    tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
-    msgs.info('Querying the ESO TAP service at:')
-    msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
-
-    # ToDo EMA
-    # This should be more flexible and take lists/arrays as input
-    position.transform_to(ICRS)
-    if not np.isscalar(position.ra.degree):
-        if np.ndim(position.ra.degree) > 1:
-            msgs.warning('The position should refer to a single pointing')
-            msgs.warning('only the first location is taken into account')
-            msgs.warning('multi pointing will be available in a future release')
-        # Converting from array to number
-        ra, dec = np.float32(position.ra.degree[0]), np.float32(position.dec.degree[0])
+    # Check inputs:
+    # Working on positions
+    if isinstance(positions, list):
+        positions_list = positions
     else:
-        ra, dec = np.float32(position.ra.degree), np.float32(position.dec.degree)
-
-    # Define query
+        positions_list = [positions]
+    for position in positions_list:
+        assert isinstance(position, coordinates.SkyCoord), r'Input positions not a SkyCoord object'
+    # Working on radius
     if radius is not None:
-        if not np.isscalar(radius):
-            radius_scalar = np.float32(radius[0])
+        if isinstance(radius, int):
+            radius = float(radius)
         else:
-            radius_scalar = np.float32(radius)
-        query = """SELECT
-                      target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                      dataproduct_type, instrument_name, abmaglim, proposal_id
-                   FROM
-                     ivoa.ObsCore
-                   WHERE
-                     CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1""".format(ra, dec, radius_scalar)
-    else:
-        query = """SELECT
-                     target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                     dataproduct_type, instrument_name, abmaglim, proposal_id
-                   FROM
-                     ivoa.ObsCore
-                   WHERE
-                     CONTAINS(POINT('ICRS',{},{}), s_region)=1""".format(ra, dec)
-    if instrument is not None:
-        instrument_selection = str("""                     AND instrument_name='{}'""".format(str(instrument)))
-        query = '\n'.join([query, instrument_selection])
-    msgs.info('The query is:')
-    msgs.info('{}'.format(str(query)))
+            assert isinstance(radius, float), r'Input radius is not a number'
 
-    # Obtaining query results
-    result_from_query = tapobs.search(query=query, maxrec=maxrec)
-    if len(result_from_query) < 1:
-        msgs.warning('No data has been retrieved')
-    else:
-        msgs.info('A total of {} entries has been retrieved'.format(len(result_from_query)))
-        msgs.info('For the following instrument:')
-        for inst_name in np.unique(result_from_query['instrument_name'].data):
-            msgs.info(' - {}'.format(inst_name.decode("utf-8")))
-    return result_from_query
+    for iii, position in enumerate(positions_list):
+        position.transform_to(ICRS)
+        radec_string = np.str(np.float_(position.ra.degree)) + ',' + np.str(np.float_(position.dec.degree))
+        radius_string = np.str(radius/3600.)
+        url = 'http://archive.eso.org/scienceportal/home?' + 'pos=' + radec_string + '&r=' + radius_string + '&sort=-obs_date'
+        if show_link:
+            msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii+1),url))
+        if open_link:
+            webbrowser.open(url)
 
 
 def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2020
@@ -226,6 +350,8 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
     return
 
 
+
+
 def query_ASP_from_polygons(polygons=None, open_link=False, show_link=False):
     if polygons is not None:
         for iii, polygon in enumerate(polygons):
@@ -243,7 +369,7 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
     msgs.info('Querying the ESO TAP service at:')
     msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
 
-    result = []
+    results_from_query = []
 
     if polygons is not None:
         polygon_union = ''
@@ -277,7 +403,7 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
                         msgs.info(' - {}'.format(inst_name.decode("utf-8")))
                     if verbose:
                         result_from_query.to_table().pprint(max_width=-1)
-                result.append(result_from_query)
+                results_from_query.append(result_from_query)
 
         polygon_union = polygon_union[:-4]
         if merge:
@@ -307,8 +433,8 @@ def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=
                     msgs.info(' - {}'.format(inst_name.decode("utf-8")))
                 if verbose:
                     result_from_query.to_table().pprint(max_width=-1)
-            result.append(result_from_query)
-        return result
+            results_from_query.append(result_from_query)
+        return results_from_query
 
         '''
         query="""SELECT count(*) from ivoa.ObsCore

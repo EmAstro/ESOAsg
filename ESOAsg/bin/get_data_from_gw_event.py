@@ -5,7 +5,7 @@ import matplotlib
 
 from ESOAsg.ancillary import astro
 from ESOAsg.ancillary import checks
-from ESOAsg.core import download_archive
+from ESOAsg.core import archive_observations
 from ESOAsg import msgs
 from ESOAsg import __version__
 from ESOAsg import default
@@ -122,18 +122,18 @@ if __name__ == '__main__':
         astro.show_contours_from_gw_bayestar(fits_file, contours=contours,
                                             cmap='afmhot', contours_color='white', show_figure=show_figure,
                                             matplotlib_backend=STARTING_MATPLOTLIB_BACKEND)
-        polygons = download_archive.contours_to_polygons(contours, max_vertices=30)
+        polygons = archive_observations.contours_to_polygons(contours, max_vertices=30)
 
         if show_asp:
             msgs.info('Opening links to ASP')
-            download_archive.query_ASP_from_polygons(polygons=polygons, open_link=True)
+            archive_observations.query_ASP_from_polygons(polygons=polygons, open_link=True)
 
-        results_from_TAP = download_archive.query_TAP_from_polygons(polygons=polygons,
+        results_from_TAP = archive_observations.query_TAP_from_polygons(polygons=polygons,
                                                                     merge=False, maxrec=maxrec,
                                                                     verbose=False, instrument=instrument)
         if start_download:
             for idx_poly in range(0, len(results_from_TAP)):
                 msgs.info('Downloading data for polygon N.{}'.format(idx_poly))
-                download_archive.download(results_from_TAP[idx_poly]['dp_id'])
+                archive_observations.download(results_from_TAP[idx_poly]['dp_id'])
 
     msgs.end()
