@@ -122,12 +122,14 @@ def connection_to_website(url, timeout=1):  # written by Ema 05.03.2020
     return is_active
 
 
-def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
+def fits_file_is_valid(fits_file, verify_fits=False):  # Written by Ema 05.03.2020
     r"""Check if a file exists and has a valid extension
 
     Args:
         fits_file (`str`):
             fits file you would like to check
+        verify_fits (`bool`)
+            if set to True, it will verify that the fits file is complaint to the FITS standard.
 
     Returns:
         is_fits (`boolean`):
@@ -136,7 +138,7 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
     """
     is_fits = True
 
-    # Checks for url
+    # Checks if it is a string
     assert isinstance(fits_file, str), 'input fits needs to be a string'
     # Check for ending
     if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz') and not fits_file.endswith('.fits.gz'):
@@ -146,6 +148,11 @@ def fits_file_is_valid(fits_file):  # Written by Ema 05.03.2020
     if not os.path.exists(fits_file):
         msgs.warning('File: {} does not exists'.format(fits_file))
         is_fits = False
+    # Check for compliance with FITS standard
+    if verify_fits:
+        hdul = fits.open(fits_file)
+        hdul.verify()
+        hdul.close()
 
     return is_fits
 
