@@ -122,14 +122,18 @@ def connection_to_website(url, timeout=1):  # written by Ema 05.03.2020
     return is_active
 
 
-def fits_file_is_valid(fits_file, verify_fits=False):  # Written by Ema 05.03.2020
+def fits_file_is_valid(fits_file, verify_fits=False, overwrite=False):  # Written by Ema 05.03.2020
     r"""Check if a file exists and has a valid extension
+
+    The option `verify_fits` checks the header of the fits file using `astropy.io.fits.verify`
 
     Args:
         fits_file (`str`):
             fits file you would like to check
-        verify_fits (`bool`)
-            if set to True, it will verify that the fits file is complaint to the FITS standard.
+        verify_fits (`bool`):
+            if set to `True`, it will verify that the fits file is complaint to the FITS standard.
+        overwrite (`bool`):
+            if `True`, overwrite the input fits file with the header corrections from `verify_fits`
 
     Returns:
         is_fits (`boolean`):
@@ -137,7 +141,6 @@ def fits_file_is_valid(fits_file, verify_fits=False):  # Written by Ema 05.03.20
 
     """
     is_fits = True
-
     # Checks if it is a string
     assert isinstance(fits_file, str), 'input fits needs to be a string'
     # Check for ending
@@ -150,12 +153,43 @@ def fits_file_is_valid(fits_file, verify_fits=False):  # Written by Ema 05.03.20
         is_fits = False
     # Check for compliance with FITS standard
     if verify_fits:
-        hdul = fits.open(fits_file)
-        hdul.verify()
+        if overwrite:
+            hdul = fits.open(fits_file, mode='update', checksum=False)
+            if not check_checksums(hdul):
+                is_fits = False
+            hdul.flush(output_verify='fix+warn', verbose=True)
+            hdul.writeto(fits_file, checksum=True, overwrite=True)
+            msgs.info('File checked and rewritten')
+        else:
+            hdul = fits.open(fits_file, mode='readonly', checksum=True)
+            if not check_checksums(hdul):
+                is_fits = False
+            hdul.verify('fix+warn')
         hdul.close()
-
+    else:
+        if overwrite:
+            msgs.error('The option overwrite works only if verify_fits = True')
     return is_fits
 
+
+def check_checksums(hdul):
+    is_good_checksum = True
+    for hdu in hdul:
+        checks_for_checksum = hdu.verify_checksum()
+        checks_for_datasum = hdu.verify_datasum()
+        if checks_for_checksum == 0:
+            msgs.warning('Checksum not valid')
+            is_good_checksum = False
+        if checks_for_checksum == 2:
+            msgs.warning('Checksum not present')
+            is_good_checksum = False
+        if checks_for_datasum == 0:
+            msgs.warning('Datasum not valid')
+            is_good_checksum = False
+        if checks_for_datasum == 2:
+            msgs.warning('Datasum not present')
+            is_good_checksum = False
+    return is_good_checksum
 
 def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
     r"""Check if a 2D image is valid

@@ -12,9 +12,8 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""Checking that the input fits file is valid
         
-        Currently the validations are:
-        - checksum
-        - datasum
+        Checks if a fits file is compliant to the FITS standard. If the option `--update_header` is enabled, the code
+        will try to fix some of the header issue and the file will be modified on place.
                 
         This uses ESOAsg version {:s}
         """.format(__version__),
@@ -42,8 +41,19 @@ if __name__ == '__main__':
 
     # File_names
     for file_name in args.input_fits:
-        if not checks.fits_file_is_valid(file_name, verify_fits=True):
-            msgs.error('{} is not valid'.format(file_name))
-    input_fits = args.input_fits
+        if args.update_header:
+            msgs.info('Testing and updating header: {}'.format(file_name))
+            valid_fits_file = checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=True)
+            if not valid_fits_file:
+                msgs.warning('{} not valid'.format(file_name))
+                msgs.info('Header corrected')
+                valid_fits_file = checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=False)
+        else:
+            msgs.info('Testing: {}'.format(file_name))
+            valid_fits_file = checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=False)
+        if not valid_fits_file:
+            msgs.warning('{} not valid'.format(file_name))
+        else:
+            msgs.info('{} valid'.format(file_name))
 
     msgs.end()
