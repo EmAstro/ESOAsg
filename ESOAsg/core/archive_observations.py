@@ -87,6 +87,103 @@ def _run_query(query, verbose=False, remove_bytes=True, maxrec=default.get_value
     return result_from_query
 
 
+def _query_obscore_base():
+    r"""Create the base string for a query to `ivoa.ObsCore`
+
+    Returns:
+        query (`str`):
+            Base for the ivoa.ObsCore query:
+            SELECT
+                target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max,
+                dataproduct_type, instrument_name, obstech, abmaglim,
+                proposal_id, obs_collection
+            FROM
+                ivoa.ObsCore
+    """
+    query_base = '''
+            SELECT
+                target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
+                dataproduct_type, instrument_name, obstech, abmaglim,
+                proposal_id, obs_collection
+            FROM
+                ivoa.ObsCore'''
+    return query_base
+
+
+def _query_obscore_intersect_ra_dec(ra, dec, radius=None):
+    r"""Create the where condition string for a query to `ivoa.ObsCore`
+
+    Args:
+        ra (`float`):
+            RA of the target in degrees and in the ICRS system
+        dec (`float`):
+            Dec of the target in degrees and in the ICRS system
+        radius (`float`):
+            Search radius in arcsec. If set to `None` no radius will be considered in the INTERSECT condition
+    Returns:
+        query_intersect_ra_dec (`str`):
+            String containing the WHERE INTERSECT condition for a query
+    """
+    if radius is None:
+        query_intersect_ra_dec = '''
+            WHERE
+                INTERSECTS(POINT('ICRS',{},{}), s_region)=1'''.format(str(ra), str(dec))
+    else:
+        query_intersect_ra_dec = '''
+            WHERE
+                INTERSECTS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
+    return query_intersect_ra_dec
+
+
+def _query_obscore_select_instruments(instruments_list):
+    r"""Create condition string to select only specific instruments in `ivoa.ObsCore`
+
+    Args:
+        instruments_list (`list'):
+            Limit the search to the selected list of instruments (e.g., `XSHOOTER`)
+    Returns:
+        query_select_instruments (`str`):
+            String containing the `instrument_name=` condition for a query
+    """
+    if len(instruments_list) == 1:
+        query_select_instruments = '''
+            AND
+                instrument_name='{}' '''.format(instruments_list[0])
+    else:
+        query_select_instruments = '''
+            AND
+                ('''
+        for instrument_name in instruments_list:
+            query_select_instruments = query_select_instruments + '''instrument_name='{}' OR '''.format(
+                instrument_name)
+        query_select_instruments = query_select_instruments[0:-4] + ')'
+    return query_select_instruments
+
+
+def _query_obscore_select_data_types(data_types_list):
+    r"""Create condition string to select only specific dataproduct types in `ivoa.ObsCore`
+
+    Args:
+        data_types_list (`list'):
+            Limit the search to the selected list of dataproduct types (e.g., `spectrum`)
+    Returns:
+        query_select_data_types (`str`):
+            String containing the `dataproduct_type=` condition for a query
+    """
+    if len(data_types_list) == 1:
+        query_select_data_types = '''
+            AND
+                dataproduct_type='{}' '''.format(data_types_list[0])
+    else:
+        query_select_data_types = '''
+            AND
+                ('''
+        for data_type in data_types_list:
+            query_select_data_types = query_select_data_types + '''dataproduct_type='{}' OR '''.format(data_type)
+        query_select_data_types = query_select_data_types[0:-4] + ')'
+    return query_select_data_types
+
+
 def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'))):
     r"""Given a filename in the ADP format, the code download the file from the
     `ESO archive <http://archive.eso.org>`_
@@ -128,7 +225,8 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
 
-def query_from_radec(positions, radius=None, instruments=None, verbose=False, maxrec=default.get_value('maxrec')):
+def query_from_radec(positions, radius=None, instruments=None, data_types=None, verbose=False,
+                     maxrec=default.get_value('maxrec')):
     r"""Query the ESO TAP service given a position in RA and Dec.
 
      The `positions` value (or list) needs to be given as an `astropy.coordinates.SkyCoord` object.
@@ -140,11 +238,13 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
             `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
         radius (`float`):
             Search radius you want to query in arcseconds. Note that in case `None` is given, the query will be
-            performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
-            `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
+            performed with the `INTERSECT(POINT('',RA,Dec), s_region)` clause instead of the
+            `INTERSECT(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
             `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
         instruments (`list'):
-            Limit the search to the selected list of instruments
+            Limit the search to the selected list of instruments (e.g., `XSHOOTER`)
+        data_types (`list'):
+            Limit the search to the selected types of data (e.g., `spectrum`)
         verbose (`bool`):
             if set to `True` additional info will be displayed
         maxrec (`int`):
@@ -165,6 +265,12 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
         positions_list = [positions]
     for position in positions_list:
         assert isinstance(position, coordinates.SkyCoord), r'Input positions not a SkyCoord object'
+    # Working on radius
+    if radius is not None:
+        if isinstance(radius, int):
+            radius = float(radius)
+        else:
+            assert isinstance(radius, float), r'Input radius is not a number'
     # Working on instruments
     if instruments is not None:
         if isinstance(instruments, list):
@@ -173,12 +279,14 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
             instruments_list = [instruments]
         for instrument in instruments_list:
             assert isinstance(instrument, str), r'Input instrument: {} not valid'.format(instrument)
-    # Working on radius
-    if radius is not None:
-        if isinstance(radius, int):
-            radius = float(radius)
+    # Working on data_types
+    if data_types is not None:
+        if isinstance(data_types, list):
+            data_types_list = data_types
         else:
-            assert isinstance(radius, float), r'Input radius is not a number'
+            data_types_list = [data_types]
+        for data_type in data_types_list:
+            assert isinstance(data_type, str), r'Input data type: {} not valid'.format(data_type)
 
     # Running over all positions
     if verbose:
@@ -194,41 +302,22 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
         position.transform_to(ICRS)
         ra, dec = np.float_(position.ra.degree), np.float_(position.dec.degree)
         msgs.work('Running query {} to the ESO archive (out of {} total)'.format(idx+1, len(positions_list)))
+
         # Define query
-        query = '''
-                SELECT
-                    target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                    dataproduct_type, instrument_name, obstech, abmaglim,
-                    proposal_id, obs_collection
-                FROM
-                    ivoa.ObsCore'''
+        # base query:
+        query = _query_obscore_base()
         # selection of the location:
-        if radius is None:
-            location_selection = '''
-                WHERE
-                    CONTAINS(POINT('ICRS',{},{}), s_region)=1'''.format(str(ra), str(dec))
-        else:
-            location_selection = '''
-                WHERE
-                    CONTAINS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
-        query = query + location_selection
+        query = query + _query_obscore_intersect_ra_dec(ra, dec, radius=radius)
         # selection of the instrument(s)
         if instruments is not None:
-            if len(instruments_list) == 1:
-                instruments_selection = '''
-                AND
-                    instrument_name='{}' '''.format(instruments_list[0])
-            else:
-                instruments_selection = '''
-                AND
-                    ('''
-                for instrument_name in instruments_list:
-                    instruments_selection = instruments_selection + '''instrument_name='{}' OR '''.format(
-                        instrument_name)
-                instruments_selection = instruments_selection[0:-4] + ')'
-            query = query + instruments_selection
+            query = query + _query_obscore_select_instruments(instruments_list)
+        # selection of the data_type(s)
+        if data_types is not None:
+            query = query + _query_obscore_select_data_types(data_types_list)
+
         # running query and append results to the list
         result_from_query = _run_query(query, verbose=verbose, remove_bytes=True, maxrec=maxrec)
+
         if len(result_from_query) < 1:
             msgs.warning('No data has been retrieved')
         else:
@@ -237,6 +326,7 @@ def query_from_radec(positions, radius=None, instruments=None, verbose=False, ma
                 msgs.info('For the following instrument:')
                 for inst_name in np.unique(result_from_query['instrument_name'].data):
                     msgs.info(' - {}'.format(inst_name))
+
         results_from_query.append(result_from_query)
     return results_from_query
 
