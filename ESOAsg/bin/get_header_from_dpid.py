@@ -1,47 +1,37 @@
 #!/usr/bin/env python3
 
 import argparse
-# from astropy import coordinates
-# from astropy import units as u
-import numpy as np
 import os.path
-# import glob
 
-# from ESOAsg.core import download_archive
 from ESOAsg import msgs
 from ESOAsg import __version__
 from ESOAsg.core import fitsfiles
 from ESOAsg.core import archive_observations
 from ESOAsg.ancillary import cleaning_lists
 
-# from IPython import embed
-
 
 def parse_arguments():
     parser = argparse.ArgumentParser(
-        description=r"""
-        This macro reads the gets the header of a data product (DP) stored in the ESO archive.
-        In case the --cards argument is not included, it will download the full header of the data
-        product on your disk.
-        
-        This uses ESOAsg version {:s}
-        """.format(__version__),
+        description=r"""This macro gets the header of a data product (DP) """
+                    r"""stored in the ESO archive.""" + """\n""" +
+                    r"""In case the --cards argument is not included, it will download """
+                    r"""the full header of the data product on your disk.""" + """\n""" + """\n""" +
+                    r"""This uses ESOAsg version {:s}""".format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
 
-    parser.add_argument('input_dpid', nargs='+', type=str,
-                        help='data product ID')
-    parser.add_argument('-car', '--cards', nargs='+', type=str, default=None,
-                        help='Header cards you want to check')
-    parser.add_argument('-v', '--version', action='version', version=__version__)
+    parser.add_argument("input_dpid", nargs="+", type=str, help=r"data product ID")
+    parser.add_argument("-car", "--cards", nargs="+", type=str, default=None, help=r"Header cards you want to get")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
 
-EXAMPLES = r"""
-        Examples:
-        Get the the value of "HIERARCH ESO OBS ID" from the dpid "OMEGA.2016-08-28T07:14:36.769"
-        get_header_from_dpid.py 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'
-        """
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" +
+               r"""Get the the value of 'HIERARCH ESO OBS ID' from the dpid 'OMEGA.2016-08-28T07:14:36.769'""" +
+               """\n""" +
+               r"""> get_header_from_dpid.py 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'""" + """\n""" +
+               r""" """)
+
 
 if __name__ == '__main__':
     # input arguments and tests
@@ -54,7 +44,6 @@ if __name__ == '__main__':
     if args.cards is not None:
         input_cards = cleaning_lists.make_list_of_strings(args.cards)
 
-    # Starting to read the header(s)
     msgs.start()
 
     if args.cards is not None:
@@ -63,18 +52,31 @@ if __name__ == '__main__':
         card_values = []
 
     for input_dpid in input_dpids:
-        archive_observations.get_header_from_archive(input_dpid, text_file=input_dpid+'.hdr')
+        # Starting to download the header(s)
+        archive_observations.get_header_from_archive(input_dpid, text_file=input_dpid + '.hdr')
         if args.cards is not None:
-            hdr_from_dpid = fitsfiles.header_from_txt_file(input_dpid+'.hdr')
-            for input_card in input_cards:
+            # getting header card values
+            if os.path.isfile(input_dpid + '.hdr'):
+                hdr_from_dpid = fitsfiles.header_from_txt_file(input_dpid + '.hdr')
+                for input_card in input_cards:
+                    dpid_names.append(input_dpid)
+                    card_names.append(input_card)
+                    if input_card in hdr_from_dpid:
+                        card_values.append(hdr_from_dpid[input_card])
+                    else:
+                        msgs.warning('Keyword {} not present in the file {}'.format(input_card, input_dpid))
+                        card_values.append('-----')
+            else:
                 dpid_names.append(input_dpid)
-                card_names.append(input_card)
-                card_values.append(hdr_from_dpid[input_card])
+                card_names.append('----')
+                card_values.append('-----')
 
+    # printing the result on terminal
     if args.cards is not None:
         msgs.info('Summary:')
-        msgs.info('DPID   CARD   VALUE')
+        msgs.info('\n\n' + ' DPID   CARD   VALUE ' + '\n'  ' ----   ----   -----')
         for dpid_name, card_name, card_value in zip(dpid_names, card_names, card_values):
-            print('{}   {}   {}'.format(dpid_name, card_name, card_value))
+            print(' {}   {}   {}'.format(dpid_name, card_name, card_value))
+        print('\n')
 
     msgs.end()
