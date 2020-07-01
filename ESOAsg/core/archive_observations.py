@@ -30,7 +30,6 @@ from astropy.coordinates import ICRS
 import requests
 import webbrowser
 
-
 from ESOAsg import msgs
 from ESOAsg import default
 from ESOAsg.ancillary import checks
@@ -220,7 +219,7 @@ def download(dp_id, min_disk_space=np.float32(default.get_value('min_disk_space'
         # Given a dp_id of a public file, the link to download it is constructed as follows:
         download_url = 'http://archive.eso.org/datalink/links?ID=ivo://eso.org/ID?{}&eso_download=file'.format(
             str(file_name))
-        msgs.work('Downloading file {}. This may take some time.'.format(file_name+'.fits'))
+        msgs.work('Downloading file {}. This may take some time.'.format(file_name + '.fits'))
         urllib.request.urlretrieve(download_url, filename=file_name + '.fits')
         msgs.info('File {} downloaded.'.format(file_name + '.fits'))
 
@@ -301,7 +300,7 @@ def query_from_radec(positions, radius=None, instruments=None, data_types=None, 
     for position, idx in zip(positions_list, range(len(positions_list))):
         position.transform_to(ICRS)
         ra, dec = np.float_(position.ra.degree), np.float_(position.dec.degree)
-        msgs.work('Running query {} to the ESO archive (out of {} total)'.format(idx+1, len(positions_list)))
+        msgs.work('Running query {} to the ESO archive (out of {} total)'.format(idx + 1, len(positions_list)))
 
         # Define query
         # base query:
@@ -370,10 +369,11 @@ def query_ASP_from_radec(positions, radius=None, open_link=False, show_link=Fals
     for iii, position in enumerate(positions_list):
         position.transform_to(ICRS)
         radec_string = np.str(np.float_(position.ra.degree)) + ',' + np.str(np.float_(position.dec.degree))
-        radius_string = np.str(radius/3600.)
-        url = 'http://archive.eso.org/scienceportal/home?' + 'pos=' + radec_string + '&r=' + radius_string + '&sort=-obs_date'
+        radius_string = np.str(radius / 3600.)
+        url = 'http://archive.eso.org/scienceportal/home?' + 'pos=' + radec_string + '&r=' + radius_string + \
+              '&sort=-obs_date'
         if show_link:
-            msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii+1),url))
+            msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii + 1), url))
         if open_link:
             webbrowser.open(url)
 
@@ -410,28 +410,28 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
         if len(list_of_files) == 1:
             list_of_outputs = [text_file]
         else:
-            list_of_outputs = [output+text_file for output in list_of_files]
+            list_of_outputs = [output + text_file for output in list_of_files]
     elif isinstance(text_file, list):
         if len(list_of_files) == len(text_file):
             list_of_outputs = text_file
         else:
             list_of_outputs = [files + '.hdr' for files in list_of_files]
     else:
-        list_of_outputs = [files+'.hdr' for files in list_of_files]
+        list_of_outputs = [files + '.hdr' for files in list_of_files]
 
     # Downloading headers
     for file_name, file_out in zip(list_of_files, list_of_outputs):
         if os.path.isfile(file_out):
             msgs.warning('Overwriting existing text file: {}'.format(file_out))
             os.remove(file_out)
-        url_for_header = archive_url+'hdr?DpId='+file_name
+        url_for_header = archive_url + 'hdr?DpId=' + file_name
         response_url = requests.get(url_for_header, allow_redirects=True)
         # Removing html from text
         header_txt = response_url.text.split('<pre>')[1].split('</pre>')[0]
         if not header_txt.startswith('No info found for'):
             file_header = open(file_out, 'w')
             for line in header_txt.splitlines():
-                file_header.write(line+'\n')
+                file_header.write(line + '\n')
             file_header.close()
             msgs.info('Header successfully saved in: {}'.format(file_out))
         else:
@@ -440,21 +440,18 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
     return
 
 
-
-
 def query_ASP_from_polygons(polygons=None, open_link=False, show_link=False):
     if polygons is not None:
         for iii, polygon in enumerate(polygons):
-            url = 'http://archive.eso.org/scienceportal/home?' + 'poly='+polygon + '&sort=-obs_date'
+            url = 'http://archive.eso.org/scienceportal/home?' + 'poly=' + polygon + '&sort=-obs_date'
             if show_link:
-                msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii+1),url))
+                msgs.info('ASP link to region N.{} is:\n {}\n'.format(np.str(iii + 1), url))
             if open_link:
                 webbrowser.open(url)
 
 
 def query_TAP_from_polygons(polygons=None, merge=False, instrument=None, maxrec=default.get_value('maxrec'),
                             verbose=False):
-
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
     msgs.info('Querying the ESO TAP service at:')
     msgs.info('{}'.format(str(default.get_value('eso_tap_obs'))))
@@ -561,7 +558,8 @@ def contours_to_polygons(contours, max_vertices=30):
         else:
             contour_clean = contour
         # Construct the polygon as a string in the right format
-        polygon = ' '.join(['%.4f, %.4f,' % (ra, dec) for ra, dec in contour_clean])[:-1] # Remove the last character, which is an unwanted extra comma
+        polygon = ' '.join(['%.4f, %.4f,' % (ra, dec) for ra, dec in contour_clean])[
+                  :-1]  # Remove the last character, which is an unwanted extra comma
         polygons.append(polygon)
 
     return polygons

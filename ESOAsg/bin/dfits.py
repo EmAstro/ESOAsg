@@ -51,22 +51,13 @@ if __name__ == '__main__':
     args = parse_arguments()
 
     # File_names
-    for file_name in args.input_fits:
-        if not checks.fits_file_is_valid(file_name):
-            msgs.error('{} is not valid'.format(file_name))
-    input_fits = args.input_fits
+    input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
 
     # which_hdu
-    if isinstance(args.hdu_number, int):
-        hdu_number = np.array([args.hdu_number], dtype=np.int_)
-    else:
-        hdu_number = np.array(args.hdu_number, dtype=np.int_)
+    hdu_numbers = cleaning_lists.make_list_of_int(args.hdu_number)
 
     # cards
-    if args.cards is None:
-        msgs.error('At least one card should be given')
-    else:
-        cards = args.cards
+    input_cards = cleaning_lists.make_list_of_strings(args.cards)
 
     # Starting to read the header(s)
     msgs.start()

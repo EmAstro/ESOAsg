@@ -28,7 +28,6 @@ matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
 import healpy
 from astropy import wcs
 
-
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 from ESOAsg.ancillary import polygons # ToDo to be removed
