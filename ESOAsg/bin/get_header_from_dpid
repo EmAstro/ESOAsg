@@ -29,7 +29,7 @@ def parse_arguments():
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" +
                r"""Get the the value of 'HIERARCH ESO OBS ID' from the dpid 'OMEGA.2016-08-28T07:14:36.769'""" +
                """\n""" +
-               r"""> get_header_from_dpid.py 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'""" + """\n""" +
+               r"""> get_header_from_dpid 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'""" + """\n""" +
                r""" """)
 
 
