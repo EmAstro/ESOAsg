@@ -14,7 +14,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""This macro gets the header of a data product (DP) """
                     r"""stored in the ESO archive.""" + """\n""" +
-                    r"""In case the --cards argument is not included, it will download """
+                    r"""In case the `--cards` argument is not included, it will download """
                     r"""the full header of the data product on your disk.""" + """\n""" + """\n""" +
                     r"""This uses ESOAsg version {:s}""".format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -26,7 +26,7 @@ def parse_arguments():
     return parser.parse_args()
 
 
-EXAMPLES = str(r"""EXAMPLES:""" + """\n""" +
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""Get the the value of 'HIERARCH ESO OBS ID' from the dpid 'OMEGA.2016-08-28T07:14:36.769'""" +
                """\n""" +
                r"""> get_header_from_dpid 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'""" + """\n""" +
