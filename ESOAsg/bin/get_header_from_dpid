@@ -13,7 +13,7 @@ from ESOAsg.ancillary import cleaning_lists
 def parse_arguments():
     parser = argparse.ArgumentParser(
         description=r"""This macro gets the header of a data product (DP) """
-                    r"""stored in the ESO archive.""" + """\n""" +
+                    r"""stored in the ESO archive.""" + """\n""" + """\n""" +
                     r"""In case the `--cards` argument is not included, it will download """
                     r"""the full header of the data product on your disk.""" + """\n""" + """\n""" +
                     r"""This uses ESOAsg version {:s}""".format(__version__),
