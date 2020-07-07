@@ -1,0 +1,146 @@
+#!/usr/bin/env python3
+
+import argparse
+import numpy as np
+
+from ESOAsg import msgs
+from ESOAsg import __version__
+from ESOAsg.core import fitsfiles
+from ESOAsg.ancillary import cleaning_lists
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description=r"""This macro modify a card in an header of a fits file.""" + """\n""" +
+                    r"""If no `--value` is given, the macro remove the card in input. Note that one can also """ +
+                    r"""update the value of `CHECKSUM` with the option `--checksum`.""" + """\n""" + """\n""" +
+                    r"""This uses ESOAsg version {:s}""".format(__version__),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=EXAMPLES)
+
+    parser.add_argument("input_fits", nargs="+", type=str,
+                        help=r"Fits file name form which read the header. " + r"This may contain wildcards")
+    parser.add_argument("-hn", "--hdu_number", nargs='+', type=int, default=0,
+                        help=r"Select which HDU to be modified")
+    parser.add_argument("-car", "--cards", nargs="+", type=str, default=None,
+                        help=r"Header cards to be modified")
+    parser.add_argument("-val", "--values", nargs="+", type=str, default=None,
+                        help=r"Value to be assigned to the cards")
+    parser.add_argument("-com", "--comments", nargs="+", type=str, default=None,
+                        help="Comment to be assigned to the cards")
+    parser.add_argument("-out", "--outputs", nargs="+", type=str, default=None,
+                        help=r"Name of the outputs modified file")
+    parser.add_argument("-cks", "--checksum", action="store_true", default=False,
+                        help=r"Update the `CHECKSUM` of the fits file")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
+    return parser.parse_args()
+
+
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
+               r"""Modify the value of CRVAL1 in all the fits files in the """ +
+               r"""working directory to `0.` include the comment `This is CRVAL1, """ +
+               r"""and save these modified fits into a new set of files having """ +
+               r"""`_changed.fits` as ending (and update the `CHECKSUM`): """ + """\n""" +
+               r"""> mod_header *.fits """ +
+               r"""--cards CRVAL1 """ +
+               r"""--values 0. """ +
+               r"""--comments 'This is CRVAL1' """ +
+               r"""--outputs _changed.fits """ +
+               r"""--checksum """ + """\n""" + """\n""" +
+               r"""Delete the card `CRVAL1` and `CRVAL2` from the two fits files """ +
+               r"""`test0.fits` and `test1.fits` and update their `CHECKSUM`: """ + """\n""" +
+               r"""> mod_header test0.fits test1.fits """ +
+               r"""--cards CRVAL1 CRVAL2""" +
+               r"""--checksum """ + """\n""" +
+               r""" """)
+
+
+if __name__ == '__main__':
+    # input arguments and tests
+    args = parse_arguments()
+
+    # File_names
+    input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
+
+    # which_hdu
+    hdu_numbers = cleaning_lists.make_list_of_int(args.hdu_number)
+
+    # cards
+    input_cards = cleaning_lists.make_list_of_strings(args.cards)
+
+    # values
+    if args.values is None:
+        remove = np.bool(True)
+        if len(input_cards) == 1:
+            msgs.info("The card {} will be removed".format(input_cards))
+        else:
+            msgs.info("The following cards will be removed:")
+            for card in input_cards:
+                msgs.info(" - {}".format(input_cards))
+    else:
+        remove = np.bool(False)
+        if isinstance(args.values, list):
+            input_values = args.values
+        else:
+            input_values = [args.values]
+        if len(input_values) != len(input_cards):
+            msgs.error("There are {} values assigned to the {} cards selected".format(len(input_values),
+                                                                                      len(input_cards)))
+
+    # comments
+    if args.comments is not None:
+        if isinstance(args.values, list):
+            input_comments = args.comments
+        else:
+            input_comments = [args.comments]
+        if len(input_comments) != len(input_cards):
+            msgs.error("There are {} comments assigned to the {} cards selected".format(len(input_comments),
+                                                                                        len(input_cards)))
+    else:
+        input_comments = [' '] * len(input_cards)
+
+    # output
+    if args.output is not None:
+        overwrite = False
+        if len(input_fits_files) == 1:
+            output_fits = args.output
+        else:
+            output_fits = [output_temp.replace('.fits', np.str(args.output[0])) for output_temp in input_fits_files]
+    else:
+        overwrite = True
+        output_fits = input_fits_files
+
+    # checksum
+    checksum = args.checksum
+
+    # Starting to modify the header(s)
+    msgs.start()
+
+    for fits_file, fits_out in zip(input_fits_files, output_fits):
+        hdul = fitsfiles.get_hdul(fits_file, mode='update', checksum=checksum)
+        if remove:
+            for card in input_cards:
+                for hdu_number in hdu_numbers:
+                    if card in hdul[hdu_number].header:
+                        msgs.info("Removing header card {} from HDU N.{}".format(card, hdu_number))
+                        del hdul[hdu_number].header[card]
+                    else:
+                        msgs.info("Header card {} not present in HDU N.{}".format(card, hdu_number))
+        else:
+            for card, value, comment in zip(input_cards, input_values, input_comments):
+                for hdu_number in hdu_numbers:
+                    if card in hdul[hdu_number].header:
+                        msgs.info("Updating header card in HDU N.{}: {}".format(hdu_number, card))
+                        msgs.info("From {} to {} / {}".format(hdul[hdu_number].header[card], value, comment))
+                    else:
+                        msgs.info("Adding header card in HDU N.{}: {}={} / {}".format(hdu_number, card, value, comment))
+                    hdul[hdu_number].header[card] = fitsfiles.check_value(value), comment
+        # This is an astropy option to  check if the headers are broadly consistent with the standard.
+        hdul.verify("fix")
+        if overwrite:
+            hdul.flush()
+        else:
+            hdul.writeto(fits_out, checksum=checksum, overwrite=True)
+        hdul.close()
+
+    msgs.end()
