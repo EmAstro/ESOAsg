@@ -76,6 +76,7 @@ def run_setup(scripts, packages, install_requires):
 if __name__ == '__main__':
     # Compile the scripts in the bin/ directory
     scripts = get_scripts()
+    print(scripts)
     # Get the packages to include
     packages = find_packages()
     # Collate the dependencies based on the system text file

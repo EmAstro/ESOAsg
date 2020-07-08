@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+
+import argparse
+import os.path
+
+from ESOAsg import msgs
+from ESOAsg import __version__
+from ESOAsg.core import fitsfiles
+from ESOAsg.core import archive_observations
+from ESOAsg.ancillary import cleaning_lists
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description=r"""This macro gets the header of a data product (DP) """
+                    r"""stored in the ESO archive.""" + """\n""" + """\n""" +
+                    r"""In case the `--cards` argument is not included, it will download """
+                    r"""the full header of the data product on your disk.""" + """\n""" + """\n""" +
+                    r"""This uses ESOAsg version {:s}""".format(__version__),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=EXAMPLES)
+
+    parser.add_argument("input_dpid", nargs="+", type=str, help=r"data product ID")
+    parser.add_argument("-car", "--cards", nargs="+", type=str, default=None, help=r"Header cards you want to get")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
+    return parser.parse_args()
+
+
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
+               r"""Get the the value of 'HIERARCH ESO OBS ID' from the dpid 'OMEGA.2016-08-28T07:14:36.769'""" +
+               """\n""" +
+               r"""> get_header_from_dpid 'OMEGA.2016-08-28T07:14:36.769' -car 'HIERARCH ESO OBS ID'""" + """\n""" +
+               r""" """)
+
+
+if __name__ == '__main__':
+    # input arguments and tests
+    args = parse_arguments()
+
+    # File_names
+    input_dpids = cleaning_lists.make_list_of_strings(args.input_dpid)
+
+    # cards
+    if args.cards is not None:
+        input_cards = cleaning_lists.make_list_of_strings(args.cards)
+
+    msgs.start()
+
+    if args.cards is not None:
+        dpid_names = []
+        card_names = []
+        card_values = []
+
+    for input_dpid in input_dpids:
+        # Starting to download the header(s)
+        archive_observations.get_header_from_archive(input_dpid, text_file=input_dpid + '.hdr')
+        if args.cards is not None:
+            # getting header card values
+            if os.path.isfile(input_dpid + '.hdr'):
+                hdr_from_dpid = fitsfiles.header_from_txt_file(input_dpid + '.hdr')
+                for input_card in input_cards:
+                    dpid_names.append(input_dpid)
+                    card_names.append(input_card)
+                    if input_card in hdr_from_dpid:
+                        card_values.append(hdr_from_dpid[input_card])
+                    else:
+                        msgs.warning('Keyword {} not present in the file {}'.format(input_card, input_dpid))
+                        card_values.append('-----')
+            else:
+                dpid_names.append(input_dpid)
+                card_names.append('----')
+                card_values.append('-----')
+
+    # printing the result on terminal
+    if args.cards is not None:
+        msgs.info('Summary:')
+        msgs.info('\n\n' + ' DPID   CARD   VALUE ' + '\n'  ' ----   ----   -----')
+        for dpid_name, card_name, card_value in zip(dpid_names, card_names, card_values):
+            print(' {}   {}   {}'.format(dpid_name, card_name, card_value))
+        print('\n')
+
+    msgs.end()
