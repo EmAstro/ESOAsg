@@ -1,4 +1,7 @@
 # ESOAsg
+
+[![Documentation Status](https://readthedocs.org/projects/esoasg/badge/?version=latest)](https://esoasg.readthedocs.io/en/latest/?badge=latest)
+
 This is a collection of useful packages that can be used to validate data for the ESO archive [http://archive.eso.org/cms.html]
 
 # Requiements
