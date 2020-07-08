@@ -240,9 +240,9 @@ def query_from_radec(positions, radius=None, instruments=None, data_types=None, 
             performed with the `INTERSECT(POINT('',RA,Dec), s_region)` clause instead of the
             `INTERSECT(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
             `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
-        instruments (`list'):
+        instruments (`list`):
             Limit the search to the selected list of instruments (e.g., `XSHOOTER`)
-        data_types (`list'):
+        data_types (`list`):
             Limit the search to the selected types of data (e.g., `spectrum`)
         verbose (`bool`):
             if set to `True` additional info will be displayed
@@ -345,7 +345,7 @@ def query_ASP_from_radec(positions, radius=None, open_link=False, show_link=Fals
             performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
             `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
             `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
-        open_link (`bool'):
+        open_link (`bool`):
             open a link to the ASP page
         show_link (`bool`):
             show the link on the terminal
