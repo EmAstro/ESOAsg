@@ -1,0 +1,3 @@
+-r ESOAsg/requirements.txt
+Sphinx>=3.0
+sphinx-automodapi>=0.12
