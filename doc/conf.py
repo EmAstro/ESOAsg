@@ -32,7 +32,7 @@ release = '0.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_automodapi.automodapi',
+#    'sphinx_automodapi.automodapi',
     'sphinx.ext.napoleon',
     'sphinx.ext.doctest',
     'sphinx.ext.graphviz',
