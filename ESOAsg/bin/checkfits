@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+
+import argparse
+
+from ESOAsg import msgs
+from ESOAsg import __version__
+from ESOAsg.ancillary import checks
+from ESOAsg.ancillary import cleaning_lists
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description=r"""Checking that the input fits file is valid.""" + """\n""" + """\n""" +
+                    r"""Checks if a fits file is compliant to the FITS standard. """ +
+                    r"""If the option `--update_header` is enabled, the code will """ +
+                    r"""will try to fix (some of) the header issue found and """ +
+                    r"""the file will be modified on place (i.e., it will be rewritten)..""" + """\n""" + """\n""" +
+                    r"""This uses ESOAsg version {:s}""".format(__version__),
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog=EXAMPLES)
+
+    parser.add_argument("input_fits", nargs="+", type=str,
+                        help="Fits file name form which read the header. This may contain wildcards.")
+    parser.add_argument("-u", "--update_header", action="store_true", default=False,
+                        help="Update the header on place")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
+    return parser.parse_args()
+
+
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
+               r"""Check and correct (if necessary) """ +
+               r"""all files in the current directory: """ + """\n""" +
+               r"""> checkfits *.fits --update_header""" + """\n""" +
+               r""" """)
+
+
+if __name__ == '__main__':
+    # input arguments and tests
+    args = parse_arguments()
+
+    # File_names
+    input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
+
+    # Update header
+    update_header = args.update_header
+
+    msgs.start()
+
+    for file_name in input_fits_files:
+        if update_header:
+            valid_fits_file = checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=True)
+            if not valid_fits_file:
+                if checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=False):
+                    msgs.info('{} not valid, but header has been successfully corrected'.format(file_name))
+                else:
+                    msgs.warning('{} not valid, and corrections attempt failed'.format(file_name))
+            else:
+                msgs.warning('{} not valid'.format(file_name))
+        else:
+            valid_fits_file = checks.fits_file_is_valid(file_name, verify_fits=True, overwrite=False)
+        if not valid_fits_file:
+            msgs.warning('{} not valid'.format(file_name))
+        else:
+            msgs.info('{} valid'.format(file_name))
+
+    msgs.end()
