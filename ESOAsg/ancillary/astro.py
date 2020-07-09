@@ -12,6 +12,8 @@ import json
 import matplotlib
 from matplotlib import pyplot as plt
 STARTING_MATPLOTLIB_BACKEND = matplotlib.rcParams["backend"]
+from ligo.skymap.tool.ligo_skymap_contour import main as ligo_skymap_contour
+matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
 
 from astropy import units as u
 from astropy import constants
@@ -22,8 +24,7 @@ from os import path
 from os import remove
 from astroquery.mast import Mast
 from astroquery.mast import Observations
-from ligo.skymap.tool.ligo_skymap_contour import main as ligo_skymap_contour
-matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
+
 
 import healpy
 from astropy import wcs
@@ -56,6 +57,28 @@ def download_kepler_data(target_name):
         Observations.download_products(keplerFitsProds, mrp_only=False, cache=False)
     return True
 
+
+def download_tess_data(target_name):
+    r"""Run a query to MAST to obtain the TESS data of an object. Date are saved in the directories:
+    `./mastDownload/TESS/<target_name>_*/*.fits`
+
+    Args:
+        target_name (`str`):
+            Name of the target: e.g., '231663901'
+
+    Returns:
+        The code returns `True` if data are retrieved and `False` otherwise.
+
+    """
+    tess_obs = Observations.query_criteria(target_name=target_name, obs_collection='TESS')
+    if len(tess_obs) == 0:
+        msgs.warning('No TESS data for target {}'.format(target_name))
+        return False
+    for idx in np.arange(0, len(tess_obs)):
+        tessProds = Observations.get_product_list(tess_obs[idx])
+        tessFitsProds = Observations.filter_products(tessProds, extension='fits', mrp_only=False)
+        Observations.download_products(tessFitsProds, mrp_only=False, cache=False)
+    return True
 
 def download_gw_bayestar(superevent_name, file_name='bayestar.fits.gz'):
     r"""Download the bayestar.fits.gz of a GW superevent
