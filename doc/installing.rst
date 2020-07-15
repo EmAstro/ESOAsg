@@ -25,7 +25,7 @@ ESOAsg runs with `python <http://www.python.org/>`_ 3.7 and with the following d
 * `matplotlib <https://matplotlib.org/>`_ -- version 3.2 or later
 * `numpy <http://www.numpy.org/>`_ -- version 1.18.0 or later
 * `packaging <https://packaging.python.org/>`_ -- version 20.0 or later
-* `pytest <https://docs.pytest.org/>`_ version 6.0 or later
+* `pytest <https://docs.pytest.org/>`_ version 5.0 or later
 * `pyvo <https://pypi.org/project/pyvo/>`_ -- version 1.0 or later
 * `requests <https://requests.readthedocs.io/>`_ -- version 2.23 or later
 
@@ -73,6 +73,5 @@ In order to assess whether ESOAsg has been properly installed, we suggest you ru
 
 Go to a directory outside of the ESOAsg directory, then type mod_header::
 
-    cd ~
+    cd
     mod_header -h
-
