@@ -1,10 +1,12 @@
 # Required Packages for ESOAsg
-packaging>=19.0
-numpy>=1.16.0
-matplotlib>=3.1
 astropy>=4.0
 astroquery>=0.4
-photutils>=0.7.2
-IPython>=7.2.0
-pytest>=3.0.7
+IPython>=7.0
+matplotlib>=3.2
+numpy>=1.18.0
+packaging>=20.0
+pytest>=6.0
 pyvo>=1.0
+requests>=2.23
+healpy>=1.13
+ligo.skymap>=0.3

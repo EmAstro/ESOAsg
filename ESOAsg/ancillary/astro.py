@@ -7,7 +7,7 @@ http://www.eso.org/~mromanie/martino/Home.html
 
 import numpy as np
 import requests
-import json
+# import json
 
 import matplotlib
 from matplotlib import pyplot as plt
