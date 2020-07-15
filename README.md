@@ -4,7 +4,7 @@
 
 This is a collection of useful packages that can be used to validate data for the ESO archive [http://archive.eso.org/cms.html]
 
-# Requiements
+# Requirements
 see ./ESOAsg/requirements.txt
 
 # License
