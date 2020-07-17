@@ -2,7 +2,6 @@ r""" Load default values
 """
 
 import pkg_resources
-from ESOAsg import msgs
 
 
 class Default:
@@ -36,4 +35,4 @@ class Default:
         if card_name in self.default_dict:
             return self.default_dict[card_name]
         else:
-            msgs.error('{} Key not present in the default dictionary'.format(card_name))
+            raise ValueError('{} Key not present in the default dictionary'.format(card_name))

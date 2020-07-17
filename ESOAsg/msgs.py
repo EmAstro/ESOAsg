@@ -1,7 +1,5 @@
-"""
-Module for terminal log
-This is inspired by PypeIt: 
-https://github.com/pypeit/PypeIt
+r"""Module for terminal log
+This was inspired by `PypeIt<https://github.com/pypeit/PypeIt>`_
 """
 
 import sys
@@ -11,8 +9,9 @@ from ESOAsg import __version__
 
 class Messages:
     r"""Create coloured text for messages printed to screen.
+
     For further details on colours see the following example:
-    http://ascii-table.com/ansi-escape-sequences.php
+    `http://ascii-table.com/ansi-escape-sequences.php`_
 
     Args:
         colors (`bool`):
@@ -25,7 +24,7 @@ class Messages:
         # Verbosity level
         # 0 -> No message displayed
         # 1 -> Only Error Messages
-        # 2 -> Only Error and Info Messages
+        # 2 -> Only Error Messages and Info
         # 3 -> Everything
 
         self._verbosity = verbosity
@@ -53,61 +52,61 @@ class Messages:
             self.enable_colors()
 
     @staticmethod
-    def _print(premsg, msg):
+    def _print(pre_message, message):
         r"""Print to standard error
         """
-        _msg = premsg+msg
-        print(_msg, file=sys.stderr)
+        _message = pre_message+message
+        print(_message, file=sys.stderr)
 
-    def error(self, msg):
+    def error(self, message):
         r"""Print an error message
         """
-        premsg = '\n'+self._start + self._white_RD + '[ERROR]   ::' + self._end + ' '
-        self._print(premsg, msg)
+        pre_message = '\n'+self._start + self._white_RD + '[ERROR]   ::' + self._end + ' '
+        self._print(pre_message, message)
         self.newline()
         sys.exit(1)
 
-    def info(self, msg):
+    def info(self, message):
         r"""Print an information message
         """
-        premsg = self._start + self._green_CL + '[INFO]    ::' + self._end + ' '
-        self._print(premsg, msg)
+        pre_message = self._start + self._green_CL + '[INFO]    ::' + self._end + ' '
+        self._print(pre_message, message)
 
     def start(self):
         r"""Print a staring message
         """
-        premsg = self._start + self._green_CL + '[START]   ::' + self._end + ' '
-        self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        pre_message = self._start + self._green_CL + '[START]   ::' + self._end + ' '
+        self._print(pre_message, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
     def end(self):
         r"""Print a ending message
         """
-        premsg = self._start + self._red_CL + '[END]     ::' + self._end + ' '
-        self._print(premsg, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
+        pre_message = self._start + self._red_CL + '[END]     ::' + self._end + ' '
+        self._print(pre_message, '~~~~~~~~~~~~~~~~~~~~~~~~~~~~')
 
-    def warning(self, msg):
+    def warning(self, message):
         r"""Print a warning message
         """
-        premsg = self._start + self._red_CL + '[WARNING] ::' + self._end + ' '
-        self._print(premsg, msg)
+        pre_message = self._start + self._red_CL + '[WARNING] ::' + self._end + ' '
+        self._print(pre_message, message)
 
-    def bug(self, msg):
+    def bug(self, message):
         r"""Print a bug message
         """
-        premsg = self._start + self._white_BK + '[BUG]     ::' + self._end + ' '
-        self._print(premsg, msg)
+        pre_message = self._start + self._white_BK + '[BUG]     ::' + self._end + ' '
+        self._print(pre_message, message)
 
-    def work(self, msg):
+    def work(self, message):
         r"""Print a work in progress message
         """
-        premsg = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
-        self._print(premsg, msg)
+        pre_message = self._start + self._black_CL + '[WORKING] ::' + self._end + ' '
+        self._print(pre_message, message)
 
-    def pre_indent(self, msg):
+    def pre_indent(self, message):
         r"""Print an indent
         """
-        premsg = '             '
-        self._print(premsg, msg)
+        pre_message = '             '
+        self._print(pre_message, message)
 
     @staticmethod
     def newline():
