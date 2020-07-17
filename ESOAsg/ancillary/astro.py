@@ -360,6 +360,11 @@ def abmaglim(rms, seeing_fwhm, exptime=None, zero_point=None, sigma=5.):
     Returns:
         abmaglim (`float`):
             AB magnitude limit of for an image
+    
+    ..Note::
+
+        This is sill work in progress
+
     """
     msgs.work('Calculating {}-sigma AB mag limit'.format(sigma))
 
