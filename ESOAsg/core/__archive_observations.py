@@ -35,6 +35,7 @@ from ESOAsg import default
 from ESOAsg.ancillary import checks
 
 
+# TRANSFERRED IN TAP_QUERIES
 def _define_tap_service(verbose=False):
     r"""Load tap service from defaults
 
@@ -54,7 +55,7 @@ def _define_tap_service(verbose=False):
     tapobs = dal.tap.TAPService(default.get_value('eso_tap_obs'))
     return tapobs
 
-
+# TRANSFERRED IN TAP_QUERIES
 def _run_query(query, verbose=False, remove_bytes=True, maxrec=default.get_value('maxrec')):
     r"""Run tap query and return result as a table
 
@@ -86,6 +87,7 @@ def _run_query(query, verbose=False, remove_bytes=True, maxrec=default.get_value
     return result_from_query
 
 
+# TRANSFERRED IN TAP_QUERIES
 def _query_obscore_base():
     r"""Create the base string for a query to `ivoa.ObsCore`
 
