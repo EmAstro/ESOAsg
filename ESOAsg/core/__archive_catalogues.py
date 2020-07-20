@@ -17,30 +17,7 @@ from ESOAsg import default
 from ESOAsg.ancillary import checks
 
 
-def _is_table_at_eso(table_name):
-    r"""Check if a given table is present at ESO
 
-    Args:
-        table_name (`str`):
-            Table to be tested.
-    Returns:
-        is_at_eso (`bool`):
-            `True` if the table is present in tapcat. `False` and warning raised otherwise.
-    """
-    is_at_eso = True
-    # Check for presence of `table_name` on the ESO archive
-    eso_catalogues_all = all_catalogues(verbose=False, all_versions=True)
-    eso_catalogues = eso_catalogues_all['table_name'].data.data.tolist()
-    eso_version = eso_catalogues_all['last_version'].data.data.tolist()
-
-    if table_name not in eso_catalogues:
-        msgs.warning('Catalogue: {} not recognized. Possible values are:\n{}'.format(table_name, eso_catalogues))
-        is_at_eso = False
-    else:
-        if not eso_version[eso_catalogues.index(table_name)]:
-            msgs.warning('{} is not the most recent version of the queried catalogue'.format(table_name))
-
-    return is_at_eso
 
 
 def _are_columns_in_table(column_list, table_name):
@@ -69,10 +46,6 @@ def _are_columns_in_table(column_list, table_name):
             else:
                 msgs.warning('Column: {} not recognized'.format(column_test))
     return are_in_table
-
-
-
-
 
 def columns_in_catalogue(table_name, verbose=False):
     r"""Return the columns present in a table

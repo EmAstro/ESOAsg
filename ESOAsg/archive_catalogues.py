@@ -9,9 +9,9 @@ from ESOAsg.queries import query_catalogues
 
 
 def all_catalogues(verbose=False, all_versions=False):
-    r"""Load a list with all ESO catalogues
+    r"""Load an `astropy.table` with all ESO catalogues
 
-    For further information check `https://www.eso.org/qi/`
+    For further information check see the `ESO catalogue facility <https://www.eso.org/qi/>`_
 
     Args:
         verbose (`bool`):
@@ -22,9 +22,10 @@ def all_catalogues(verbose=False, all_versions=False):
 
     Returns:
         all_catalogues_table (`astropy.table`):
-            `astropy.table` containing: `cat_id`, `collection`, `table_name`, `title`, `number_rows`, `version`,
-            `acknowledgment` of all catalogues currently present at ESO. In addition the column `last_version` is added.
-            This is an attempt to remove obsolete catalogues based on the version number and the title of the catalogue.
+            `astropy.table` containing: `cat_id`, `collection`, `table_name`, `title`, `number_rows`,
+            `number_columns`, `version`, `acknowledgment` of all catalogues currently present at ESO.
+            In addition the column `last_version` is added. This flags obsolete catalogues based on the
+            version number and the title of the catalogue.
     """
     query_all_catalogues = query_catalogues.ESOCatalogues(query=tap_queries.create_query_all_catalogues(
         all_versions=all_versions))
@@ -32,7 +33,8 @@ def all_catalogues(verbose=False, all_versions=False):
     query_all_catalogues.run_query()
     # Sorting
     query_all_catalogues.result_from_query.sort(['collection', 'table_name', 'version'])
-    # Checking for obsolete
+    # Checking for obsolete and creating last_version column
+    # this is redundant in case `all_version` = True
     unique_titles = np.unique(query_all_catalogues.result_from_query['title'].data).tolist()
     last_version = np.zeros_like(query_all_catalogues.result_from_query['version'].data, dtype=bool)
     for unique_title in unique_titles:
@@ -48,4 +50,27 @@ def all_catalogues(verbose=False, all_versions=False):
     return query_all_catalogues.result_from_query
 
 
+def _is_table_at_eso(table_name):
+    r"""Check if a given table is present at ESO
 
+    Args:
+        table_name (`str`):
+            Table to be tested.
+    Returns:
+        is_at_eso (`bool`):
+            `True` if the table is present in tapcat. `False` and warning raised otherwise.
+    """
+    is_at_eso = True
+    # Check for presence of `table_name` on the ESO archive
+    eso_catalogues_all = all_catalogues(verbose=False, all_versions=True)
+    eso_catalogues = eso_catalogues_all['table_name'].data.data.tolist()
+    eso_version = eso_catalogues_all['last_version'].data.data.tolist()
+
+    if table_name not in eso_catalogues:
+        msgs.warning('Catalogue: {} not recognized. Possible values are:\n{}'.format(table_name, eso_catalogues))
+        is_at_eso = False
+    else:
+        if not eso_version[eso_catalogues.index(table_name)]:
+            msgs.warning('{} is not the most recent version of the queried catalogue'.format(table_name))
+
+    return is_at_eso

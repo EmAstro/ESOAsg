@@ -73,7 +73,11 @@ def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
             Result from the query to the TAP service
     """
     # Obtaining query results and convert it to an astropy table
-    result_from_query = tap_service.search(query=query, maxrec=maxrec).to_table()
+    if query is not None:
+        result_from_query = tap_service.search(query=query, maxrec=maxrec).to_table()
+    else:
+        msgs.warning('Empty query provided')
+        result_from_query = None
     return result_from_query
 
 

@@ -8,12 +8,11 @@ class ESOObservations(query.Query):
     r"""This class is designed to query the ESO archive for raw, reduced, and ambient data.
 
     """
-    tap_service = tap_queries.define_tap_service('eso_tap_obs')
 
-    def __init__(self):
-
-        super(ESOObservations, self).__init__()
-
+    def __init__(slef, query=None, result_from_query=None, maxrec=default.get_value('maxrec')):
+        # assign tap_service
+        super().__init__(tap_service=tap_queries.define_tap_service('eso_tap_obs'), query=query,
+                         result_from_query=result_from_query, maxrec=maxrec)
     '''
     def __init__(self, tap_service, query):
         self.tap_service = tap_queries.define_tap_service('eso_tap_obs')
