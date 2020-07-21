@@ -26,9 +26,9 @@ env:
         # to repeat them for all configurations.
         - FOLDERNAME='ESOAsg'
         - PYTHON_VERSION=3.7
-        - ASTROPY_VERSION=stable
-        - NUMPY_VERSION=stable
-        - SKLEARN_VERSION=stable
+        - ASTROPY_VERSION=4.0
+        - NUMPY_VERSION=1.18
+        #- SKLEARN_VERSION=stable
         - MAIN_CMD='python setup.py'
         - SETUP_CMD='test'
         - CONDA_DEPENDENCIES='astropy ipython matplotlib numpy packaging requests'
@@ -41,7 +41,7 @@ env:
         # are in astropy-ci-extras. If your package uses either of these,
         # add the channels to CONDA_CHANNELS along with any other channels
         # you want to use.
-        - CONDA_CHANNELS='astropy-ci-extras conda-forge anaconda'
+        - CONDA_CHANNELS='astropy-ci-extras conda-forge anaconda conda-forge/label/gcc7'
 
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
