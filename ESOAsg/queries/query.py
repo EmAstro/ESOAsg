@@ -27,3 +27,13 @@ class Query:
         r"""Print the query on the terminal
         """
         tap_queries.print_query(self.query)
+        return
+
+    def which_service(self):
+        r"""Return the `tap_service` that is used together with a description of it
+
+        Returns:
+            None
+        """
+        tap_queries.which_service(self.tap_service)
+        return
