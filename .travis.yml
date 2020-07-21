@@ -34,7 +34,7 @@ env:
         - SKLEARN_VERSION=stable
         - MAIN_CMD='python setup.py'
         - SETUP_CMD='test'
-        - CONDA_DEPENDENCIES='astropy ipython matplotlib numpy packaging pytest pyvo requests ligo.skymap'
+        - CONDA_DEPENDENCIES='astropy ipython matplotlib numpy packaging pyvo requests ligo.skymap'
         - PIP_DEPENDENCIES='extension_helpers'
         - EVENT_TYPE='pull_request push'
         - TASK='test'
@@ -135,6 +135,7 @@ install:
     # - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com/astropy/pyvo.git; fi
     - conda install astroquery -c astropy
     - conda install healpy -c conda-forge
+    - conda install ligo.skymap -c conda-forge
 
 script:
     - $MAIN_CMD $SETUP_CMD
