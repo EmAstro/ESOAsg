@@ -19,13 +19,13 @@ ESOAsg.core
 The archive_catalogues module
 +++++++++++++++++++++++++++++
 
-.. automodule:: ESOAsg.core.archive_catalogues
+.. automodule:: ESOAsg.archive_catalogues
    :members:
 
 The archive_observations module
 +++++++++++++++++++++++++++++++
 
-.. automodule:: ESOAsg.core.archive_observations
+.. automodule:: ESOAsg.archive_observations
    :members:
 
 ESOAsg.datacontainers

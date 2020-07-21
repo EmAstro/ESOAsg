@@ -22,7 +22,7 @@ from ESOAsg import msgs
 TAP_SERVICES = ['eso_tap_cat', 'eso_tap_obs']
 
 
-# I/O
+# I/O:
 
 def define_tap_service(which_tap_service):
     r"""Load a Table Access Protocol (TAP) service from defaults
@@ -80,22 +80,18 @@ def which_service(tap_service):
     tap_service.describe()
     return
 
-# Query builders
 
 def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
-    r"""Run tap query and return result as a table
+    r"""Run query to TAP service and return result as an `astropy.Table`
 
     Args:
-        tap_service (`pyvo.dal.tap.TAPService`)
-            TAP service that will be used for the queries
-        query (`str`):
-            Query to be run
-        maxrec (`int`, `None`):
-            Define the maximum number of entries that a single query can return
+        tap_service (`pyvo.dal.tap.TAPService`): TAP service that will be used for the query
+        query (`str`): query to be run
+        maxrec (`int`, optional): define the maximum number of entries that a single query can return. Default is set
+            by default.get_value('maxrec')
 
     Returns:
-        result_from_query (`astropy.Table`):
-            Result from the query to the TAP service
+        result_from_query (`astropy.Table`): result from the query to the TAP service
     """
     # Obtaining query results and convert it to an astropy table
     if query is not None:
@@ -105,6 +101,75 @@ def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
         result_from_query = None
     return result_from_query
 
+# Query builders:
+# This part of the module create some TAP queries to explore catalogues and observations
+
+# Catalogues:
+
+
+def create_query_all_catalogues(all_versions=False):
+    r"""Create TAP query that returns info on all catalogues in the ESO archive
+
+    Args:
+        all_versions (`bool`): if set to `True` also obsolete versions of the catalogues are listed
+
+    Returns:
+        query_all_catalogues (`str`): string containing the query to obtain all catalogues present in the ESO archive
+
+    """
+    query_all_catalogues = '''
+        SELECT 
+            table_name, collection, title, filter, publication_date, ref.description as description,
+            number_rows, number_columns, rel_descr_url, acknowledgment, cat_id, telescope, instrument, 
+            mjd_obs, mjd_end, skysqdeg, bibliography, document_id, version,
+            kc.from_column as from_column, k.target_table as target_table, kc.target_column as target_column
+        FROM
+            TAP_SCHEMA.tables as ref
+        LEFT OUTER JOIN 
+            TAP_SCHEMA.keys as k on ref.table_name = k.from_table 
+        AND
+            k.target_table in (SELECT
+                                    T.table_name
+                                FROM 
+                                    TAP_SCHEMA.tables as T
+                                WHERE 3 in (SELECT 
+                                                count(*) 
+                                            FROM
+                                                TAP_SCHEMA.columns
+                                            WHERE
+                                                table_name=T.table_name
+                                            AND
+                                                (ucd = 'pos.eq.ra;meta.main' OR
+                                                 ucd = 'pos.eq.dec;meta.main' OR
+                                                 ucd = 'meta.id;meta.main')
+                                            )
+                                )
+        LEFT OUTER JOIN 
+            TAP_SCHEMA.key_columns as kc on k.key_id=kc.key_id'''
+
+
+
+    if all_versions:
+        query_all_catalogues = '''
+            SELECT
+                cat_id, collection, table_name, title, number_rows, number_columns, version, acknowledgment
+            FROM 
+                TAP_SCHEMA.tables 
+            WHERE 
+                schema_name = 'safcat' '''
+    else:
+        query_all_catalogues = '''
+            SELECT
+                t1.cat_id, t1.collection, t1.table_name, t1.title, t1.number_rows, t1.number_columns, 
+                t1.version, t1.acknowledgment
+            FROM
+                tables t1
+                left outer JOIN tables t2 ON (t1.title = t2.title AND t1.version < t2.version)
+            WHERE
+                t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat' '''
+    return query_all_catalogues
+
+# Observations
 
 def create_query_obscore_base():
     r"""Create the base string for a query to `ivoa.ObsCore`
@@ -204,33 +269,4 @@ def condition_query_obscore_select_data_types(data_types_list):
     return query_select_data_types
 
 
-def create_query_all_catalogues(all_versions=False):
-    r"""Create TAP query that returns all the catalogues in the ESO archive
 
-    Args:
-        all_versions (`bool`):
-            if set to `True` also obsolete versions of the catalogues are listed.
-
-    Returns:
-        query_all_catalogues (`str`):
-            string containing the query to obtain all catalogues present in the ESO archive
-    """
-    if all_versions:
-        query_all_catalogues = '''
-            SELECT
-                cat_id, collection, table_name, title, number_rows, number_columns, version, acknowledgment
-            FROM 
-                TAP_SCHEMA.tables 
-            WHERE 
-                schema_name = 'safcat' '''
-    else:
-        query_all_catalogues = '''
-            SELECT
-                t1.cat_id, t1.collection, t1.table_name, t1.title, t1.number_rows, t1.number_columns, 
-                t1.version, t1.acknowledgment
-            FROM
-                tables t1
-                left outer JOIN tables t2 ON (t1.title = t2.title AND t1.version < t2.version)
-            WHERE
-                t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat' '''
-    return query_all_catalogues

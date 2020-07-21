@@ -18,7 +18,7 @@ python and dependencies
 
 ESOAsg runs with `python <http://www.python.org/>`_ 3.7 and with the following dependencies:
 
-* `python <http://www.python.org/>`_ version 3.7 or later
+* `python <http://www.python.org/>`_ -- version 3.7 or later
 * `astropy <https://www.astropy.org/>`_ -- version 4.0 or later
 * `astroquery <https://astroquery.readthedocs.io/en/latest/>`_ -- version 0.4 or later
 * `IPython <https://ipython.org>`_ -- version 7.13 or later
