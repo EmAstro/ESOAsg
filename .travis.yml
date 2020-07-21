@@ -109,10 +109,10 @@ matrix:
 
         # Try numpy 1.18
         - os: linux
-          env: PYTHON_VERSION=3.7 NUMPY_VERSION=1.18
+          env: NUMPY_VERSION=1.18
         # Try numpy pre-release
         - os: linux
-          env: PYTHON_VERSION=3.7 NUMPY_VERSION=prerelease
+          env: NUMPY_VERSION=prerelease
                EVENT_TYPE='pull_request push cron'
 
         # Do a PEP8 test with pycodestyle
@@ -130,9 +130,9 @@ install:
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
     # - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL git+https://github.com/astropy/pyvo.git; fi
-    - conda install astroquery -c astropy
-    - conda install healpy -c conda-forge
-    - conda install ligo.skymap -c conda-forge
+    # - conda install astroquery -c astropy
+    # - conda install healpy -c conda-forge
+    # - conda install ligo.skymap -c conda-forge
 
 script:
     - $MAIN_CMD $SETUP_CMD
