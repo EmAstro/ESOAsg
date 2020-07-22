@@ -16,9 +16,12 @@ Get Started
    :maxdepth: 1
 
    installing
+   thisversion
+
 
 Archive access
 ==============
+
 
 .. toctree::
    :maxdepth: 2

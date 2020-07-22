@@ -13,11 +13,11 @@ def get_scripts():
     r"""Grab scripts in the bin directory and in the sub-folder.
     """
     scripts, scriptsAsg = [], []
-    if os.path.isdir('ESOAsg/bin'):
-        scripts = [fname for fname in glob.glob(os.path.join('ESOAsg/bin', '*'))
+    if os.path.isdir('bin'):
+        scripts = [fname for fname in glob.glob(os.path.join('bin', '*'))
                    if not os.path.basename(fname).endswith('.rst') and not os.path.isdir(fname)]
-    if os.path.isdir('ESOAsg/bin/ASGSpecific'):
-        scriptsAsg = [fname for fname in glob.glob(os.path.join('ESOAsg/bin/ASGSpecific', '*'))
+    if os.path.isdir('bin/ASGSpecific'):
+        scriptsAsg = [fname for fname in glob.glob(os.path.join('bin/ASGSpecific', '*'))
                       if not os.path.basename(fname).endswith('.rst')]
     scripts.extend(scriptsAsg)
     return scripts
