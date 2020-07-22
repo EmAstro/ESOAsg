@@ -119,9 +119,9 @@ def create_query_all_catalogues(all_versions=False):
     """
     query_all_catalogues = '''
         SELECT 
-            table_name, collection, title, filter, publication_date, ref.description as description,
-            number_rows, number_columns, rel_descr_url, acknowledgment, cat_id, telescope, instrument, 
-            mjd_obs, mjd_end, skysqdeg, bibliography, document_id, version,
+            collection, title, version, table_name, filter, instrument, telescope, publication_date, 
+            ref.description as description, number_rows, number_columns, rel_descr_url, acknowledgment, cat_id, 
+            mjd_obs, mjd_end, skysqdeg, bibliography, document_id,
             kc.from_column as from_column, k.target_table as target_table, kc.target_column as target_column
         FROM
             TAP_SCHEMA.tables as ref
@@ -147,29 +147,27 @@ def create_query_all_catalogues(all_versions=False):
         LEFT OUTER JOIN 
             TAP_SCHEMA.key_columns as kc on k.key_id=kc.key_id'''
 
-
-
-    if all_versions:
-        query_all_catalogues = '''
-            SELECT
-                cat_id, collection, table_name, title, number_rows, number_columns, version, acknowledgment
-            FROM 
-                TAP_SCHEMA.tables 
-            WHERE 
-                schema_name = 'safcat' '''
-    else:
-        query_all_catalogues = '''
-            SELECT
-                t1.cat_id, t1.collection, t1.table_name, t1.title, t1.number_rows, t1.number_columns, 
-                t1.version, t1.acknowledgment
-            FROM
-                tables t1
-                left outer JOIN tables t2 ON (t1.title = t2.title AND t1.version < t2.version)
+    if not all_versions:
+        query_last_version_only = '''
             WHERE
-                t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat' '''
+                cat_id in (SELECT
+                                cat_id
+                           FROM (SELECT
+                                    t1.cat_id cat_id
+                                 FROM
+                                    TAP_SCHEMA.tables t1
+                                 LEFT OUTER JOIN
+                                    TAP_SCHEMA.tables t2 on (t1.title = t2.title and t1.version < t2.version)
+                                 WHERE
+                                    t2.title is null
+                                )
+                            t)'''
+        query_all_catalogues = query_all_catalogues + query_last_version_only
+
     return query_all_catalogues
 
 # Observations
+
 
 def create_query_obscore_base():
     r"""Create the base string for a query to `ivoa.ObsCore`

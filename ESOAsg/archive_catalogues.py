@@ -30,23 +30,12 @@ def all_catalogues(verbose=False, all_versions=False):
     query_all_catalogues = query_catalogues.ESOCatalogues(query=tap_queries.create_query_all_catalogues(
         all_versions=all_versions))
     # Obtaining query results
-    query_all_catalogues.run_query()
+    query_all_catalogues.run_query(to_string=True)
     # Sorting
     query_all_catalogues.result_from_query.sort(['collection', 'table_name', 'version'])
     # Checking for obsolete and creating last_version column
     # this is redundant in case `all_version` = True
-    unique_titles = np.unique(query_all_catalogues.result_from_query['title'].data).tolist()
-    last_version = np.zeros_like(query_all_catalogues.result_from_query['version'].data, dtype=bool)
-    for unique_title in unique_titles:
-        most_recent_version = np.nanmax(
-            query_all_catalogues.result_from_query['version'].data[(query_all_catalogues.result_from_query[
-                                                                                  'title'].data == unique_title)])
-        last_version[(query_all_catalogues.result_from_query['title'].data == unique_title) &
-                     (query_all_catalogues.result_from_query['version'].data == most_recent_version)] = True
-    query_all_catalogues.result_from_query.add_column(MaskedColumn(data=last_version, name='last_version', dtype=bool,
-                                                 description='True if this is the latest version of the catalog'))
-    query_all_catalogues.result_from_query['table_name'].data.data[:] = checks.from_bytes_to_string(query_all_catalogues.result_from_query[
-                                                                                      'table_name'].data.data)
+    query_all_catalogues.set_last_version(update=True)
     return query_all_catalogues.result_from_query
 
 
