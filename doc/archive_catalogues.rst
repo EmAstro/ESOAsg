@@ -15,10 +15,35 @@ Please, when you use data from the archive, follow the :doc:`datapolicy`.
 Overview
 ========
 
+The module `archive_catalogue` is based on the `query.ESOCatalogues` class (a child of the `query.Query` class) that has the following attributes:
 
+* `query` -- A string that contains the query to be perfomed via the TAP Service `tap_cat`
+* `result_from_query` -- A table containing the result of the query
+* `maxrec` -- An integer that the define the maximum number of records that will be returned for a query
+
+After defining a `query` the `result_from_query` attribute is automatically filled by the method `run_query()`, for instance:
+::
+
+    from ESOAsg.queries import query_catalogues
+    # define a query to obtain all `table_name` in the ESO Archive
+    query = 'SELECT schema_name, table_name from TAP_SCHEMA.tables'
+    # instantiate the class
+    catalogue_list = query_catalogues.ESOCatalogues(query=query)
+    # run the query
+    catalogue_list.run_query()
+    # print the result on terminal
+    catalogue_list.result_from_query.pprint()
+
+The module `archive_catalogue` provides a set of additional quality-of-life functions to circumvent the actual creation of the queries.
+These allow one to directly obtain the information needed in a `table` format.
 
 Some examples
 =============
+
+.. note::
+   The way the queries are created allows one to set as input either `collections` or `tables`.
+   We strongly discurage to use both at the same times however.
+   Given that the connector between the two conditions is an `AND` this may give rise to an un-expected behaviour
 
 Which catalogues are available
 ------------------------------
@@ -48,9 +73,94 @@ or this one to obtain `only the latest version of the catalogues <http://archive
     WHERE
        t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat'
 
-Alternatively, it is possible to obtain an `astropy.table` containing information on all catalogues (and all their versions) using:
+Alternatively, it is possible to obtain an `astropy.table` containing information on all catalogues and all their versions using (note that the query is more complicated of the ones above because more information are collected):
 ::
 
     from ESOAsg import archive_catalogues
     archive_catalogues.all_catalogues(all_versions=True)
 
+This returns an `astropy.table` containing:
+
++------------------+-----------------------------------------------------------------------------------------+
+| Column name      | Description                                                                             |
++==================+=========================================================================================+
+| collection       | Name of the Phase 3 collection the catalog belongs to                                   |
++------------------+-----------------------------------------------------------------------------------------+
+| title            | Title of the catalog                                                                    |
++------------------+-----------------------------------------------------------------------------------------+
+| version          | Version of the catalog                                                                  |
++------------------+-----------------------------------------------------------------------------------------+
+| table_name       | The fully qualified table name                                                          |
++------------------+-----------------------------------------------------------------------------------------+
+| filter           | Name(s) of the filter bandpasses the original data were aquired with                    |
++------------------+-----------------------------------------------------------------------------------------+
+| instrument       | Name(s) of the instrument(s) the original data were acquired with                       |
++------------------+-----------------------------------------------------------------------------------------+
+| telescope        | Name(s) of the telescope(s) the original data were acquired with                        |
++------------------+-----------------------------------------------------------------------------------------+
+| publication_date | The data the catalog was published                                                      |
++------------------+-----------------------------------------------------------------------------------------+
+| description      | Describes tables in the tableset                                                        |
++------------------+-----------------------------------------------------------------------------------------+
+| number_rows      | Number of rows present in this version of the catalog                                   |
++------------------+-----------------------------------------------------------------------------------------+
+| number_columns   | Number of columns present in this version of the catalog                                |
++------------------+-----------------------------------------------------------------------------------------+
+| rel_descr_url    | Location of the release description document (typically a pdf)                          |
++------------------+-----------------------------------------------------------------------------------------+
+| acknowledgment   | It provides the sentence to be used in your publication when making use of this catalog |
++------------------+-----------------------------------------------------------------------------------------+
+| cat_id           | Internal catalog identifier,                                                            |
++------------------+-----------------------------------------------------------------------------------------+
+| mjd_obs          | The observational data this catalog is based were taken between mjd_obs and mjd_end     |
++------------------+-----------------------------------------------------------------------------------------+
+| mjd_end          | The observational data this catalog is based were taken between mjd_obs and mjd_end     |
++------------------+-----------------------------------------------------------------------------------------+
+| skysqdeg         | Area of the sky (in square degrees) covered by this catalog                             |
++------------------+-----------------------------------------------------------------------------------------+
+| bibliography     | Bibliographic reference in the form of either a BIBCODE or a DOI                        |
++------------------+-----------------------------------------------------------------------------------------+
+| document_id      | Internal identifier of the release description document [#foot_cat]_                    |
++------------------+-----------------------------------------------------------------------------------------+
+| from_column      | Column in the from_table                                                                |
++------------------+-----------------------------------------------------------------------------------------+
+| target_table     | The table with the primary key                                                          |
++------------------+-----------------------------------------------------------------------------------------+
+| target_column    | Column in the target_table                                                              |
++------------------+-----------------------------------------------------------------------------------------+
+| last_version     | True if this is the latest version of the catalog                                       |
++------------------+-----------------------------------------------------------------------------------------+
+| RA_id            | Identifier for RA in the catalog                                                        |
++------------------+-----------------------------------------------------------------------------------------+
+| Dec_id           | Identifier for Dec in the catalog                                                       |
++------------------+-----------------------------------------------------------------------------------------+
+
+.. note::
+   At first sight it may seem that not all catalogs have the `RA_id` and `Dec_id`.
+   This is because the catalogue is spreaded into more than one table.
+   To identify the same source among the differnt tables of a catalogue the `target_table` and `target_column` should be used.
+
+Which columns are in a catalog
+------------------------------
+
+It is possible to get information on all columns present in a catalogue by running the following `TAP query <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20table_name%2C%20column_name%2C%20ucd%2C%20datatype%2C%20description%2C%20unit%0AFROM%20TAP_SCHEMA.columns%0AWHERE%20table_name%20%3D%20'viking_er5_zyjj_1j_2hks_catMetaData_fits_V4'%0A&>`_ for the `VIKING DR4 <https://www.eso.org/rm/api/v1/public/releaseDescriptions/135>`_ catalogue:
+::
+
+    SELECT 
+        table_name, column_name, ucd, datatype, description, unit
+    FROM 
+        TAP_SCHEMA.columns
+    WHERE 
+        table_name = 'viking_er5_zyjj_1j_2hks_catMetaData_fits_V4'
+
+A similar result can be obtained running:
+::
+
+    archive_catalogues.columns_info(tables='viking_er5_zyjj_1j_2hks_catMetaData_fits_V4')
+
+where the result is stored in an `astropy.table`. 
+
+
+.. rubric:: Footnotes
+
+.. [#foot_cat] The web user interface for this catalog is reachable via the URL computed appending the `cat_id` to the string: https://www.eso.org/qi/catalogQuery/index/

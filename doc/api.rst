@@ -13,8 +13,8 @@ Scripts
   * mod_header
 
 
-ESOAsg.core
------------
+ESOAsg
+------
 
 The archive_catalogues module
 +++++++++++++++++++++++++++++
@@ -26,6 +26,16 @@ The archive_observations module
 +++++++++++++++++++++++++++++++
 
 .. automodule:: ESOAsg.archive_observations
+   :members:
+
+
+ESOAsg.core
+-----------
+
+The tap_queries module
+++++++++++++++++++++++
+
+.. automodule:: ESOAsg.core.tap_queries
    :members:
 
 ESOAsg.datacontainers

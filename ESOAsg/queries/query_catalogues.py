@@ -28,8 +28,11 @@ class ESOCatalogues(query.Query):
         column is already present, a warning is raised.
 
         Args:
-            update (`bool`): in case the `last_version` column is already present the code will update the value only
+            update (bool): in case the `last_version` column is already present the code will update the value only
                 if `update` is set to `True`
+
+        Returns:
+            None
 
         """
         # Require that title and version are present in result_from_query

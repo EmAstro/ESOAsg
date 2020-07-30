@@ -15,6 +15,27 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 
+def from_string_to_list(string):
+    r"""Given an input string a list containing the string is returned
+
+    Args:
+        string (str): string that need to be converted into a list
+
+    Returns
+        list: list containing the str as element
+
+    """
+    if string is None:
+        return None
+    elif isinstance(string, list):
+        return string
+    elif isinstance(string, str):
+        return [string]
+    else:
+        msgs.error('Not valid type for: {}'.format(string))
+    return
+
+
 def from_bytes_to_string(input_in_bytes):
     r"""Given an input in `bytes` return it the corresponding `str`
 
@@ -22,12 +43,11 @@ def from_bytes_to_string(input_in_bytes):
     the input is not `bytes` nothing is changed.
 
     Args:
-        input_in_bytes (`bytes`)
-            Input in bytes
+        input_in_bytes (bytes): input in bytes
 
     Returns:
-        output_as_str (`str`)
-            Output converted to a string
+        str: output converted into a string
+
     """
     if isinstance(input_in_bytes, bytes):
         output_as_str = np.str(input_in_bytes.decode("utf-8"))
@@ -190,6 +210,7 @@ def check_checksums(hdul):
             msgs.warning('Datasum not present')
             is_good_checksum = False
     return is_good_checksum
+
 
 def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
     r"""Check if a 2D image is valid

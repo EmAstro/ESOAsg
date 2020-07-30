@@ -14,7 +14,7 @@ class Query:
         maxrec (`int`)
     """
 
-    def __init__(self, tap_service=None, query=None, result_from_query=None, maxrec=default.get_value('maxrec')):
+    def __init__(self, tap_service=None, query=None, result_from_query=None, maxrec=None):
         self.tap_service = tap_service
         self.query = query
         self.result_from_query = result_from_query
@@ -30,6 +30,15 @@ class Query:
         """
         self.result_from_query = None
 
+    def get_result_from_query(self):
+        r"""Returns a copy of `result_from_query`
+        """
+        if self.result_from_query is None:
+            copy_of_result_from_query = None
+        else:
+            copy_of_result_from_query = self.result_from_query.copy()
+        return copy_of_result_from_query
+
     def run_query(self, to_string=True):
         r"""Run the query and store results in the `result_from_query` attribute
 
@@ -37,7 +46,7 @@ class Query:
             to_string (`bool`, optional): if set to True, if a column is in `bytes` format it transform it to `str`
 
         """
-        self.result_from_query = tap_queries.run_query(self.tap_service, self.query)
+        self.result_from_query = tap_queries.run_query(self.tap_service, self.query, maxrec=self.maxrec)
         if to_string:
             for column_id in self.which_columns():
                 self.result_from_query[column_id].data.data[:] = checks.from_bytes_to_string(self.result_from_query[
@@ -68,5 +77,5 @@ class Query:
             msgs.warning('`result_from_query` is empty. You may want to run the query first')
             list_of_columns = []
         else:
-            list_of_columns = self.which_columns.colnames
+            list_of_columns = self.result_from_query.colnames
         return list_of_columns
