@@ -424,3 +424,32 @@ def _is_column_in_catalogues(column_name, collections=None, tables=None):
         msgs.warning('Column: {} not recognized. Possible values are:\n{}'.format(column_name, all_column_list))
         is_at_eso = False
     return is_at_eso
+
+
+'''
+def query_from_radec(table_names, position, radius=None, maxrec=default.get_value('maxrec')):
+    r"""Query the ESO tap_cat service (link defined in `ESOAsg\default.txt`) for a specific a specific location.
+
+    The `position` needs to be given as an `astropy.coordinates.SkyCoord` object.
+
+    Args:
+        table_names (`list`):
+            list of the tables to be queried. To check the full list of catalogues run `all_catalogues()`
+        position (`astropy.coordinates.SkyCoord`):
+            Coordinates of the sky you want to query in the format of an `astropy.coordinates.SkyCoord` object. Note
+            that at the moment it works for one target at the time. For further detail see here:
+            `astropy coordinates <https://docs.astropy.org/en/stable/coordinates/>`_
+        radius (`float`):
+            Search radius you want to query in arcseconds. Note that in case `None` is given, the query will be
+            performed with the `CONTAINS(POINT('',RA,Dec), s_region)` clause instead of the
+            `CONTAINS(s_region,CIRCLE('',RA,Dec,radius/3600.))` one. See here for further examples:
+            `tap obs examples <http://archive.eso.org/tap_obs/examples>`_
+        maxrec (`numpy.int`):
+            Define the maximum number of file that a single query can return from the ESO archive. You probably never
+            need this. By default is set by the `default.txt` file.
+
+    Returns:
+        result_from_query (`astropy.Table`):
+            Result from the query to the TAP service
+    """
+'''

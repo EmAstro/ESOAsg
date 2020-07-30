@@ -95,6 +95,8 @@ def which_service(tap_service):
 def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
     r"""Run query to TAP service and return result as an `astropy.Table`
 
+    If the job requires to much time to run, the code will move to an asynchronous query.
+
     Args:
         tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
         query (str): query to be run
@@ -109,23 +111,66 @@ def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
     if query is not None:
         try:
             result_from_query = tap_service.search(query=query, maxrec=maxrec).to_table()
-        except ValueError:
-            msgs.warning('ValueError: The query timed out. Trying `async` instead')
-            result_from_query = tap_service.run_async(query=query, maxrec=maxrec).to_table()
-        except DALQueryError:
-            msgs.warning('DALQueryError: The query timed out. Trying `async` instead')
-            result_from_query = tap_service.run_async(query=query, maxrec=maxrec).to_table()
-        except DALFormatError:
-            msgs.warning('DALFormatError: The query timed out. Trying `async` instead')
-            result_from_query = tap_service.run_async(query=query, maxrec=maxrec).to_table()
+        except (ValueError, DALQueryError, DALFormatError):
+            msgs.warning('The query timed out. Trying `async` instead')
+            result_from_query = run_query_async(tap_service=tap_service, query=query, maxrec=maxrec)
     else:
         msgs.warning('Empty query provided')
         result_from_query = None
     return result_from_query
 
 
+def run_query_async(tap_service, query, maxrec=default.get_value('maxrec')):
+    r"""
+
+    Args:
+        tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
+        query (str): query to be run
+        maxrec (int): define the maximum number of entries that a single query can return. Default is set
+            by default.get_value('maxrec')
+
+    Returns:
+        astropy.table: result from the query to the TAP service
+
+    """
+    tap_job = tap_service.submit_job(query=query, maxrec=maxrec)
+    tap_job.run()
+    # Wait for Executing
+    tap_job.wait(phases=["EXECUTING", "ERROR", "ABORTED"], timeout=10.)
+    msgs.info('The query to the tap_service is in the status: {}'.format(str(tap_job.phase)))
+    # Wait for Completed
+    tap_job.wait(phases=["COMPLETED", "ERROR", "ABORTED"], timeout=10.)
+    msgs.info('The query to the tap_service is in the status: {}'.format(str(tap_job.phase)))
+    # Fetch the results
+    tap_job.raise_if_error()
+    return tap_job.fetch_result().to_table()
+
 # Query builders:
-# This part of the module create some TAP queries to explore catalogues and observations
+
+# General
+
+def _create_comma_separated_list(list_of_strings):
+    r"""Given a list of strings, returns them in a single string using comma as separator
+
+    If `list_of_string is None, a `*` character is returned
+
+    Args:
+        list_of_strings (list, optional): list of `str`
+
+    Returns:
+        str: single string containing all the entries of the input list separated by a comma
+
+    """
+    if list_of_strings is None:
+        final_string = '*'
+    else:
+        final_string = ' '
+        for single_string in list_of_strings:
+            final_string = final_string + ', ' + single_string
+        # remove initial `,`
+        final_string = final_string.strip()[2:]
+    return final_string
+
 
 # Catalogues:
 
@@ -318,29 +363,6 @@ def create_query_table(table_name, columns=None):
     return query
 
 
-def _create_comma_separated_list(list_of_strings):
-    r"""Given a list of strings, returns them in a single string using comma as separator
-
-    If `list_of_string is None, a `*` character is returned
-
-    Args:
-        list_of_strings (list, optional): list of `str`
-
-    Returns:
-        str: single string containing all the entries of the input list separated by a comma
-
-    """
-    if list_of_strings is None:
-        final_string = '*'
-    else:
-        final_string = ' '
-        for single_string in list_of_strings:
-            final_string = final_string + ', ' + single_string
-        # remove initial `,`
-        final_string = final_string.strip()[2:]
-    return final_string
-
-
 # Observations
 
 
@@ -348,14 +370,7 @@ def create_query_obscore_base():
     r"""Create the base string for a query to `ivoa.ObsCore`
 
     Returns:
-        query (`str`):
-            Base for the `ivoa.ObsCore` query::
-
-                SELECT
-                    target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, dataproduct_type, instrument_name,
-                    obstech, abmaglim, proposal_id, obs_collection
-                FROM
-                    ivoa.ObsCore
+        str: Base for the `ivoa.ObsCore` queries
 
     """
     query_base = '''
@@ -368,19 +383,18 @@ def create_query_obscore_base():
     return query_base
 
 
-def condition_query_obscore_intersect_ra_dec(ra, dec, radius=None):
-    r"""Create the where condition string for a query to `ivoa.ObsCore`
+def condition_intersect_ra_dec(ra, dec, radius=None):
+    r"""Create the WHERE INTERSECTS condition string for a query
 
     Args:
-        ra (`float`):
-            RA of the target in degrees and in the ICRS system
-        dec (`float`):
-            Dec of the target in degrees and in the ICRS system
-        radius (`float`):
-            Search radius in arcsec. If set to `None` no radius will be considered in the INTERSECT condition
+        ra (float): RA of the target in degrees and in the ICRS system
+        dec (float): Dec of the target in degrees and in the ICRS system
+        radius (float, optional): Search radius in arcsec. If set to `None` no radius will be considered in the
+            INTERSECT condition
+
     Returns:
-        query_intersect_ra_dec (`str`):
-            String containing the WHERE INTERSECT condition for a query
+        str: String containing the WHERE INTERSECT condition for a query
+
     """
     if radius is None:
         query_intersect_ra_dec = '''
