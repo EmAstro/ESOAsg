@@ -153,7 +153,8 @@ def columns_info(collections=None, tables=None, verbose=False):
     return all_columns_table
 
 
-def get_catalogues(collections=None, tables=None, columns=None, all_versions=False, maxrec=None, verbose=False):
+def get_catalogues(collections=None, tables=None, columns=None, type_of_query='sync', all_versions=False,
+                   maxrec=None, verbose=False):
     r"""Query the ESO tap_cat service for specific catalogues
 
     There are two ways to select the catalogues you are interested in. Either you select directly the table_name (or the
@@ -165,13 +166,14 @@ def get_catalogues(collections=None, tables=None, columns=None, all_versions=Fal
     table
 
     Args:
-        collections (any): list of `str` containing the names (or a single `str`) of the collections for which the
-            query will be limited
+        collections (any): list of `str` containing the names (or a single `str`) of the collections for
+            which the query will be limited
         tables (any): list of `str` containing the table_name of the tables for which the query will be limited
         columns (any): list of the `column_name` that you want to download. The full list of the columns in a
             table can be found by running `columns_info()`
         all_versions (bool): if set to `True` also obsolete versions of the catalogues are searched in case
             `collections` is given
+        type_of_query (str): type of query to be run
         maxrec (int, optional): define the maximum number of entries that a single query can return. If it is `None` the
             value is set by the limit of the service.
         verbose (bool): if set to `True` additional info will be displayed
@@ -208,7 +210,7 @@ def get_catalogues(collections=None, tables=None, columns=None, all_versions=Fal
         # instantiate ESOCatalogues
         query_table = query_catalogues.ESOCatalogues(query=tap_queries.create_query_table(table_name,
                                                                                           columns=columns_in_table),
-                                                     maxrec=maxrec_for_table)
+                                                     type_of_query=type_of_query, maxrec=maxrec_for_table)
         if verbose:
             query_table.print_query()
         query_table.run_query(to_string=True)
@@ -428,7 +430,7 @@ def _is_column_in_catalogues(column_name, collections=None, tables=None):
 
 '''
 def query_from_radec(table_names, position, radius=None, maxrec=default.get_value('maxrec')):
-    r"""Query the ESO tap_cat service (link defined in `ESOAsg\default.txt`) for a specific a specific location.
+    r"""Query the ESO tap_cat service for a specific a specific location.
 
     The `position` needs to be given as an `astropy.coordinates.SkyCoord` object.
 

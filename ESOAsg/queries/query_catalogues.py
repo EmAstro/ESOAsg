@@ -14,10 +14,10 @@ class ESOCatalogues(query.Query):
     r"""This class is designed to query the ESO archive for raw, reduced, and ambient data.
 
     """
-    def __init__(self, query=None, result_from_query=None, maxrec=default.get_value('maxrec')):
+    def __init__(self, query=None, result_from_query=None, type_of_query='sync', maxrec=default.get_value('maxrec')):
         # assign tap_service
         super().__init__(tap_service=tap_queries.define_tap_service('eso_tap_cat'), query=query,
-                         result_from_query=result_from_query, maxrec=maxrec)
+                         result_from_query=result_from_query, type_of_query=type_of_query, maxrec=maxrec)
 
     def set_last_version(self, update=True):
         r"""Set the `last_version` column to the `result_from_query` attribute

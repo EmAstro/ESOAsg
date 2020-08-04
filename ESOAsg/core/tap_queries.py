@@ -30,6 +30,8 @@ from ESOAsg import msgs
 
 # currently supported tap services
 TAP_SERVICES = ['eso_tap_cat', 'eso_tap_obs']
+# type of queries currently allowed
+TAP_QUERY_TYPES = ['sync', 'async']
 
 
 # I/O:
@@ -92,10 +94,41 @@ def which_service(tap_service):
     return
 
 
-def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
+def run_query(tap_service, query, type_of_query, maxrec=default.get_value('maxrec')):
     r"""Run query to TAP service and return result as an `astropy.Table`
 
     If the job requires to much time to run, the code will move to an asynchronous query.
+
+    Args:
+        tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
+        query (str): query to be run
+        type_of_query (str): type of query to be run
+        maxrec (int): define the maximum number of entries that a single query can return. Default is set
+            by default.get_value('maxrec')
+
+    Returns:
+        astropy.table: result from the query to the TAP service
+
+    """
+    if type_of_query not in TAP_QUERY_TYPES:
+        msgs.error('{} not a valid entry for the type of TAP query. Possibilities are: {}'.format(type_of_query,
+                                                                                                  TAP_QUERY_TYPES))
+    # Obtaining query results and convert it to an astropy table
+    if query is not None:
+        if type_of_query == 'sync':
+            result_from_query = run_query_sync(tap_service, query, maxrec=maxrec)
+        else:
+            result_from_query = run_query_async(tap_service, query, maxrec=maxrec)
+    else:
+        msgs.warning('Empty query provided')
+        result_from_query = None
+    return result_from_query
+
+
+def run_query_sync(tap_service, query, maxrec=default.get_value('maxrec')):
+    r"""Run a synchronous query to TAP service and return result as an `astropy.Table`
+
+    If the synchronous query fails, the code automatically tries to run the same query asynchronously
 
     Args:
         tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
@@ -107,21 +140,16 @@ def run_query(tap_service, query, maxrec=default.get_value('maxrec')):
         astropy.table: result from the query to the TAP service
 
     """
-    # Obtaining query results and convert it to an astropy table
-    if query is not None:
-        try:
-            result_from_query = tap_service.search(query=query, maxrec=maxrec).to_table()
-        except (ValueError, DALQueryError, DALFormatError):
-            msgs.warning('The query timed out. Trying `async` instead')
-            result_from_query = run_query_async(tap_service=tap_service, query=query, maxrec=maxrec)
-    else:
-        msgs.warning('Empty query provided')
-        result_from_query = None
+    try:
+        result_from_query = tap_service.search(query=query, maxrec=maxrec).to_table()
+    except (ValueError, DALQueryError, DALFormatError):
+        msgs.warning('The query timed out. Trying `async` instead')
+        result_from_query = run_query_async(tap_service=tap_service, query=query, maxrec=maxrec)
     return result_from_query
 
 
 def run_query_async(tap_service, query, maxrec=default.get_value('maxrec')):
-    r"""
+    r"""Run an asynchronous query to TAP service and return result as an `astropy.Table`
 
     Args:
         tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
@@ -148,6 +176,7 @@ def run_query_async(tap_service, query, maxrec=default.get_value('maxrec')):
 # Query builders:
 
 # General
+
 
 def _create_comma_separated_list(list_of_strings):
     r"""Given a list of strings, returns them in a single string using comma as separator

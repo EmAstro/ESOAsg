@@ -10,15 +10,23 @@ class Query:
     Attributes:
         tap_service (`str`)
         query (`str`)
+        type_of_query (`str`)
         result_from_query (`str`)
         maxrec (`int`)
     """
 
-    def __init__(self, tap_service=None, query=None, result_from_query=None, maxrec=None):
+    def __init__(self, tap_service=None, query=None, type_of_query='sync', result_from_query=None, maxrec=None):
         self.tap_service = tap_service
         self.query = query
         self.result_from_query = result_from_query
         self.maxrec = maxrec
+        if type_of_query not in tap_queries.TAP_QUERY_TYPES:
+            msgs.warning('{} not a valid entry for the type of TAP query. Possibilities are: {}'.format(
+                type_of_query, tap_queries.TAP_QUERY_TYPES))
+            msgs.warning('The `type_of_query` attribute will be set to `sync`')
+            self.type_of_query = 'sync'
+        else:
+            self.type_of_query = type_of_query
 
     def clean_query(self):
         r"""Set the `query` attribute to None
@@ -46,7 +54,8 @@ class Query:
             to_string (`bool`, optional): if set to True, if a column is in `bytes` format it transform it to `str`
 
         """
-        self.result_from_query = tap_queries.run_query(self.tap_service, self.query, maxrec=self.maxrec)
+        self.result_from_query = tap_queries.run_query(self.tap_service, self.query, self.type_of_query,
+                                                       maxrec=self.maxrec)
         if to_string:
             for column_id in self.which_columns():
                 self.result_from_query[column_id].data.data[:] = checks.from_bytes_to_string(self.result_from_query[

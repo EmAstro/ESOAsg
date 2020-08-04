@@ -21,7 +21,7 @@ eso_tap_cat::http://archive.eso.org/tap_cat
 # Link to ESO archive
 eso_archive_url::http://archive.eso.org/
 #################################################################
-# verbose level
+# verbose level -> work in progress
 # in order of verbosity:
 # quiet=0, normal=1, chatty=2, debug=3
 verbosity::3

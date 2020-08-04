@@ -20,6 +20,7 @@ The module `archive_catalogue` is based on the `query.ESOCatalogues` class (a ch
 * `query` -- A string that contains the query to be perfomed via the TAP Service `tap_cat`
 * `result_from_query` -- A table containing the result of the query
 * `maxrec` -- An integer that the define the maximum number of records that will be returned for a query
+* `type_of_query` -- A string that defines if the query will be run `synchronously` or `asynchronously`
 
 After defining a `query` the `result_from_query` attribute is automatically filled by the method `run_query()`, for instance:
 ::
@@ -42,7 +43,7 @@ Some examples
 
 .. note::
    The way the queries are created allows one to set as input either `collections` or `tables`.
-   We strongly discurage to use both at the same times however.
+   However, we strongly discurage to use both at the same times.
    Given that the connector between the two conditions is an `AND` this may give rise to an un-expected behaviour
 
 Which catalogues are available
@@ -158,7 +159,7 @@ A similar result can be obtained running:
 
     archive_catalogues.columns_info(tables='viking_er5_zyjj_1j_2hks_catMetaData_fits_V4')
 
-where the result is stored in an `astropy.table`. 
+where the result is stored in an `astropy.table`.
 
 
 .. rubric:: Footnotes
