@@ -85,8 +85,7 @@ def catalogues_info(all_versions=False, collections=None, tables=None, verbose=F
     query_for_catalogues.run_query(to_string=True)
     # Sorting
     query_for_catalogues.result_from_query.sort(['collection', 'table_name', 'version'])
-    # Checking for obsolete and creating last_version column
-    # this is redundant in case `all_version` = Tru
+    # Checking for obsolete and creating last_version column, this is redundant in case `all_version` = True
     query_for_catalogues.set_last_version(update=True)
     catalogues_table = query_for_catalogues.get_result_from_query()
     # Get info on source ID RA and DEC for all collections
@@ -300,7 +299,7 @@ def _is_collection_list_at_eso(collections):
     """
     assert collections is None or isinstance(collections, (str, list)), r'`collections` must be `None`, ' \
                                                                         r'or a `str` or a `list`'
-    collections_list = checks.from_string_to_list(collections)
+    collections_list = checks.from_element_to_list(collections, element_type=str)
     if collections_list is not None:
         clean_collections = []
         for collection in collections_list:
@@ -341,7 +340,7 @@ def _is_table_list_at_eso(tables):
 
     """
     assert tables is None or isinstance(tables, (str, list)), r'`tables` must be `None` or a `str` or a `list`'
-    tables_list = checks.from_string_to_list(tables)
+    tables_list = checks.from_element_to_list(tables, element_type=str)
     if tables is not None:
         clean_tables = []
         for table in tables_list:
@@ -392,7 +391,7 @@ def _is_column_list_in_catalogues(columns, collections=None, tables=None):
 
     """
     assert columns is None or isinstance(columns, (str, list)), r'`columns` must be `None` or a `str` or a `list`'
-    columns_list = checks.from_string_to_list(columns)
+    columns_list = checks.from_element_to_list(columns, element_type=str)
     if columns is not None:
         # test if it is a valid column
         clean_columns = []

@@ -1,5 +1,4 @@
-"""
-Module that performs some useful and basic checks
+r"""Module that performs some useful and basic checks and transformations
 """
 
 # import sys
@@ -15,25 +14,55 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 
-def from_string_to_list(string):
-    r"""Given an input string a list containing the string is returned
+def from_element_to_list(element, element_type=str):
+    r"""Given an element it returns a list containing the element
+
+    It also checks all the elements in the list have the same type defined by `element_type`
 
     Args:
-        string (str): string that need to be converted into a list
+        element (any): element that will be put in the string
+        element_type (any): type of the element that should be contained in the list
 
-    Returns
-        list: list containing the str as element
+    Returns:
+        list: list containing `element`
 
     """
-    if string is None:
+    if element is None:
         return None
-    elif isinstance(string, list):
-        return string
-    elif isinstance(string, str):
-        return [string]
+    elif isinstance(element, list):
+        for element_in_list in element:
+            assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
+        return element
+    elif isinstance(element, element_type):
+        return [element]
     else:
-        msgs.error('Not valid type for: {}'.format(string))
+        msgs.error('Not valid type for: {}'.format(element))
     return
+
+
+def from_number_to_string(number):
+    r"""Given an int or a float it returns a string
+
+    If the input is a int, it is first converted to float and then to string
+
+    Args:
+        number (any): `int` or `float` that needs to be transformed into a string
+
+    Returns:
+        str: same of number but as a `str`
+
+    """
+    if number is None:
+        return None
+    elif isinstance(number, str):
+        return number
+    elif isinstance(number, int):
+        return str(float(number))
+    elif isinstance(number, float):
+        return str(number)
+    else:
+        msgs.error('The value entered is not a string or a number. Type: {}'.format(type(number)))
+        return
 
 
 def from_bytes_to_string(input_in_bytes):
@@ -229,7 +258,7 @@ def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
     assert isinstance(image2d, np.ndarray), 'The image is not a `numpy array`'
     # Check for dimensions
     if not image2d.ndim == 2:
-        msgs.warning('The image is not two dimensional (NDIM={})'.format(image2d.ndim))
+        msgs.warning('The image is not two dimensional (N. of dimension={})'.format(image2d.ndim))
         is_image2d = False
 
     return is_image2d
@@ -312,7 +341,7 @@ def check_instrument(instrument):
         is_instrument (np:bool):
             True if it is a valid instrument
     """
-    instrument_list = ['MUSE', 'SINFONI']
+    instrument_list = ['MUSE']
     if instrument in instrument_list:
         is_instrument = True
     else:

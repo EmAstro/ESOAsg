@@ -38,6 +38,9 @@ The tap_queries module
 .. automodule:: ESOAsg.core.tap_queries
    :members:
 
+.. automodule:: ESOAsg.core.asp_queries
+   :members:
+
 ESOAsg.datacontainers
 ---------------------
 

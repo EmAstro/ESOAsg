@@ -32,6 +32,9 @@ from ESOAsg import msgs
 TAP_SERVICES = ['eso_tap_cat', 'eso_tap_obs']
 # type of queries currently allowed
 TAP_QUERY_TYPES = ['sync', 'async']
+# list of columns that will be queried in
+COLUMNS_FROM_OBSCORE = ['target_name', 'dp_id', 's_ra', 's_dec', 't_exptime', 'em_min', 'em_max', 'dataproduct_type',
+                        'instrument_name', 'obstech', 'abmaglim', 'proposal_id', 'obs_collection']
 
 
 # I/O:
@@ -319,59 +322,6 @@ def create_query_all_columns(collections=None, tables=None):
     return query_all_columns
 
 
-def condition_collections_like(collections=None):
-    r"""Create a `LIKE` - `OR` condition over a list of collections
-
-    If `collections` is `None` the query the conditions will be substitute with '%' meaning that will have no effect
-
-    Args:
-        collections (list, optional): list of `str` containing the names of the collections for which columns
-            information will be returned
-
-    Returns:
-        str: set of conditions in the format: collection LIKE --- OR
-
-    """
-    condition_collections = ''''''
-    if collections is None:
-        list_collections = ['%']
-    else:
-        list_collections = collections.copy()
-    for collection in list_collections:
-        condition_collection = '''
-                    collection LIKE '{}' OR'''.format(collection)
-        condition_collections = condition_collections + condition_collection
-    # remove the last OR
-    condition_collections = condition_collections[:-3]
-    return condition_collections
-
-
-def condition_tables_like(tables=None):
-    r"""Create a `LIKE` - `OR` condition over a list of table_names
-
-    If `tables` is `None` the query the conditions will be substitute with '%' meaning that will have no effect
-
-    Args:
-        tables (list): list of `str` containing the table_name for which columns information will be returned
-
-    Returns:
-        str: set of conditions in the format: table_name LIKE --- OR
-
-    """
-    condition_tables = ''''''
-    if tables is None:
-        list_tables = ['%']
-    else:
-        list_tables = tables.copy()
-    for table in list_tables:
-        condition_table = '''
-                    table_name LIKE '{}' OR'''.format(table)
-        condition_tables = condition_tables + condition_table
-    # remove the last OR
-    condition_tables = condition_tables[:-3]
-    return condition_tables
-
-
 def create_query_table(table_name, columns=None):
     r"""Create a query to return selected columns from a table
 
@@ -404,15 +354,13 @@ def create_query_obscore_base():
     """
     query_base = '''
             SELECT
-                target_name, dp_id, s_ra, s_dec, t_exptime, em_min, em_max, 
-                dataproduct_type, instrument_name, obstech, abmaglim,
-                proposal_id, obs_collection
+                {}
             FROM
-                ivoa.ObsCore'''
+                ivoa.ObsCore'''.format(_create_comma_separated_list(COLUMNS_FROM_OBSCORE))
     return query_base
 
 
-def condition_intersect_ra_dec(ra, dec, radius=None):
+def condition_intersects_ra_dec(ra, dec, radius=None):
     r"""Create the WHERE INTERSECTS condition string for a query
 
     Args:
@@ -435,52 +383,113 @@ def condition_intersect_ra_dec(ra, dec, radius=None):
                 INTERSECTS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
     return query_intersect_ra_dec
 
+# Conditions
 
-def condition_query_obscore_select_instruments(instruments_list):
+# ToDo, these can be compacted in one single function
+
+
+def condition_tables_like(tables=None):
+    r"""Create a `LIKE` - `OR` condition over a list of table_names
+
+    If `tables` is `None` the query the conditions will be substitute with '%' meaning that will have no effect
+
+    Args:
+        tables (list): list of `str` containing the table_name for which columns information will be returned
+
+    Returns:
+        str: set of conditions in the format: table_name LIKE --- OR
+
+    """
+    condition_tables = ''''''
+    if tables is None:
+        list_tables = ['%']
+    else:
+        list_tables = tables.copy()
+    for table in list_tables:
+        condition_table = '''
+                    table_name LIKE '{}' OR'''.format(table)
+        condition_tables = condition_tables + condition_table
+    # remove the last OR
+    condition_tables = condition_tables[:-3]
+    return condition_tables
+
+
+def condition_instruments_like(instruments=None):
     r"""Create condition string to select only specific instruments in `ivoa.ObsCore`
 
     Args:
-        instruments_list (list): limit the search to the selected list of
+        instruments (list): limit the search to the selected list of
             instruments (e.g., `XSHOOTER`)
     Returns:
         str: string containing the `instrument_name` condition for a query
 
     """
-    if len(instruments_list) == 1:
-        query_select_instruments = '''
-            AND
-                instrument_name='{}' '''.format(instruments_list[0])
-    else:
-        query_select_instruments = '''
+    condition_instruments = '''
             AND
                 ('''
-        for instrument_name in instruments_list:
-            query_select_instruments = query_select_instruments + '''instrument_name='{}' OR '''.format(
-                instrument_name)
-        query_select_instruments = query_select_instruments[0:-4] + ')'
-    return query_select_instruments
+    if instruments is None:
+        list_instruments = ['%']
+    else:
+        list_instruments = instruments.copy()
+    for instrument in list_instruments:
+        condition_instrument = '''
+                instrument_name LIKE '{}' OR'''.format(instrument)
+        condition_instruments = condition_instruments + condition_instrument
+    # remove the last OR
+    condition_instruments = condition_instruments[:-3] + '''
+                )'''
+    return condition_instruments
 
 
-def condition_query_obscore_select_data_types(data_types_list):
-    r"""Create condition string to select only specific dataproduct types in `ivoa.ObsCore`
+def condition_data_types_like(data_types=None):
+    r"""Create condition string to select only specific data product types in `ivoa.ObsCore`
 
     Args:
-        data_types_list (list): limit the search to the selected list of dataproduct types (e.g.,
-        `spectrum`)
+        data_types (list): limit the search to the selected list of dataproduct types (e.g., `spectrum`)
 
     Returns:
         str: string containing the `dataproduct_type` condition for a query
 
     """
-    if len(data_types_list) == 1:
-        query_select_data_types = '''
-            AND
-                dataproduct_type='{}' '''.format(data_types_list[0])
-    else:
-        query_select_data_types = '''
+    condition_data_types = '''
             AND
                 ('''
-        for data_type in data_types_list:
-            query_select_data_types = query_select_data_types + '''dataproduct_type='{}' OR '''.format(data_type)
-        query_select_data_types = query_select_data_types[0:-4] + ')'
-    return query_select_data_types
+    if data_types is None:
+        list_data_types = ['%']
+    else:
+        list_data_types = data_types.copy()
+    for data_type in list_data_types:
+        condition_data_type = '''
+                dataproduct_type LIKE '{}' OR'''.format(data_type)
+        condition_data_types = condition_data_types + condition_data_type
+    # remove the last OR
+    condition_data_types = condition_data_types[:-3] + '''
+                )'''
+    return condition_data_types
+
+
+def condition_collections_like(collections=None):
+    r"""Create a `LIKE` - `OR` condition over a list of collections
+
+    If `collections` is `None` the query the conditions will be substitute with '%' meaning that will have no effect
+
+    Args:
+        collections (list, optional): list of `str` containing the names of the collections for which columns
+            information will be returned
+
+    Returns:
+        str: set of conditions in the format: collection LIKE --- OR
+
+    """
+    condition_collections = ''''''
+    if collections is None:
+        list_collections = ['%']
+    else:
+        list_collections = collections.copy()
+    for collection in list_collections:
+        condition_collection = '''
+                    collection LIKE '{}' OR'''.format(collection)
+        condition_collections = condition_collections + condition_collection
+    # remove the last OR
+    condition_collections = condition_collections[:-3]
+    return condition_collections
