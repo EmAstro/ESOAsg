@@ -34,7 +34,7 @@ def get_requirements():
 
 
 NAME = 'ESOAsg'
-VERSION = '0.00'
+VERSION = '0.1.0'
 AUTHOR = 'Ema'
 
 
