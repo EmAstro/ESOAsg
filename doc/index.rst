@@ -28,11 +28,14 @@ Archive access
 
    datapolicy
    archive_catalogues
-
+   archive_observations
+   archive_science_portal
+   archive_scripts
 
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
+
 
    api
 

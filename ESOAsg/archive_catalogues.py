@@ -2,7 +2,7 @@ import numpy as np
 from astropy.table import MaskedColumn
 
 from ESOAsg import msgs
-from ESOAsg.ancillary import checks
+from ESOAsg.ancillary import cleaning_lists
 from ESOAsg.core import tap_queries
 from ESOAsg.queries import query_catalogues
 
@@ -299,7 +299,7 @@ def _is_collection_list_at_eso(collections):
     """
     assert collections is None or isinstance(collections, (str, list)), r'`collections` must be `None`, ' \
                                                                         r'or a `str` or a `list`'
-    collections_list = checks.from_element_to_list(collections, element_type=str)
+    collections_list = cleaning_lists.from_element_to_list(collections, element_type=str)
     if collections_list is not None:
         clean_collections = []
         for collection in collections_list:
@@ -340,7 +340,7 @@ def _is_table_list_at_eso(tables):
 
     """
     assert tables is None or isinstance(tables, (str, list)), r'`tables` must be `None` or a `str` or a `list`'
-    tables_list = checks.from_element_to_list(tables, element_type=str)
+    tables_list = cleaning_lists.from_element_to_list(tables, element_type=str)
     if tables is not None:
         clean_tables = []
         for table in tables_list:
@@ -391,7 +391,7 @@ def _is_column_list_in_catalogues(columns, collections=None, tables=None):
 
     """
     assert columns is None or isinstance(columns, (str, list)), r'`columns` must be `None` or a `str` or a `list`'
-    columns_list = checks.from_element_to_list(columns, element_type=str)
+    columns_list = cleaning_lists.from_element_to_list(columns, element_type=str)
     if columns is not None:
         # test if it is a valid column
         clean_columns = []

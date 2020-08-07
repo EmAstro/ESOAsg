@@ -11,7 +11,18 @@ from ESOAsg.queries import query
 
 
 class ESOCatalogues(query.Query):
-    r"""This class is designed to query the ESO archive for raw, reduced, and ambient data.
+    r"""This class is designed to query the scientific catalogues provided by the principal investigators of ESO
+    observing programmes
+
+    This is a child of :class:`ESOAsg.queries.query.Query` with the `tap_service` defined to be:
+
+    >>> tap_service=tap_queries.define_tap_service('eso_tap_cat')
+
+    Args:
+        query (str): String containing the query
+        type_of_query (str): type of query to be run
+        maxrec (int, optional): define the maximum number of entries that a single query can return
+        result_from_query (astropy.table.Table): result from the query to the TAP service
 
     """
     def __init__(self, query=None, result_from_query=None, type_of_query='sync', maxrec=default.get_value('maxrec')):

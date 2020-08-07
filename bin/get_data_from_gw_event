@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+
+r"""Collect data from the ESO archive given a `bayestar` file associated to a GW superevent
+"""
+
+from ESOAsg.scripts import get_data_from_gw_event
+
+if __name__ == '__main__':
+    args = get_data_from_gw_event.parser()
+    get_data_from_gw_event.main(args)
+

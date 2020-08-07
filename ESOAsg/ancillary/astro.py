@@ -7,13 +7,7 @@ http://www.eso.org/~mromanie/martino/Home.html
 
 import numpy as np
 import requests
-# import json
-
-import matplotlib
-from matplotlib import pyplot as plt
-STARTING_MATPLOTLIB_BACKEND = matplotlib.rcParams["backend"]
-from ligo.skymap.tool.ligo_skymap_contour import main as ligo_skymap_contour
-matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
+import json
 
 from astropy import units as u
 from astropy import constants
@@ -22,9 +16,7 @@ import importlib
 
 from os import path
 from os import remove
-from astroquery.mast import Mast
 from astroquery.mast import Observations
-
 
 import healpy
 from astropy import wcs
@@ -34,40 +26,46 @@ from ESOAsg.ancillary import checks
 from ESOAsg.ancillary import polygons # ToDo to be removed
 from ESOAsg.core import fitsfiles
 
+import matplotlib
+from matplotlib import pyplot as plt
+STARTING_MATPLOTLIB_BACKEND = matplotlib.rcParams["backend"]
+from ligo.skymap.tool.ligo_skymap_contour import main as ligo_skymap_contour
+matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
+
 
 def download_kepler_data(target_name):
-    r"""Run a query to MAST to obtain the kepler data of an object. Date are saved in the directories:
-    `./mastDownload/Kepler/<target_name>_*/*.fits`
+    r"""Run a query to MAST to obtain the kepler data of an object
+
+    The data is saved in the directories: `./mastDownload/Kepler/<target_name>_*/*.fits`
 
     Args:
-        target_name (`str`):
-            Name of the target: e.g., 'kplr011446443'
+        target_name (str): name of the target: e.g., 'kplr011446443'
 
     Returns:
-        The code returns `True` if data are retrieved and `False` otherwise.
+        bool: it returns `True` if data are retrieved and `False` otherwise.
 
     """
-    keplerObs = Observations.query_criteria(target_name=target_name, obs_collection='Kepler')
-    if len(keplerObs) == 0:
+    kepler_obs = Observations.query_criteria(target_name=target_name, obs_collection='Kepler')
+    if len(kepler_obs) == 0:
         msgs.warning('No Kepler data for target {}'.format(target_name))
         return False
-    for idx in np.arange(0, len(keplerObs)):
-        keplerProds = Observations.get_product_list(keplerObs[idx])
-        keplerFitsProds = Observations.filter_products(keplerProds, extension='fits', mrp_only=False)
-        Observations.download_products(keplerFitsProds, mrp_only=False, cache=False)
+    for idx in np.arange(0, len(kepler_obs)):
+        kepler_prods = Observations.get_product_list(kepler_obs[idx])
+        kepler_fits_prods = Observations.filter_products(kepler_prods, extension='fits', mrp_only=False)
+        Observations.download_products(kepler_fits_prods, mrp_only=False, cache=False)
     return True
 
 
 def download_tess_data(target_name):
-    r"""Run a query to MAST to obtain the TESS data of an object. Date are saved in the directories:
-    `./mastDownload/TESS/<target_name>_*/*.fits`
+    r"""Run a query to MAST to obtain the TESS data of an object.
+
+    Data is saved in the directories: `./mastDownload/TESS/<target_name>_*/*.fits`
 
     Args:
-        target_name (`str`):
-            Name of the target: e.g., '231663901'
+        target_name (str): name of the target: e.g., '231663901'
 
     Returns:
-        The code returns `True` if data are retrieved and `False` otherwise.
+        bool: it returns `True` if data are retrieved and `False` otherwise.
 
     """
     tess_obs = Observations.query_criteria(target_name=target_name, obs_collection='TESS')
@@ -75,40 +73,37 @@ def download_tess_data(target_name):
         msgs.warning('No TESS data for target {}'.format(target_name))
         return False
     for idx in np.arange(0, len(tess_obs)):
-        tessProds = Observations.get_product_list(tess_obs[idx])
-        tessFitsProds = Observations.filter_products(tessProds, extension='fits', mrp_only=False)
-        Observations.download_products(tessFitsProds, mrp_only=False, cache=False)
+        tess_prods = Observations.get_product_list(tess_obs[idx])
+        tess_fits_prods = Observations.filter_products(tess_prods, extension='fits', mrp_only=False)
+        Observations.download_products(tess_fits_prods, mrp_only=False, cache=False)
     return True
+
 
 def download_gw_bayestar(superevent_name, file_name='bayestar.fits.gz'):
     r"""Download the bayestar.fits.gz of a GW superevent
 
-    This is simply checking the existence of:
-    `https://gracedb.ligo.org/superevents/<superevent_name>/files/`
-    and downloading the file:
-    `https://gracedb.ligo.org/apiweb/superevents/<superevent_name>/iles/bayestar.fits.gz`
+    This is simply checking the existence of: `https://gracedb.ligo.org/superevents/<superevent_name>/files/`
+    and downloading the file: `https://gracedb.ligo.org/apiweb/superevents/<superevent_name>/iles/bayestar.fits.gz`
 
     The downloaded file will be renamed as `superevent_name`+`file_name`
 
     Args:
-        superevent_name (`str`):
-            Name of the superevent: e.g., 'S191205ah'
-        file_name (`str`):
-            Name of the file to download. Default is `bayestar.fits.gz`
+        superevent_name (str): name of the superevent: e.g., 'S191205ah'
+        file_name (str): name of the file to download. Default is `bayestar.fits.gz`
 
     Returns:
-        The code returns `True` if data are retrieved and `False` otherwise.
+        bool: it returns `True` if data are retrieved and `False` otherwise.
+
     """
 
     # Some checks
-    assert isinstance(superevent_name, (str, np.str)), '{} is not a valid string'.format(superevent_name)
-    assert isinstance(file_name, (str, np.str)), '{} is not a valid string'.format(file_name)
+    assert isinstance(superevent_name, str), '{} is not a valid string'.format(superevent_name)
+    assert isinstance(file_name, str), '{} is not a valid string'.format(file_name)
     # Checks if superevent exists
-    gw_files_url = 'https://gracedb.ligo.org/superevents/'+superevent_name+'/files/'
+    gw_files_url = 'https://gracedb.ligo.org/superevents/' + superevent_name + '/files/'
     checks.connection_to_website(gw_files_url)
-
     # download the and save the superevent file
-    gw_bayestar_url = 'https://gracedb.ligo.org/apiweb/superevents/'+superevent_name+'/files/'+file_name
+    gw_bayestar_url = 'https://gracedb.ligo.org/apiweb/superevents/' + superevent_name + '/files/' + file_name
     r = requests.get(gw_bayestar_url, allow_redirects=True)
     if r.status_code == 404:
         msgs.warning('Failed to access to: {}'.format(gw_bayestar_url))
@@ -137,14 +132,11 @@ def contours_from_gw_bayestar(file_name, credible_level=50.):
     compatible with TAP and ASP queries.
 
     Args:
-        file_name (`str`):
-            Name of HEALPix maps
-        credible_level (`float`):
-            Probability level at which contours are returned
+        file_name (str): Name of HEALPix maps
+        credible_level (float): Probability level at which contours are returned
 
     Returns:
-        contours (`list`):
-           [RA,Dec] list defining the contours location. These are counterclowise oriented as seen on the sky from
+        list: [RA,Dec] list defining the contours location. These are counter-clockwise oriented as seen on the sky from
            inside the sphere. The length of contours represent the number of not connected regions identified.
     """
 
@@ -163,10 +155,10 @@ def contours_from_gw_bayestar(file_name, credible_level=50.):
     ligo_skymap_contour(args=[file_name, '--output', contour_tmp_file, '--contour', str(credible_level)])
 
     # Parse the content of the resulting json file into a dict
-    with open(contour_tmp_file, 'r') as jfile:
-        jdata = jfile.read()
-    contours_dict = json.loads(jdata)
-    jfile.close()
+    with open(contour_tmp_file, 'r') as json_file:
+        json_data = json_file.read()
+    contours_dict = json.loads(json_data)
+    json_file.close()
     # cleaning up
     remove(contour_tmp_file)
 
@@ -174,12 +166,12 @@ def contours_from_gw_bayestar(file_name, credible_level=50.):
     # contours is a list, each element of which contains the vertices of one contour encircling the desired significance
     contours = contours_dict['features'][0]['geometry']['coordinates']
     # Make sure that the orientation of the polygons on the sky is the correct one for the TAP queries,
-    # i.e. counterclowise as seen on the sky from inside the sphere.
+    # i.e. counter-clockwise as seen on the sky from inside the sphere.
     for iii, contour in enumerate(contours):
         contours[iii] = _ensure_orientation(contour)
 
     # Quick summary:
-    if len(contours)>0:
+    if len(contours) > 0:
         msgs.info('Extracted the contours for {} regions at {} credible level'.format(len(contours), credible_level))
     else:
         msgs.info('No contours extracted at {} credible level'.format(credible_level))
@@ -207,11 +199,11 @@ def _ensure_orientation(contour):
 
     # create the spherical polygon, which by construction has the right orientation on the sky
     contour_array = np.asarray(contour, dtype=np.float32)
-    spherical_polygon = polygons.SphericalPolygon.from_radec(contour_array[:,0], contour_array[:,1], degrees=True)
+    spherical_polygon = polygons.SphericalPolygon.from_lonlat(contour_array[:, 0], contour_array[:, 1], degrees=True)
 
     # reformat the correctly-oriented polygon to the same format as the input
     contour_oriented = []
-    for radec in spherical_polygon.to_radec():
+    for radec in spherical_polygon.to_lonlat():
         for ra, dec in zip(radec[0], radec[1]):
             contour_oriented.append([ra, dec])
 
@@ -222,15 +214,15 @@ def _array_split(array_in, thr):
     r"""Split an input array if two consecutive elements in x differ
     more than thr. The purpose is to deal with RAs folding at 360 degrees.
     """
-    xx_in, yy_in = array_in[:,0], array_in[:,1]
+    xx_in, yy_in = array_in[:, 0], array_in[:, 1]
 
-    #Rearrange the input arrays to so that its first element is the most eastern one.
+    # Rearrange the input arrays to so that its first element is the most eastern one.
     ii = np.argmax(xx_in)
     xx_in = np.append(xx_in[ii:], xx_in[0:ii])
     yy_in = np.append(yy_in[ii:], yy_in[0:ii])
 
     dxx = np.diff(xx_in)
-    split_indices = np.where(np.abs(dxx)>thr)
+    split_indices = np.where(np.abs(dxx) > thr)
     return np.split(xx_in, split_indices[0]+1), np.split(yy_in, split_indices[0]+1)
 
 

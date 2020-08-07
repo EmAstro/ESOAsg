@@ -90,7 +90,7 @@ author = u'Ema and Associates'
 # built documents.
 #
 # The short X.Y version.
-version = '0.0.0'
+version = '0.0'
 # The full version, including alpha/beta/rc tags.
 release = '0.0.0'
 
@@ -125,7 +125,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # If true, the current module name will be prepended to all description
 # unit titles (such as .. function::).
-#add_module_names = True
+add_module_names = True
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
@@ -211,7 +211,7 @@ html_sidebars = {
 # Sphinx supports the following languages:
 #   'da', 'de', 'en', 'es', 'fi', 'fr', 'hu', 'it', 'ja'
 #   'nl', 'no', 'pt', 'ro', 'ru', 'sv', 'tr'
-#html_search_language = 'en'
+html_search_language = 'en'
 
 # A dictionary with options for the search language support, empty by default.
 # Now only 'ja' uses this config value
@@ -222,7 +222,7 @@ html_sidebars = {
 #html_search_scorer = 'scorer.js'
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'PypeItdoc'
+htmlhelp_basename = 'ESOAsgdoc'
 
 # -- Options for LaTeX output ---------------------------------------------
 

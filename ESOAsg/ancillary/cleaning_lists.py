@@ -1,6 +1,10 @@
 """ Module that performs some lists massaging to work well with arg.parser
 """
 
+
+import numpy as np
+from astropy.table import Column, MaskedColumn
+
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
@@ -74,8 +78,7 @@ def make_list_of_int(args_input, length=None):
 
     Args:
         args_input (`list`):
-            input list of strings that will be checked (usually is coming from
-            `parse_arguments()` in a macro).
+            input list of strings that will be checked (usually is coming from `parse_arguments()` in a macro).
         length (`int`):
             If set to a value, the code will check that the length of `list_of_string` will match `length`. If not
             the code will further check if `args_input` contains only one element. In this case the output list will
@@ -101,7 +104,123 @@ def make_list_of_int(args_input, length=None):
     if length is not None:
         if len(list_of_int) != length:
             if len(list_of_int) == 1:
-                list_of_string = [list_of_int[0]] * length
+                list_of_int = [list_of_int[0]] * length
             else:
                 msgs.error('List length: {} not matching {}'.format(len(list_of_int), length))
     return list_of_int
+
+
+def from_element_to_list(element, element_type=str):
+    r"""Given an element it returns a list containing the element
+
+    It also checks all the elements in the list have the same type defined by `element_type`
+
+    Args:
+        element (any): element that will be put in the string
+        element_type (any): type of the element that should be contained in the list
+
+    Returns:
+        list: list containing `element`
+
+    """
+    if element is None:
+        return None
+    elif isinstance(element, list):
+        for element_in_list in element:
+            assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
+        return element
+    elif isinstance(element, np.ndarray):
+        element_list = element.tolist()
+        for element_in_list in element_list:
+            assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
+        return element_list
+    elif isinstance(element, MaskedColumn):
+        element_list = element.data.data.tolist()
+        for element_in_list in element_list:
+            assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
+        return element_list
+    elif isinstance(element, element_type):
+        return [element]
+    else:
+        msgs.error('Not valid type for: {}'.format(element))
+    return
+
+
+def from_number_to_string(number):
+    r"""Given an int or a float it returns a string
+
+    If the input is a int, it is first converted to float and then to string
+
+    Args:
+        number (any): `int` or `float` that needs to be transformed into a string
+
+    Returns:
+        str: same of number but as a `str`
+
+    """
+    if number is None:
+        return None
+    elif isinstance(number, str):
+        return number
+    elif isinstance(number, int):
+        return str(float(number))
+    elif isinstance(number, float):
+        return str(number)
+    else:
+        msgs.error('The value entered is not a string or a number. Type: {}'.format(type(number)))
+        return
+
+
+def from_bytes_to_string(input_in_bytes):
+    r"""Given an input in `bytes` return it the corresponding `str`
+
+    This is mainly to deal with the fact that TAP queries return a list in bytes format that might be annoying. If
+    the input is not `bytes` nothing is changed.
+
+    Args:
+        input_in_bytes (any): input in bytes
+
+    Returns:
+        any: output converted into a string
+
+    """
+    # condition for a single entry as bytes
+    if isinstance(input_in_bytes, bytes):
+        output_as_str = str(input_in_bytes.decode("utf-8"))
+    # condition for a np.array containing bytes
+    elif isinstance(input_in_bytes, np.ndarray) and len(input_in_bytes.shape) == 1:
+        output_as_str = np.empty_like(input_in_bytes)
+        for idx in np.arange(0, np.size(output_as_str)):
+            if isinstance(input_in_bytes[idx], bytes):
+                output_as_str[idx] = str(input_in_bytes[idx].decode("utf-8"))
+            else:
+                output_as_str[idx] = input_in_bytes[idx]
+    # condition for a list containing bytes
+    elif isinstance(input_in_bytes, list):
+        output_as_str = []
+        for element_in_bytes in input_in_bytes:
+            if isinstance(element_in_bytes, bytes):
+                output_as_str.append(str(element_in_bytes.decode("utf-8")))
+            else:
+                output_as_str.append(element_in_bytes)
+    # return copy of the entry
+    else:
+        output_as_str = input_in_bytes.copy()
+    return output_as_str
+
+
+def remove_non_ascii(text_string):
+    r"""Replace non ascii characters from a string
+
+    Args:
+        text_string (`str`):
+            input string from which the non ascii characters will be removed
+
+    Returns:
+        text_string_cleaned ('str'):
+            string from which the non ASCII characters have been removed.
+
+    """
+    text_string_cleaned = "".join(character for character in text_string if 31 < ord(character) < 123)
+    text_string_cleaned.replace('\\', '').strip()
+    return text_string_cleaned

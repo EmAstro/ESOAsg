@@ -1,18 +1,19 @@
-from ESOAsg import default
 from ESOAsg import msgs
-from ESOAsg.ancillary import checks
+from ESOAsg.ancillary import cleaning_lists
 from ESOAsg.core import tap_queries
+
+__all__ = ['Query']
 
 
 class Query:
     r"""Base class that dictate the general behaviour of a query
 
     Attributes:
-        tap_service (`str`)
-        query (`str`)
-        type_of_query (`str`)
-        result_from_query (`str`)
-        maxrec (`int`)
+        tap_service (pyvo.dal.tap.TAPService): TAP service that will be used for the query
+        query (str): String containing the query
+        type_of_query (str): type of query to be run
+        maxrec (int, optional): define the maximum number of entries that a single query can return
+        result_from_query (astropy.table.Table): result from the query to the TAP service
     """
 
     def __init__(self, tap_service=None, query=None, type_of_query='sync', result_from_query=None, maxrec=None):
@@ -58,8 +59,8 @@ class Query:
                                                        maxrec=self.maxrec)
         if to_string:
             for column_id in self.which_columns():
-                self.result_from_query[column_id].data.data[:] = checks.from_bytes_to_string(self.result_from_query[
-                    column_id].data.data)
+                self.result_from_query[column_id].data.data[:] = cleaning_lists.from_bytes_to_string(
+                    self.result_from_query[column_id].data.data)
         return
 
     def print_query(self):

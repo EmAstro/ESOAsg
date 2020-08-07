@@ -374,14 +374,34 @@ def condition_intersects_ra_dec(ra, dec, radius=None):
 
     """
     if radius is None:
-        query_intersect_ra_dec = '''
+        query_intersects_ra_dec = '''
             WHERE
-                INTERSECTS(POINT('ICRS',{},{}), s_region)=1'''.format(str(ra), str(dec))
+                INTERSECTS(POINT('ICRS',{0},{1}), s_region) = 1'''.format(str(ra),
+                                                                          str(dec))
     else:
-        query_intersect_ra_dec = '''
+        query_intersects_ra_dec = '''
             WHERE
-                INTERSECTS(s_region,CIRCLE('ICRS',{},{},{}/3600.))=1'''.format(str(ra), str(dec), str(radius))
-    return query_intersect_ra_dec
+                INTERSECTS(s_region,CIRCLE('ICRS',{0},{1},{2}/3600.)) = 1'''.format(str(ra),
+                                                                                    str(dec),
+                                                                                    str(radius))
+    return query_intersects_ra_dec
+
+
+def condition_intersects_polygon(polygon):
+    r"""Create the WHERE INTERSECTS polygon condition string for a query
+
+    Args:
+        polygon (str): coordinates of the verices of the polygon in the sky
+
+    Returns:
+        str: String containing the WHERE INTERSECT condition for a query
+
+    """
+    query_intersects_polygon = '''
+            WHERE
+                INTERSECTS(s_region,POLYGON('', {0} )) = 1'''.format(polygon)
+    return query_intersects_polygon
+
 
 # Conditions
 
@@ -420,6 +440,7 @@ def condition_instruments_like(instruments=None):
     Args:
         instruments (list): limit the search to the selected list of
             instruments (e.g., `XSHOOTER`)
+
     Returns:
         str: string containing the `instrument_name` condition for a query
 
