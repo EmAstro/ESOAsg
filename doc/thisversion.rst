@@ -7,12 +7,22 @@ Develop
 
 Current developments are:
 
-* full refactoring of the :doc:`archive_catalogues` module
-* full refactoring of the `archive_observations` module
 * introducing data containers
+* including new scripts
 * fixing header manipulation tools
 * improving documentation
 
+ESOAsg V0.1
+===========
+
+This release deals with some major improvement on how the query to the archive are performed.
+In particular:
+
+* :doc:`archive_catalogues`
+* :doc:`archive_observations`
+* :doc:`archive_science_portal`
+
+Some effort to improve documentation has been made
 
 ESOAsg V0.0
 ===========
