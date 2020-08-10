@@ -1,0 +1,11 @@
+#!/usr/bin/env python3
+
+r"""Collect data from the ESO archive given RA and Dec in degrees
+"""
+
+from ESOAsg.scripts import get_data_from_radec
+
+if __name__ == '__main__':
+    args = get_data_from_radec.parser()
+    get_data_from_radec.main(args)
+

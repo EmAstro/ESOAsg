@@ -1,6 +1,6 @@
 r"""
-get_data_from_ra_dec
-====================
+get_data_from_radec
+===================
 Script to collect data from the ESO archive given RA and Dec
 
 .. topic:: Inputs:
@@ -22,7 +22,7 @@ EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""Get images that intersect a circle of 5 arcseconds around the position: """ +
                r"""RA=15.054250 and Dec=-28.048833 """ + """\n""" +
                r"""`_changed` as ending (and update the `CHECKSUM`): """ + """\n""" +
-               r"""> get_data_from_ra_dec """ +
+               r"""> get_data_from_radec """ +
                r"""-ra 15.054250 """ +
                r"""-dec -28.048833 """ +
                r"""-r 5. """ +

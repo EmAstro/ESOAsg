@@ -32,11 +32,11 @@ After defining a `query` the `result_from_query` attribute is automatically fill
     # define a query to obtain all `table_name` in the ESO Archive
     query = 'SELECT schema_name, table_name from TAP_SCHEMA.tables'
     # instantiate the class
-    all_catalogue_query = query_catalogues.ESOCatalogues(query=query)
+    catalogue_al = query_catalogues.ESOCatalogues(query=query)
     # run the query
-    all_catalogue_query.run_query()
+    catalogue_list.run_query()
     # print the result on terminal
-    all_catalogue_query.result_from_query.pprint()
+    catalogue_list.result_from_query.pprint()
 
 The module `archive_catalogue` provides a set of additional quality-of-life functions to circumvent the actual creation of the queries.
 These allow one to directly obtain the information needed in a `table` format.

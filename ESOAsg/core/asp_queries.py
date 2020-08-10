@@ -14,11 +14,11 @@ from ESOAsg.ancillary import cleaning_lists
 CONNECTORS = ['&']
 
 
-def run_query(query, show_link=True, open_link=True):
+def run_query(query_url, show_link=True, open_link=True):
     r"""Run the ASP query
 
     Args:
-        query (str): url of the ASP query
+        query_url (str): url of the ASP query
         open_link (bool): open a link to the ASP page
         show_link (bool): show the link on the terminal
 
@@ -27,9 +27,9 @@ def run_query(query, show_link=True, open_link=True):
 
     """
     if show_link:
-        msgs.info('The ASP link is:\n {}\n'.format(query))
+        msgs.info('The ASP link is:\n {}\n'.format(query_url))
     if open_link:
-        webbrowser.open(query)
+        webbrowser.open(query_url)
     return
 
 
@@ -195,13 +195,3 @@ def condition_data_types(data_types, connector=None):
     condition_for_data_types = '{0}dp_type={1}'.format(_get_connector(connector),
                                                        _create_comma_separated_list(data_types).upper())
     return condition_for_data_types
-
-
-def from_polygons(polygons=None, open_link=False, show_link=False):
-    if polygons is not None:
-        for iii, polygon in enumerate(polygons):
-            url = 'http://archive.eso.org/scienceportal/home?' + 'poly=' + polygon + '&sort=-obs_date'
-            if show_link:
-                msgs.info('ASP link to region N.{} is:\n {}\n'.format(str(iii + 1), url))
-            if open_link:
-                webbrowser.open(url)
