@@ -11,6 +11,7 @@ import json
 
 from astropy import units as u
 from astropy import constants
+from astropy import wcs
 
 import importlib
 
@@ -19,17 +20,19 @@ from os import remove
 from astroquery.mast import Observations
 
 import healpy
-from astropy import wcs
 
 from ESOAsg import msgs
+from ESOAsg.ancillary import cleaning_lists
 from ESOAsg.ancillary import checks
-from ESOAsg.ancillary import polygons # ToDo to be removed
+from ESOAsg.ancillary import polygons  # ToDo to be removed
 from ESOAsg.core import fitsfiles
 
 import matplotlib
 from matplotlib import pyplot as plt
+
 STARTING_MATPLOTLIB_BACKEND = matplotlib.rcParams["backend"]
 from ligo.skymap.tool.ligo_skymap_contour import main as ligo_skymap_contour
+
 matplotlib.rcParams["backend"] = STARTING_MATPLOTLIB_BACKEND
 
 
@@ -108,10 +111,10 @@ def download_gw_bayestar(superevent_name, file_name='bayestar.fits.gz'):
     if r.status_code == 404:
         msgs.warning('Failed to access to: {}'.format(gw_bayestar_url))
         return False
-    open(superevent_name+'_bayestar.fits.gz', 'wb').write(r.content)
+    open(superevent_name + '_bayestar.fits.gz', 'wb').write(r.content)
 
     # check that the file actually arrived on disk
-    if path.isfile(superevent_name+'_bayestar.fits.gz'):
+    if path.isfile(superevent_name + '_bayestar.fits.gz'):
         _test_header = fitsfiles.header_from_fits_file(superevent_name + '_' + file_name)
         if len(_test_header) > 0:
             msgs.info('File {}_{} successfully downloaded'.format(superevent_name, file_name))
@@ -147,7 +150,7 @@ def contours_from_gw_bayestar(file_name, credible_level=50.):
     assert isinstance(credible_level, (int, float, np.int, np.float)), '`credible_level` is not a float or an int'
 
     # Create temporary file where to store output from ligo_skymap_contour
-    contour_tmp_file = '.'+file_name+'.tmp.json'
+    contour_tmp_file = '.' + file_name + '.tmp.json'
     if path.isfile(contour_tmp_file):
         remove(contour_tmp_file)
 
@@ -223,7 +226,7 @@ def _array_split(array_in, thr):
 
     dxx = np.diff(xx_in)
     split_indices = np.where(np.abs(dxx) > thr)
-    return np.split(xx_in, split_indices[0]+1), np.split(yy_in, split_indices[0]+1)
+    return np.split(xx_in, split_indices[0] + 1), np.split(yy_in, split_indices[0] + 1)
 
 
 def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', contours_color='C3',
@@ -238,6 +241,7 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
         contours_color:
         show_figure (`bool`):
         save_figure (`str` or `None`):
+        matplotlib_backend:
 
     Returns:
 
@@ -262,12 +266,14 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
         matplotlib.use(STARTING_MATPLOTLIB_BACKEND)
         try:
             # check if the script runs on a notebook.
-            # https://stackoverflow.com/questions/23883394/detect-if-python-script-is-run-from-an-ipython-shell-or-run-from
+            # https://stackoverflow.com/questions/23883394/detect-if-python-script-is-run-from-an-ipython-shell-or
+            # -run-from
             # -the-command-li
             __IPYTHON__
         except NameError:
             # Try to get a working gui
-            # https://stackoverflow.com/questions/39026653/programmatically-choose-correct-backend-for-matplotlib-on-mac-os-x
+            # https://stackoverflow.com/questions/39026653/programmatically-choose-correct-backend-for-matplotlib-on
+            # -mac-os-x
             gui_env = matplotlib.rcsetup.all_backends
             for gui in gui_env:
                 try:
@@ -286,7 +292,7 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
     # Read map and get object name
     map_data, map_header = healpy.read_map(file_name, h=True, verbose=False, dtype=None)
     object_name_list = [value for name, value in map_header if name == 'OBJECT']
-    if len(object_name_list)>0:
+    if len(object_name_list) > 0:
         object_name = object_name_list[0]
     else:
         object_name = 'GW event - {}'.format(file_name)
@@ -322,8 +328,225 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
     # Bringing back the previously used matplotlib backend
     matplotlib.use(STARTING_MATPLOTLIB_BACKEND)
 
-# ToDo -> ABMAGLIM
 
+def mag2f_nu(abmags):
+    r"""Convert list of AB magnitudes in a list of spectral flux densities per unit frequency in jansky
+
+    The input can be either a list of `astropy.units.Quantity` or a list of `float`. In the latter
+    case it is assumed that the entry is in mag
+
+    Args:
+        abmags (any): input list of magnitudes in the AB system to be converted in flux density in jansky
+
+    Returns:
+        list: list of spectral flux densities per unit frequency. Each element of the list is an
+            `astropy.units.Quantity` with jansky as unit
+
+    """
+    abmags_list = cleaning_lists.from_element_to_list_of_quantities(abmags, unit=u.mag)
+    f_nus_list = []
+    for abmag in abmags_list:
+        f_nus_list.append(np.power(10., (8.90 - abmag.value) / 2.5) * u.jansky)
+    return f_nus_list
+
+
+def f_nu2mag(f_nus):
+    r"""Convert list of spectral flux densities per unit frequency in a list of AB magnitudes
+
+    The input can be either a list of `astropy.units.Quantity` or a list of `float`. In the latter
+    case it is assumed that the entry is in jansky
+
+    Args:
+        f_nus (any): input list of spectral flux densities per unit frequency to be converted to AB magnitudes. If
+            `f_nus` does not have units it is assumed to be in jansky
+
+    Returns:
+        list: list of AB magnitudes. Each element of the list is an `astropy.units.Quantity` with
+            mag as unit
+
+    """
+    f_nus_list = cleaning_lists.from_element_to_list_of_quantities(f_nus, unit=u.jansky)
+    abmag_list = []
+    for f_nu in f_nus_list:
+        abmag_list.append(((-2.5 * np.log10(f_nu.value)) + 8.90) * u.mag)
+    return abmag_list
+
+
+def f_nu2f_lambda(f_nus, wavelengths):
+    r"""Convert list of spectral flux densities per unit frequency into spectral flux densities per unit  wavelength
+
+    Args:
+        f_nus (any): input list of spectral flux densities per unit frequency to be converted to AB magnitudes. If
+            `f_nus` does not have units it is assumed to be in jansky
+        wavelengths (any): specific wavelengths at which perform the conversion. If the input does not have units, Ang.
+            is assumed. It must be either a single value or a list with the same length of `f_nus`
+    Returns:
+        list: list of spectral flux densities per unit wavelength
+
+    """
+    f_nus_list = cleaning_lists.from_element_to_list_of_quantities(f_nus, unit=u.jansky)
+    wavelengths_list = cleaning_lists.from_element_to_list_of_quantities(wavelengths, unit=u.AA)
+    f_lambdas_list = []
+    if len(wavelengths_list) == 1:
+        for f_nu in f_nus_list:
+            f_lambdas_list.append(f_nu.to(u.erg*u.centimeter**-2.*u.second**-1.*u.AA**-1.,
+                                          equivalencies=u.spectral_density(wavelengths_list[0])))
+    elif len(wavelengths_list) == len(f_nus_list):
+        for f_nu, wavelength in zip(f_nus_list, wavelengths_list):
+            f_lambdas_list.append(f_nu.to(u.erg*u.centimeter**-2.*u.second**-1.*u.AA**-1.,
+                                          equivalencies=u.spectral_density(wavelength)))
+    else:
+        msgs.error('Length of `wavelengths` not compatible with the one of `f_nus`')
+        return
+    return f_lambdas_list
+
+
+def f_lambda2f_nu(f_lambdas, wavelengths):
+    r"""Convert list of spectral flux densities per unit wavelength into spectral flux densities per unit frequency
+
+    Args:
+        f_lambdas (any): input list of spectral flux densities per unit wavelength to be converted to AB magnitudes. If
+            `f_lambdas` does not have units it is assumed to be in erg/s/cm**2/Ang.
+        wavelengths (any): specific wavelengths at which perform the conversion. If the input does not have units, Ang.
+            is assumed. It must be either a single value or a list with the same length of `f_lambdas`
+
+    Returns:
+        list: list of spectral flux densities per unit frequency
+
+    """
+    f_lambdas_list = cleaning_lists.from_element_to_list_of_quantities(f_lambdas,
+                                                                       unit=u.erg*u.centimeter**-2.*u.second**-1.*u.AA**-1.)
+    wavelengths_list = cleaning_lists.from_element_to_list_of_quantities(wavelengths, unit=u.AA)
+    f_nus_list = []
+    if len(wavelengths_list) == 1:
+        for f_lambda in f_lambdas_list:
+            f_nus_list.append(f_lambda.to(u.jansky,
+                                          equivalencies=u.spectral_density(wavelengths_list[0])))
+    elif len(wavelengths_list) == len(f_lambdas_list):
+        for f_lambda, wavelength in zip(f_lambdas_list, wavelengths_list):
+            f_nus_list.append(f_lambda.to(u.jansky,
+                                          equivalencies=u.spectral_density(wavelength)))
+    else:
+        msgs.error('Length of `wavelengths` not compatible with the one of `f_lambdas`')
+        return
+    return f_nus_list
+
+
+def mag2f_lambda(abmags, wavelengths):
+    r"""Convert list of AB magnitudes in a list of spectral flux densities per unit frequency in jansky
+
+    The input can be either a list of `astropy.units.Quantity` or a list of `float`. In the latter
+    case it is assumed that the entry is in mag
+
+    Args:
+        abmags (any): input list of magnitudes in the AB system to be converted in flux density in jansky
+        wavelengths (any): specific wavelengths at which perform the conversion. If the input does not have units, Ang.
+            is assumed. It must be either a single value or a list with the same length of `abmags`
+
+    Returns:
+        list: list of spectral flux densities per unit wavelength. Each element of the list is an
+            `astropy.units.Quantity` with erg/s/cm**2/Ang as unit
+
+    """
+    abmags_list = cleaning_lists.from_element_to_list_of_quantities(abmags, unit=u.mag)
+    f_nus_list = []
+    for abmag in abmags_list:
+        f_nus_list.append(np.power(10., (8.90 - abmag.value) / 2.5) * u.jansky)
+    return f_nu2f_lambda(f_nus_list, wavelengths)
+
+
+def f_lambda2mag(f_lambdas, wavelengths):
+    r"""Convert list of spectral flux densities per unit wavelength in a list of AB magnitudes
+
+    The input can be either a list of `astropy.units.Quantity` or a list of `float`. In the latter
+    case it is assumed that the entry is in jansky
+
+    Args:
+        f_lambdas (any): input list of spectral flux densities per unit frequency to be converted to AB magnitudes. If
+            `f_lambdas` does not have units it is assumed to be in erg/s/cm**2/Ang
+        wavelengths (any): specific wavelengths at which perform the conversion. If the input does not have units, Ang.
+            is assumed. It must be either a single value or a list with the same length of `f_lambdas`
+
+    Returns:
+        list: list of AB magnitudes. Each element of the list is an `astropy.units.Quantity` with
+            mag as unit
+
+    """
+    f_lambdas_list = cleaning_lists.from_element_to_list_of_quantities(f_lambdas,
+                                                                       unit=u.erg*u.centimeter**-2.*u.second**-1.*u.AA**-1.)
+    wavelengths_list = cleaning_lists.from_element_to_list_of_quantities(wavelengths, unit=u.AA)
+    f_nus_list = f_lambda2f_nu(f_lambdas_list, wavelengths_list)
+    abmag_list = []
+    for f_nu in f_nus_list:
+        abmag_list.append(((-2.5 * np.log10(f_nu.value)) + 8.90) * u.mag)
+    return abmag_list
+
+
+def mag2sb(abmags, areas):
+    r"""Convert list of AB magnitudes into surface brightness given an area
+
+    .. math::
+
+        SB = m + 2.5 log10(area/arcsec^2)
+
+    Args:
+        abmags (any): input list of magnitudes in the AB system to be converted in surface brightness in mag/arcsec**2
+        areas (any): area over which calculate the surface brightness. If the input does not have units, arcsec**2
+            is assumed. It must be either a single value or a list with the same length of `abmags`
+
+    Returns:
+        list: list of surface brightnesses. Each element of the list is an `astropy.units.Quantity` with
+            mag/arcsec**2 as unit
+    """
+    abmags_list = cleaning_lists.from_element_to_list_of_quantities(abmags, unit=u.mag)
+    areas_list = cleaning_lists.from_element_to_list_of_quantities(areas, unit=u.arcsec**2.)
+    surface_brightnesses_list = []
+    if len(areas_list) == 1:
+        for abmag in abmags_list:
+            surface_brightnesses_list.append((abmag + (2.5 * np.log10(areas_list[0]/u.arcsec**2.)))/u.arcsec**2.)
+    elif len(areas_list) == len(abmags_list):
+        for abmag, area in zip(abmags_list, areas_list):
+            surface_brightnesses_list.append((abmag + (2.5 * np.log10(area/u.arcsec**2.)))/u.arcsec**2.)
+    else:
+        msgs.error('Length of `areas` not compatible with the one of `abmags`')
+        return
+    return surface_brightnesses_list
+
+
+def sb2mag(surface_brightnesses, areas):
+    r"""Convert list of surface brightness into AB magnitudes given an area
+
+    .. math::
+
+        m = SB - 2.5 log10(area/arcsec^2)
+
+    Args:
+        surface_brightnesses (any): input list of surface brightnesses to be converted in magnitudes in mag. If the
+            input does not have units, mag/arcsec**2 is assumed.
+        areas (any): area over which calculate the surface brightness. If the input does not have units, arcsec**2
+            is assumed. It must be either a single value or a list with the same length of `sbs`
+
+    Returns:
+        list: list of magnitudes. Each element of the list is an `astropy.units.Quantity` with mag as unit
+
+    """
+    surface_brightnesses_list = cleaning_lists.from_element_to_list_of_quantities(surface_brightnesses,
+                                                                                  unit=u.mag/u.arcsec**2)
+    areas_list = cleaning_lists.from_element_to_list_of_quantities(areas, unit=u.arcsec**2.)
+    abmag_list = []
+    if len(areas_list) == 1:
+        for surface_brightness in surface_brightnesses_list:
+            abmag_list.append((surface_brightness*u.arcsec**2.) - (2.5 * np.log10(areas_list[0]/u.arcsec**2.) * u.mag))
+    elif len(areas_list) == len(surface_brightnesses_list):
+        for surface_brightness, area in zip(surface_brightnesses_list, areas_list):
+            abmag_list.append((surface_brightness*u.arcsec**2.) - (2.5 * np.log10(area/u.arcsec**2.) * u.mag))
+    else:
+        msgs.error('Length of `areas` not compatible with the one of `surface_brightnesses`')
+        return
+    return abmag_list
+
+
+# ToDo -> ABMAGLIM
 
 def abmaglim(rms, seeing_fwhm, exptime=None, zero_point=None, sigma=5.):
     r"""Calculate the N-sigma magnituide limit.
@@ -359,15 +582,8 @@ def abmaglim(rms, seeing_fwhm, exptime=None, zero_point=None, sigma=5.):
         if exptime is not None:
             msgs.error('`exptime` needs to be `None` if `zero_point` is `None`')
         rms_in_jansky = rms.to(u.jansky, equivalencies=u.spectral())
-        abmaglim = -2.5*np.log10(sigma*rms_in_jansky*np.pi*np.power(seeing_fwhm/2.,2.)/(3631.*u.jansky))
+        abmaglim = -2.5 * np.log10(sigma * rms_in_jansky * np.pi * np.power(seeing_fwhm / 2., 2.) / (3631. * u.jansky))
     else:
-        abmaglim = -2.5 * np.log10(sigma*rms*np.pi*np.power(seeing_fwhm/2.,2.)/exptime) + zero_point
+        abmaglim = -2.5 * np.log10(sigma * rms * np.pi * np.power(seeing_fwhm / 2., 2.) / exptime) + zero_point
     return abmaglim
 
-# ToDo
-def fnu2flambda(flambda, wavelength):
-    return np.power(wavelength, 2.)*flambda/constants.c
-
-# ToDo
-def flambda2fnu(fnu, wavelength):
-    return constants.c*fnu/np.power(wavelength, 2.)

@@ -8,4 +8,3 @@ from ESOAsg.scripts import get_data_from_radec
 if __name__ == '__main__':
     args = get_data_from_radec.parser()
     get_data_from_radec.main(args)
-
