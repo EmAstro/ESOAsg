@@ -4,6 +4,7 @@
 
 import numpy as np
 from astropy.table import Column, MaskedColumn
+import astropy.units as u
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
@@ -116,7 +117,7 @@ def from_element_to_list(element, element_type=str):
     It also checks all the elements in the list have the same type defined by `element_type`
 
     Args:
-        element (any): element that will be put in the string
+        element (any): element that will be put in the list
         element_type (any): type of the element that should be contained in the list
 
     Returns:
@@ -144,6 +145,48 @@ def from_element_to_list(element, element_type=str):
     else:
         msgs.error('Not valid type for: {}'.format(element))
     return
+
+
+def from_element_to_list_of_quantities(element, unit=None):
+    r"""Convert an input into a list of `astropy.units.Quantity`
+
+    Args:
+        element (int, float, np.ndarray, Quantity object, list): element that will be put in the list
+        unit (UnitBase instance): An object that represents the unit to be associated with the input value
+
+    Returns:
+        list: list of quantities in the format `element`*`unit`
+
+    """
+    assert isinstance(unit, u.UnitBase), r'{} not a valid astropy units'.format(unit)
+    if isinstance(element, int):
+        return [float(element)*unit]
+    elif isinstance(element, float):
+        return [element*unit]
+    elif isinstance(element, np.ndarray) and not isinstance(element, u.Quantity):
+        element_list_clean = []
+        element_list = np.copy(element).tolist()
+        for element_in_list in element_list:
+            element_list_clean.append(element_in_list*unit)
+        return element_list_clean
+    elif isinstance(element, u.Quantity):
+        element_list_clean = []
+        element_converted = np.copy(element).to(unit)
+        for element_in_list in np.nditer(element_converted):
+            print(element_in_list)
+            element_list_clean.append(element_in_list*unit)
+        return element_list_clean
+    elif isinstance(element, list):
+        element_list_clean = []
+        for element_in_list in element:
+            if isinstance(element_in_list, u.Quantity):
+                element_list_clean.append(element_in_list.to(unit))
+            else:
+                element_list_clean.append(element_in_list*unit)
+        return element_list_clean
+    else:
+        msgs.error('The input cannot be converted into a list of quantities')
+        return
 
 
 def from_number_to_string(number):

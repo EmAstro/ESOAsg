@@ -6,13 +6,14 @@ from ESOAsg.ancillary import checks
 from ESOAsg import default
 
 
-def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2020
+def get_header_from_archive(file_id, text_file=None, verbose=False):  # written by Ema. 04.03.2020
     r"""Download header for the ESO given a `file_id`
 
     Args:
         file_id (str): ESO file ID for which the header will be downloaded
         text_file (str): text file where the header will be downloaded. If `None` it will it will be set to t
             he same string `file_id` but with a `.hdr` extension
+        verbose (bool): if set to `True` additional info will be displayed
 
     Returns:
         None
@@ -51,7 +52,8 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
     # Downloading headers
     for file_name, file_out in zip(list_of_files, list_of_outputs):
         if os.path.isfile(file_out):
-            msgs.warning('Overwriting existing text file: {}'.format(file_out))
+            if verbose:
+                msgs.warning('Overwriting existing text file: {}'.format(file_out))
             os.remove(file_out)
         url_for_header = archive_url + 'hdr?DpId=' + file_name
         response_url = requests.get(url_for_header, allow_redirects=True)
@@ -62,7 +64,8 @@ def get_header_from_archive(file_id, text_file=None):  # written by Ema. 04.03.2
             for line in header_txt.splitlines():
                 file_header.write(line + '\n')
             file_header.close()
-            msgs.info('Header successfully saved in: {}'.format(file_out))
+            if verbose:
+                msgs.info('Header successfully saved in: {}'.format(file_out))
         else:
             msgs.warning('{} is not present in the ESO archive'.format(file_name))
     return

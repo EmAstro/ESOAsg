@@ -6,7 +6,7 @@ import os.path
 from ESOAsg import msgs
 from ESOAsg import __version__
 from ESOAsg.core import fitsfiles
-from ESOAsg.core import archive_observations
+from ESOAsg import archive_observations
 from ESOAsg.ancillary import cleaning_lists
 
 
