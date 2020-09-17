@@ -4,10 +4,9 @@ import argparse
 import os.path
 
 from ESOAsg import msgs
-from ESOAsg import core
 from ESOAsg import __version__
 from ESOAsg.core import fitsfiles
-from ESOAsg import archive_observations
+from ESOAsg.core import phase3
 from ESOAsg.ancillary import cleaning_lists
 
 
@@ -54,7 +53,7 @@ if __name__ == '__main__':
 
     for input_dpid in input_dpids:
         # Starting to download the header(s)
-        core.phase3.get_header_from_archive(input_dpid, text_file=input_dpid + '.hdr')
+        phase3.get_header_from_archive(input_dpid, text_file=input_dpid + '.hdr')
         if args.cards is not None:
             # getting header card values
             if os.path.isfile(input_dpid + '.hdr'):
