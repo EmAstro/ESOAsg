@@ -189,7 +189,7 @@ def check_value(value):  # written by Ema 05.03.2020
             value = np.bool(True)
         elif value == 'F':
             value = np.bool(False)
-        elif special_char.search(value) is None:
+        elif special_char.search(value) is not None:
             value = str(value)
         else:
             value = ast.literal_eval(value)
