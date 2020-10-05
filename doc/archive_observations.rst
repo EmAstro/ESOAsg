@@ -6,15 +6,13 @@ Archive Observations
 
 The `ESO archive <http://archive.eso.org/cms.html>`_ currently (June 2020) contains more than `1.7 million spectra <https://archive.eso.org/scienceportal/home?data_release_date=*:2020-06-24&dp_type=SPECTRUM&sort=-obs_date&s=P%2fDSS2%2fcolor&f=177.115919&fc=-1,-1&cs=J2000&av=true&ac=false&c=9,10,11,12,13,14,15,16,17,18,19,20&ta=RES&dts=true&sdtm=%7b%22SPECTRUM%22%3atrue%7d&at=119.452774,-60.30286&sr=i>`_, more than `650,000 images <https://archive.eso.org/scienceportal/home?data_release_date=*:2020-06-24&dp_type=IMAGE&sort=-obs_date&s=P%2fDSS2%2fcolor&f=177.115919&fc=-1,-1&cs=J2000&av=true&ac=false&c=9,10,11,12,13,14,15,16,17,18,19,20&ta=RES&dts=true&sdtm=%7b%22IMAGE%22%3atrue%7d&at=160.465004,19.501825&sr=i>`_, and more than `240,000 cubes <https://archive.eso.org/scienceportal/home?data_release_date=*:2020-06-24&dp_type=CUBE&sort=-obs_date&s=P%2fDSS2%2fcolor&f=177.115919&fc=-1,-1&cs=J2000&av=true&ac=false&c=9,10,11,12,13,14,15,16,17,18,19,20&ta=RES&dts=true&sdtm=%7b%22CUBE%22%3atrue%7d&at=239.591811,-14.166308&sr=i>`_.
 
-There are three main ways to access the vaste amount of information present in the [ESO archive](http://archive.eso.org/cms.html):
+There are three main ways to access the vaste amount of information present in the `ESO archive <http://archive.eso.org/cms.html>`_:
 
 * the `Raw Data query form <http://archive.eso.org/eso/eso_archive_main.html>`_
 * the `Science Portal <http://archive.eso.org/scienceportal/home>`_ to browse and access the processed data (see also ref::`archive-science-portal`)
 * the `Programmatic and Tools access <http://archive.eso.org/programmatic/>`_ which permits direct database access to both raw and processed data, and to the ambient condition measurements
 
 In addition, the `archive_observations` provides simple wrappers to efficiently embed the access to the ESO archive into `python` routines.
-
-Please, when you use data from the archive, follow the :doc:`datapolicy`.
 
 Overview
 ========
@@ -39,7 +37,7 @@ After defining a `query` you can fill the `result_from_query` attribute using th
     # print the result on terminal
     alma_query.result_from_query.pprint()
 
-The module `archive_observations` provides a set of functions to help an user to search and download for data without explicitly creating a TAP query.
+The module `archive_observations` provides a set of functions to help a user to search and download for data without explicitly creating a TAP query.
 
 
 Some examples

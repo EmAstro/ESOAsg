@@ -2,8 +2,8 @@
 Versions
 ========
 
-Develop
-=======
+Developments in progress
+========================
 
 Current developments are:
 

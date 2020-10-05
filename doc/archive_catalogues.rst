@@ -5,15 +5,13 @@
 Archive Catalogues
 ==================
 
-The ESO catalogue facility provides access to the collection of data that were produced by PIs of ESO programmes and then integrated into the ESO science archive through the Phase 3 process.
-The full list of available catalogue could be found `here <https://www.eso.org/qi/>`_.
+The ESO Catalogue Facility provides access to the collection of catalogues and data that were produced by PIs of ESO programmes and then integrated into the ESO science archive through the Phase 3 process.
+The full list of available catalogues could be found `here <https://www.eso.org/qi/>`_.
 
 To access the data you can use the `programmatic access <http://archive.eso.org/programmatic/#TAP>`_ via the `tap_cat` TAP Service. 
 The module `archive_catalogues` provides some simple `python` wrapper around this.
 
 More examples on how to use the TAP services for the ESO archive are provided `in these notebooks <http://archive.eso.org/programmatic/HOWTO/>`_.
-
-Please, when you use data from the archive, follow the :doc:`datapolicy`.
 
 Overview
 ========
@@ -52,7 +50,7 @@ Some examples
 Which catalogues are available
 ------------------------------
 
-In general, it is possible to explore which catalogue are availabe in the ESO archive either with the `query interface webpage <https://www.eso.org/qi/>`_, or with the `archive science portal <https://archive.eso.org/scienceportal/home?data_release_date=*:2020-07-23&dp_type=CATALOG&sort=-obs_date&s=P%2fDSS2%2fcolor&f=134.496111&fc=-1,-1&cs=J2000&av=true&ac=false&c=9,10,11,12,13,14,15,16,17,18,19,20&ta=RES&dts=true&sdtm=%7b%22CATALOG%22%3atrue%7d&at=0,0&sr=i>`_, or by running the `TAP query to obtain all versions of all catalogues <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20cat_id%2C%20collection%2C%20table_name%2C%20title%2C%20number_rows%2C%20number_columns%2C%20version%2C%20acknowledgment%20FROM%20TAP_SCHEMA.tables%20WHERE%20schema_name%20%3D%20'safcat'%0A&>`_:
+In general, it is possible to explore which catalogue are available in the ESO archive either with the `query interface webpage <https://www.eso.org/qi/>`_, or with the `archive science portal <https://archive.eso.org/scienceportal/home?data_release_date=*:2020-07-23&dp_type=CATALOG&sort=-obs_date&s=P%2fDSS2%2fcolor&f=134.496111&fc=-1,-1&cs=J2000&av=true&ac=false&c=9,10,11,12,13,14,15,16,17,18,19,20&ta=RES&dts=true&sdtm=%7b%22CATALOG%22%3atrue%7d&at=0,0&sr=i>`_, or by running the `TAP query to obtain all versions of all catalogues <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20cat_id%2C%20collection%2C%20table_name%2C%20title%2C%20number_rows%2C%20number_columns%2C%20version%2C%20acknowledgment%20FROM%20TAP_SCHEMA.tables%20WHERE%20schema_name%20%3D%20'safcat'%0A&>`_:
 ::
 
     SELECT
@@ -85,69 +83,70 @@ Alternatively, it is possible to obtain an `astropy.table` containing informatio
 
 This returns an `astropy.table` containing:
 
-+------------------+-----------------------------------------------------------------------------------------+
-| Column name      | Description                                                                             |
-+==================+=========================================================================================+
-| collection       | Name of the Phase 3 collection the catalog belongs to                                   |
-+------------------+-----------------------------------------------------------------------------------------+
-| title            | Title of the catalog                                                                    |
-+------------------+-----------------------------------------------------------------------------------------+
-| version          | Version of the catalog                                                                  |
-+------------------+-----------------------------------------------------------------------------------------+
-| table_name       | The fully qualified table name                                                          |
-+------------------+-----------------------------------------------------------------------------------------+
-| filter           | Name(s) of the filter bandpasses the original data were aquired with                    |
-+------------------+-----------------------------------------------------------------------------------------+
-| instrument       | Name(s) of the instrument(s) the original data were acquired with                       |
-+------------------+-----------------------------------------------------------------------------------------+
-| telescope        | Name(s) of the telescope(s) the original data were acquired with                        |
-+------------------+-----------------------------------------------------------------------------------------+
-| publication_date | The data the catalog was published                                                      |
-+------------------+-----------------------------------------------------------------------------------------+
-| description      | Describes tables in the tableset                                                        |
-+------------------+-----------------------------------------------------------------------------------------+
-| number_rows      | Number of rows present in this version of the catalog                                   |
-+------------------+-----------------------------------------------------------------------------------------+
-| number_columns   | Number of columns present in this version of the catalog                                |
-+------------------+-----------------------------------------------------------------------------------------+
-| rel_descr_url    | Location of the release description document (typically a pdf)                          |
-+------------------+-----------------------------------------------------------------------------------------+
-| acknowledgment   | It provides the sentence to be used in your publication when making use of this catalog |
-+------------------+-----------------------------------------------------------------------------------------+
-| cat_id           | Internal catalog identifier,                                                            |
-+------------------+-----------------------------------------------------------------------------------------+
-| mjd_obs          | The observational data this catalog is based were taken between mjd_obs and mjd_end     |
-+------------------+-----------------------------------------------------------------------------------------+
-| mjd_end          | The observational data this catalog is based were taken between mjd_obs and mjd_end     |
-+------------------+-----------------------------------------------------------------------------------------+
-| skysqdeg         | Area of the sky (in square degrees) covered by this catalog                             |
-+------------------+-----------------------------------------------------------------------------------------+
-| bibliography     | Bibliographic reference in the form of either a BIBCODE or a DOI                        |
-+------------------+-----------------------------------------------------------------------------------------+
-| document_id      | Internal identifier of the release description document [#foot_cat]_                    |
-+------------------+-----------------------------------------------------------------------------------------+
-| from_column      | Column in the from_table                                                                |
-+------------------+-----------------------------------------------------------------------------------------+
-| target_table     | The table with the primary key                                                          |
-+------------------+-----------------------------------------------------------------------------------------+
-| target_column    | Column in the target_table                                                              |
-+------------------+-----------------------------------------------------------------------------------------+
-| last_version     | True if this is the latest version of the catalog                                       |
-+------------------+-----------------------------------------------------------------------------------------+
-| RA_id            | Identifier for RA in the catalog                                                        |
-+------------------+-----------------------------------------------------------------------------------------+
-| Dec_id           | Identifier for Dec in the catalog                                                       |
-+------------------+-----------------------------------------------------------------------------------------+
++------------------+-------------------------------------------------------------------------------------------+
+| Column name      | Description                                                                               |
++==================+===========================================================================================+
+| collection       | Name of the Phase 3 collection the catalogue belongs to                                   |
++------------------+-------------------------------------------------------------------------------------------+
+| title            | Title of the catalogue                                                                    |
++------------------+-------------------------------------------------------------------------------------------+
+| version          | Version of the catalogue                                                                  |
++------------------+-------------------------------------------------------------------------------------------+
+| table_name       | The fully qualified table name                                                            |
++------------------+-------------------------------------------------------------------------------------------+
+| filter           | Name(s) of the filter bandpasses the original data were aquired with                      |
++------------------+-------------------------------------------------------------------------------------------+
+| instrument       | Name(s) of the instrument(s) the original data were acquired with                         |
++------------------+-------------------------------------------------------------------------------------------+
+| telescope        | Name(s) of the telescope(s) the original data were acquired with                          |
++------------------+-------------------------------------------------------------------------------------------+
+| publication_date | The data the catalogue was published                                                      |
++------------------+-------------------------------------------------------------------------------------------+
+| description      | Describes tables in the tableset                                                          |
++------------------+-------------------------------------------------------------------------------------------+
+| number_rows      | Number of rows present in this version of the catalogue                                   |
++------------------+-------------------------------------------------------------------------------------------+
+| number_columns   | Number of columns present in this version of the catalogue                                |
++------------------+-------------------------------------------------------------------------------------------+
+| rel_descr_url    | Location of the release description document (typically a pdf)                            |
++------------------+-------------------------------------------------------------------------------------------+
+| acknowledgment   | It provides the sentence to be used in your publication when making use of this catalogue |
++------------------+-------------------------------------------------------------------------------------------+
+| cat_id           | Internal catalogue identifier                                                             |
++------------------+-------------------------------------------------------------------------------------------+
+| mjd_obs          | The observational data this catalogue is based were taken between mjd_obs and mjd_end     |
++------------------+-------------------------------------------------------------------------------------------+
+| mjd_end          | The observational data this catalogue is based were taken between mjd_obs and mjd_end     |
++------------------+-------------------------------------------------------------------------------------------+
+| skysqdeg         | Area of the sky (in square degrees) covered by this catalogue                             |
++------------------+-------------------------------------------------------------------------------------------+
+| bibliography     | Bibliographic reference in the form of either a BIBCODE or a DOI                          |
++------------------+-------------------------------------------------------------------------------------------+
+| document_id      | Internal identifier of the release description document [#foot_cat]_                      |
++------------------+-------------------------------------------------------------------------------------------+
+| from_column      | Column in the from_table                                                                  |
++------------------+-------------------------------------------------------------------------------------------+
+| target_table     | The table with the primary key                                                            |
++------------------+-------------------------------------------------------------------------------------------+
+| target_column    | Column in the target_table                                                                |
++------------------+-------------------------------------------------------------------------------------------+
+| last_version     | True if this is the latest version of the catalogue                                       |
++------------------+-------------------------------------------------------------------------------------------+
+| RA_id            | Identifier for RA in the catalogue                                                        |
++------------------+-------------------------------------------------------------------------------------------+
+| Dec_id           | Identifier for Dec in the catalogue                                                       |
++------------------+-------------------------------------------------------------------------------------------+
 
 .. note::
-   At first sight it may seem that not all catalogs have the `RA_id` and `Dec_id`.
-   This is because the catalogue is spreaded into more than one table.
-   To identify the same source among the differnt tables of a catalogue the `target_table` and `target_column` should be used.
+   At first sight it may seem that not all cataloguess have the `RA_id` and `Dec_id`.
+   This is because the catalogue is spread into more than one table.
+   To identify the same source among the different tables of a catalogue the `target_table` and `target_column` should be used.
 
-Which columns are in a catalog
-------------------------------
+Which columns are in a catalogue
+--------------------------------
 
-It is possible to get information on all columns present in a catalogue by running the following `TAP query <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20table_name%2C%20column_name%2C%20ucd%2C%20datatype%2C%20description%2C%20unit%0AFROM%20TAP_SCHEMA.columns%0AWHERE%20table_name%20%3D%20'viking_er5_zyjj_1j_2hks_catMetaData_fits_V4'%0A&>`_ for the `VIKING DR4 <https://www.eso.org/rm/api/v1/public/releaseDescriptions/135>`_ catalogue:
+It is possible to get information on all columns present in a catalogue.
+For instance, the columns of the `VIKING DR4 <https://www.eso.org/rm/api/v1/public/releaseDescriptions/135>`_ catalogue can be obtained running the following `TAP query <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20table_name%2C%20column_name%2C%20ucd%2C%20datatype%2C%20description%2C%20unit%0AFROM%20TAP_SCHEMA.columns%0AWHERE%20table_name%20%3D%20'viking_er5_zyjj_1j_2hks_catMetaData_fits_V4'%0A&>`_:
 ::
 
     SELECT 
@@ -167,4 +166,4 @@ where the result is stored in an `astropy.table`.
 
 .. rubric:: Footnotes
 
-.. [#foot_cat] The web user interface for this catalog is reachable via the URL computed appending the `cat_id` to the string: https://www.eso.org/qi/catalogQuery/index/
+.. [#foot_cat] The web user interface for this catalogue is reachable via the URL computed appending the `cat_id` to the string: https://www.eso.org/qi/catalogQuery/index/

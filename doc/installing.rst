@@ -2,7 +2,7 @@
 Installing ESOAsg
 =================
 
-This document describes how to install ESOAsg.
+This section describes how to install ESOAsg.
 
 Installing Dependencies
 =======================
@@ -58,7 +58,7 @@ To install the package via GitHub run::
 
     git clone https://github.com/EmAstro/ESOAsg.git
 
-And we then recommend to install it with the `develop` option::
+And, given that the packages is still work in progress and you may want to updated on-the-fly, we then recommend to install it with the `develop` option::
 
     cd ESOAsg
     python setup.py develop
@@ -68,10 +68,20 @@ Testing the Installation
 
 In order to assess whether ESOAsg has been properly installed, we suggest you run the following tests:
 
-1. Ensure that the scripts work
+1. Run the default tests
+------------------------
+
+In the directory where ESOAsg is installed run::
+
+    pytest
+
+You should see that all the current test passed.
+
+2. Ensure that the scripts work
 -------------------------------
 
 Go to a directory outside of the ESOAsg directory, then type mod_header::
 
     cd
     mod_header -h
+
