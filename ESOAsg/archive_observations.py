@@ -17,7 +17,7 @@ def query_from_radec(positions=None, radius=None, instruments=None, data_types=N
     r"""Query the ESO archive for data at a given position in RA and Dec
 
     The `positions` value (or list) needs to be given as an
-    astropy.coordinates.SkyCoord <https://docs.astropy.org/en/stable/coordinates/>`_ object.
+    `astropy.coordinates.SkyCoord <https://docs.astropy.org/en/stable/coordinates/>`_ object.
 
     The output is in an (list of) `astropy.table` with columns defined in: `core.tap_queries.COLUMNS_FROM_OBSCORE`
 

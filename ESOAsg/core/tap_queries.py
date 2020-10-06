@@ -234,21 +234,21 @@ def create_query_all_catalogues(all_versions=False, collections=None, tables=Non
             TAP_SCHEMA.keys as k on ref.table_name = k.from_table 
         AND
             k.target_table in (SELECT
-                                    T.table_name
-                                FROM 
-                                    TAP_SCHEMA.tables as T
-                                WHERE 3 in (SELECT 
-                                                count(*) 
-                                            FROM
-                                                TAP_SCHEMA.columns
-                                            WHERE
-                                                table_name=T.table_name
-                                            AND
-                                                (ucd = 'pos.eq.ra;meta.main' OR
-                                                 ucd = 'pos.eq.dec;meta.main' OR
-                                                 ucd = 'meta.id;meta.main')
-                                            )
-                                )
+                                   T.table_name
+                               FROM 
+                                   TAP_SCHEMA.tables as T
+                               WHERE 3 in (SELECT 
+                                               count(*) 
+                                           FROM
+                                               TAP_SCHEMA.columns
+                                           WHERE
+                                               table_name=T.table_name
+                                           AND
+                                               (ucd = 'pos.eq.ra;meta.main' OR
+                                                ucd = 'pos.eq.dec;meta.main' OR
+                                                ucd = 'meta.id;meta.main')
+                                           )
+                               )
         LEFT OUTER JOIN 
             TAP_SCHEMA.key_columns as kc on k.key_id=kc.key_id
         WHERE
@@ -258,17 +258,15 @@ def create_query_all_catalogues(all_versions=False, collections=None, tables=Non
         query_last_version_only = '''
         AND
             cat_id in (SELECT
-                            cat_id
-                       FROM (SELECT
-                                t1.cat_id cat_id
-                             FROM
-                                TAP_SCHEMA.tables t1
-                             LEFT OUTER JOIN
-                                TAP_SCHEMA.tables t2 on (t1.title = t2.title and t1.version < t2.version)
-                             WHERE
-                                t2.title is null
-                            )
-                        t)'''
+                           t1.cat_id cat_id
+                       FROM
+                           TAP_SCHEMA.tables t1
+                       LEFT OUTER JOIN
+                           TAP_SCHEMA.tables t2 on (t1.title = t2.title AND
+                                                    t1.version < t2.version)
+                       WHERE
+                           t2.title is null
+                       )'''
         query_all_catalogues = query_all_catalogues + query_last_version_only
 
     if collections is not None:
