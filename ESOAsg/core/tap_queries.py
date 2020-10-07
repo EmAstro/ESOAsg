@@ -335,10 +335,37 @@ def create_query_table(table_name, columns=None):
             SELECT 
                 {} 
             FROM 
-                {}
-            '''.format(_create_comma_separated_list(columns), table_name)
+                {}'''.format(_create_comma_separated_list(columns), table_name)
     return query
 
+
+def condition_source_ids_like(source_ids, source_id_name='SOURCEID'):
+    r"""Create the WHERE `source_id_name` = condition string for a query
+
+    Args:
+        source_ids (list): list of `str` containing the source_ids  for which columns
+            information will be returned
+        source_id_name (str): name of the source id column in a catalogue
+
+    Returns:
+        str: String containing the WHERE `source_id_name` = condition for a query
+
+    """
+    if source_ids is None:
+        return ''
+    else:
+        condition_source_ids = '''
+            WHERE
+                ('''
+        list_source_ids = source_ids.copy()
+        for source_id in list_source_ids:
+            condition_source_id = '''
+                {} = {} OR'''.format(source_id_name, source_id)
+            condition_source_ids = condition_source_ids + condition_source_id
+            # remove the last OR
+            condition_source_ids = condition_source_ids[:-3] + '''
+                )'''
+    return condition_source_ids
 
 # Observations
 
@@ -389,7 +416,7 @@ def condition_intersects_polygon(polygon):
     r"""Create the WHERE INTERSECTS polygon condition string for a query
 
     Args:
-        polygon (str): coordinates of the verices of the polygon in the sky
+        polygon (str): coordinates of the vertices of the polygon in the sky
 
     Returns:
         str: String containing the WHERE INTERSECT condition for a query

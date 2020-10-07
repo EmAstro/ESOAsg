@@ -1,0 +1,6 @@
+#!/bin/bash
+
+tag=$(git describe --tags --abbrev=0)
+echo "Current tag: ${tag}"
+
+exit 0

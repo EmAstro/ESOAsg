@@ -1,5 +1,5 @@
 import numpy as np
-from astropy.table import MaskedColumn
+from astropy.table import MaskedColumn, join
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import cleaning_lists
@@ -8,7 +8,8 @@ from ESOAsg.queries import query_catalogues
 
 
 def all_catalogues_info(all_versions=False, verbose=False):
-    r"""Load an `astropy.table` with information on all catalogues present in the ESO archive
+    r"""Load an `astropy.table.Table <https://docs.astropy.org/en/stable/table/>`_ with information on all catalogues
+    present in the ESO archive
 
     The output table will contain the following columns:
     `collection`, `title`, `version`, `table_name`, `filter`, `instrument`, `telescope`, `publication_date`,
@@ -31,14 +32,15 @@ def all_catalogues_info(all_versions=False, verbose=False):
         all_versions (bool): if set to `True` also obsolete versions of the catalogues are listed
 
     Returns:
-        astropy.table: table containing the information on all catalogues present in the ESO archive
+        :obj:`astropy.table`: table containing the information on all catalogues present in the ESO archive
 
     """
     return catalogues_info(all_versions=all_versions, collections=None, tables=None, verbose=verbose)
 
 
 def catalogues_info(all_versions=False, collections=None, tables=None, verbose=False):
-    r"""Load an `astropy.table` with information on the selected catalogues
+    r"""Load an `astropy.table.Table <https://docs.astropy.org/en/stable/table/>`_ with information on the selected
+    catalogues
 
     Specific catalogues can be selected by selecting a list of collections or a list of table_names. If both
     `collections` and `tables` are set to `None` information on all ESO catalogues will be returned. For further
@@ -48,7 +50,7 @@ def catalogues_info(all_versions=False, collections=None, tables=None, verbose=F
     `collection`, `title`, `version`, `table_name`, `filter`, `instrument`, `telescope`, `publication_date`,
     `description`, `number_rows`, `number_columns`, `rel_descr_url`, `acknowledgment`, `cat_id`, `mjd_obs`,
     `mjd_end`, `skysqdeg`, `bibliography`, `document_id`, `from_column`, `target_table`, `target_column`,
-    `last_version`
+    `last_version`, `table_RA`, `table_Dec`, `table_ID`
 
     .. note::
        The way the query is created is to set as input or `collections` or `tables`. Particular attention should be
@@ -64,7 +66,7 @@ def catalogues_info(all_versions=False, collections=None, tables=None, verbose=F
         verbose (bool): if set to `True` additional info will be displayed
 
     Returns:
-        astropy.table: table containing the information on the selected catalogues
+        :obj:`astropy.table`: table containing the information on the selected catalogues
 
     """
     # Test on collections
@@ -90,8 +92,10 @@ def catalogues_info(all_versions=False, collections=None, tables=None, verbose=F
     catalogues_table = query_for_catalogues.get_result_from_query()
     # Get info on source ID RA and DEC for all collections
     id_ra_dec_table = _get_id_ra_dec_from_columns(collections=clean_collections)
-    ra_id, dec_id = [], []
+    source_id, ra_id, dec_id = [], [], []
     for t_name in catalogues_table.iterrows('table_name'):
+        source_id_table = id_ra_dec_table[(id_ra_dec_table['table_name'] == t_name) &
+                                          (id_ra_dec_table['ucd'] == 'meta.id;meta.main')]['column_name'].data.data
         ra_id_table = id_ra_dec_table[(id_ra_dec_table['table_name'] == t_name) &
                                       (id_ra_dec_table['ucd'] == 'pos.eq.ra;meta.main')]['column_name'].data.data
         dec_id_table = id_ra_dec_table[(id_ra_dec_table['table_name'] == t_name) &
@@ -102,10 +106,18 @@ def catalogues_info(all_versions=False, collections=None, tables=None, verbose=F
             msgs.warning('Impossible to identify RA and Dec columns in table: {}'.format(t_name))
         else:
             ra_id.append(None), dec_id.append(None)
-    catalogues_table.add_column(MaskedColumn(data=np.asarray(ra_id), name='RA_id', dtype=str,
+        if len(source_id_table) == 1:
+            source_id.append(source_id_table[0])
+        elif len(source_id_table) > 1:
+            msgs.warning('Impossible to identify SourceID columns in table: {}'.format(t_name))
+        else:
+            source_id.append(None)
+    catalogues_table.add_column(MaskedColumn(data=np.asarray(ra_id), name='table_RA', dtype=str,
                                              description='Identifier for RA in the catalog'))
-    catalogues_table.add_column(MaskedColumn(data=np.asarray(dec_id), name='Dec_id', dtype=str,
+    catalogues_table.add_column(MaskedColumn(data=np.asarray(dec_id), name='table_Dec', dtype=str,
                                              description='Identifier for Dec in the catalog'))
+    catalogues_table.add_column(MaskedColumn(data=np.asarray(source_id), name='table_ID', dtype=str,
+                                             description='Identifier for Source ID in the catalog'))
     return catalogues_table
 
 
@@ -153,16 +165,19 @@ def columns_info(collections=None, tables=None, verbose=False):
 
 
 def get_catalogues(collections=None, tables=None, columns=None, type_of_query='sync', all_versions=False,
-                   maxrec=None, verbose=False):
+                   join_target_table=False,  maxrec=None, verbose=False):
     r"""Query the ESO tap_cat service for specific catalogues
 
     There are two ways to select the catalogues you are interested in. Either you select directly the table_name (or the
     list of table_names) that you want to query, or you select a collection (or a list of collections). If you select
     this latter option, what happens in the background is that the code is going to search for the table(s)
-    corresponding to the given collection and query them
+    corresponding to the given collection and query them.
 
-    If you are asking for more than one table, the result will be listed in a list of `astropy.tables` one per
-    table
+    If a catalogue it is spread in more than one table, it is possible to merge the RA, Dec, and Source ID from the
+    `target_table` by using the `join_target_table` option.
+
+    If you are asking for more than one table, the result will be listed in a list of `astropy.tables` with one element
+    per retrieved table
 
     Args:
         collections (any): list of `str` containing the names (or a single `str`) of the collections for
@@ -172,6 +187,8 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
             table can be found by running `columns_info()`
         all_versions (bool): if set to `True` also obsolete versions of the catalogues are searched in case
             `collections` is given
+        join_target_table (bool): if set to `True` RA, Dec, and Source ID will be inherited from the `target_table`
+             (if necessary)
         type_of_query (str): type of query to be run
         maxrec (int, optional): define the maximum number of entries that a single query can return. If it is `None` the
             value is set by the limit of the service.
@@ -182,28 +199,26 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
 
     """
     # ToDo EMA: conditions to select properties from catalogues should be added in this. Both with ANDs and with ORs
-    # test on collections
-    clean_collections = _is_collection_list_at_eso(collections)
-    # test on tables
-    clean_tables = _is_table_list_at_eso(tables)
-    # the query works on
-    if clean_tables is None:
-        clean_tables = []
-    if clean_collections is not None:
-        for clean_collection in clean_collections:
-            clean_tables.append(_get_tables_from_collection(clean_collection, all_versions=all_versions))
-    # This removes possible duplicates and removes None
-    clean_tables = list(filter(None, list(set(clean_tables))))
-    # if max_rec is set to None, the entire length of the catalogue is considered:
-    if maxrec is None:
-        maxrec_list = []
-        for table in clean_tables:
-            maxrec_list.append(_get_catalogue_length_from_table(table, all_versions=all_versions))
+
+    # Obtain list of all tables derived from the merger of collections and tables
+    clean_tables = _is_collection_and_table_list_at_eso(collections=collections, tables=tables,
+                                                        all_versions=all_versions)
+
+    # if maxrec is set to None, the entire length of the catalogue is considered:
+    maxrec_list = _get_catalogue_length_from_tables(clean_tables, maxrec=maxrec, all_versions=all_versions)
+
+    # if join_target_table is set to True, the target_catalogue will also be queried (if present):
+    if join_target_table:
+        info_tables = catalogues_info(tables=clean_tables, verbose=verbose, all_versions=all_versions)
+        target_tables = info_tables['target_table'].data.tolist()
+        source_ids = info_tables['table_ID'].data.tolist()
     else:
-        maxrec_list = [maxrec] * len(clean_tables)
+        target_tables = [''] * len(clean_tables)
+        source_ids = [''] * len(clean_tables)
 
     list_of_catalogues = []
-    for table_name, maxrec_for_table in zip(clean_tables, maxrec_list):
+    for table_name, maxrec_for_table, target_table, source_id in zip(clean_tables, maxrec_list, target_tables,
+                                                                     source_ids):
         # test for columns
         columns_in_table = _is_column_list_in_catalogues(columns, tables=table_name)
         # instantiate ESOCatalogues
@@ -214,6 +229,40 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
             query_table.print_query()
         query_table.run_query(to_string=True)
         catalogue = query_table.get_result_from_query()
+        if join_target_table and len(target_table) > 0:
+            # if the target table is present, the code will query it to get the values for Ra, Dec, and source ID
+            info_target_table = catalogues_info(tables=target_table, verbose=verbose, all_versions=all_versions)
+            table_id_name = info_target_table['table_ID'][0]
+            table_RA_name, table_Dec_name = info_target_table['table_RA'][0], info_target_table['table_Dec'][0]
+            target_table_columns = [table_id_name, table_RA_name, table_Dec_name]
+            target_id = []
+            target_RA, table_Dec = [], []
+            for idx in range(len(catalogue)):
+                table_source_id = catalogue[source_ids][idx][0]
+                query_source_in_table = tap_queries.create_query_table(target_table,
+                                                                       columns=target_table_columns)
+                query_source_in_table = query_source_in_table + tap_queries.condition_source_ids_like(
+                    [table_source_id], source_id_name=info_target_table['table_ID'][0])
+                query_target_table = query_catalogues.ESOCatalogues(query=query_source_in_table,
+                                                                    type_of_query=type_of_query,
+                                                                    maxrec=_get_catalogue_length_from_table(
+                                                                        target_table, all_versions=all_versions))
+                query_target_table.run_query(to_string=True)
+                target_catalogue = query_target_table.get_result_from_query()
+                target_id.append(target_catalogue[info_target_table['table_ID'][0]][0])
+
+
+            # Now the two tables should match source_id in catalogue
+            # and info_target_table['table_ID'][0] in target_catalogue
+            match_column = catalogue[source_id].copy(
+                data=target_catalogue[info_target_table['table_ID'][0]].data)
+            target_catalogue.add_column(match_column)
+            target_catalogue.rename_column(info_target_table['table_ID'][0], 'target_ID')
+            target_catalogue.rename_column(info_target_table['table_RA'][0], 'target_RA')
+            target_catalogue.rename_column(info_target_table['table_Dec'][0], 'target_Dec')
+            from IPython import embed
+            embed()
+            catalogue = join(catalogue, target_catalogue, keys=source_id, join_type='left')
         list_of_catalogues.append(catalogue)
         msgs.info('The query to {} returned {} entries (with a limit set to maxrec={})'.format(table_name,
                                                                                                len(catalogue),
@@ -268,6 +317,29 @@ def _get_tables_from_collection(collection, all_versions=False):
     return list_selected_tables
 
 
+def _get_catalogue_length_from_tables(tables, maxrec=None, all_versions=False):
+    r"""Returns a list with the length of catalogues given in `tables`
+
+    Args:
+        tables (any): `list` of table_names (or a single `str`) to be queried
+        all_versions (bool): if set to `True` also obsolete versions of the catalogues are listed
+        maxrec (int, optional): define the maximum number of entries that a single query can return. If it is `None` the
+            value is set by the limit of the service.
+
+    Returns:
+        list: list of `int` containing the length of each catalogue in input. If `maxrec` is set, it will return a
+            with the same length of tables, but with all entries set to `maxrec`
+
+    """
+    if maxrec is None:
+        maxrec_list = []
+        for table in tables:
+            maxrec_list.append(_get_catalogue_length_from_table(table, all_versions=all_versions))
+    else:
+        maxrec_list = [maxrec] * len(tables)
+    return maxrec_list
+
+
 def _get_catalogue_length_from_table(table_name, all_versions=False):
     r"""Returns the length of a catalogue given a `table_name`
 
@@ -285,6 +357,32 @@ def _get_catalogue_length_from_table(table_name, all_versions=False):
     table_selected_catalogues = table_all_catalogues[(table_all_catalogues['table_name'].data == table_name)]
     selected_number_columns = int(table_selected_catalogues['number_rows'].data.data)
     return selected_number_columns
+
+
+def _is_collection_and_table_list_at_eso(collections=None, tables=None, all_versions=False):
+    r"""Check if lists of collections and tables are present in the ESO archive and merge them in a list of tables
+
+    Args:
+        collections (any): str or list of collections to be tested
+        tables (any): `list` of table_names (or a single `str`) to be tested
+        all_versions (bool): if set to `True` also obsolete versions of the catalogues are searched in case
+            `collections` is given
+    Returns:
+        list: merge of `collections` and `tables` where collections or tables not present at ESO are removed
+
+    """
+    # test on collections
+    clean_collections = _is_collection_list_at_eso(collections)
+    # test on tables
+    clean_tables = _is_table_list_at_eso(tables)
+    if clean_tables is None:
+        clean_tables = []
+    if clean_collections is not None:
+        for clean_collection in clean_collections:
+            clean_tables.append(_get_tables_from_collection(clean_collection, all_versions=all_versions))
+    # This removes possible duplicates and removes None
+    clean_tables = list(filter(None, list(set(clean_tables))))
+    return clean_tables
 
 
 def _is_collection_list_at_eso(collections):
