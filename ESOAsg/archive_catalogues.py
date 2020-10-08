@@ -165,16 +165,13 @@ def columns_info(collections=None, tables=None, verbose=False):
 
 
 def get_catalogues(collections=None, tables=None, columns=None, type_of_query='sync', all_versions=False,
-                   join_target_table=False,  maxrec=None, verbose=False):
+                   maxrec=None, verbose=False):
     r"""Query the ESO tap_cat service for specific catalogues
 
     There are two ways to select the catalogues you are interested in. Either you select directly the table_name (or the
     list of table_names) that you want to query, or you select a collection (or a list of collections). If you select
     this latter option, what happens in the background is that the code is going to search for the table(s)
     corresponding to the given collection and query them.
-
-    If a catalogue it is spread in more than one table, it is possible to merge the RA, Dec, and Source ID from the
-    `target_table` by using the `join_target_table` option.
 
     If you are asking for more than one table, the result will be listed in a list of `astropy.tables` with one element
     per retrieved table
@@ -187,8 +184,6 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
             table can be found by running `columns_info()`
         all_versions (bool): if set to `True` also obsolete versions of the catalogues are searched in case
             `collections` is given
-        join_target_table (bool): if set to `True` RA, Dec, and Source ID will be inherited from the `target_table`
-             (if necessary)
         type_of_query (str): type of query to be run
         maxrec (int, optional): define the maximum number of entries that a single query can return. If it is `None` the
             value is set by the limit of the service.
@@ -207,18 +202,8 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
     # if maxrec is set to None, the entire length of the catalogue is considered:
     maxrec_list = _get_catalogue_length_from_tables(clean_tables, maxrec=maxrec, all_versions=all_versions)
 
-    # if join_target_table is set to True, the target_catalogue will also be queried (if present):
-    if join_target_table:
-        info_tables = catalogues_info(tables=clean_tables, verbose=verbose, all_versions=all_versions)
-        target_tables = info_tables['target_table'].data.tolist()
-        source_ids = info_tables['table_ID'].data.tolist()
-    else:
-        target_tables = [''] * len(clean_tables)
-        source_ids = [''] * len(clean_tables)
-
     list_of_catalogues = []
-    for table_name, maxrec_for_table, target_table, source_id in zip(clean_tables, maxrec_list, target_tables,
-                                                                     source_ids):
+    for table_name, maxrec_for_table in zip(clean_tables, maxrec_list):
         # test for columns
         columns_in_table = _is_column_list_in_catalogues(columns, tables=table_name)
         # instantiate ESOCatalogues
@@ -229,40 +214,6 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
             query_table.print_query()
         query_table.run_query(to_string=True)
         catalogue = query_table.get_result_from_query()
-        if join_target_table and len(target_table) > 0:
-            # if the target table is present, the code will query it to get the values for Ra, Dec, and source ID
-            info_target_table = catalogues_info(tables=target_table, verbose=verbose, all_versions=all_versions)
-            table_id_name = info_target_table['table_ID'][0]
-            table_RA_name, table_Dec_name = info_target_table['table_RA'][0], info_target_table['table_Dec'][0]
-            target_table_columns = [table_id_name, table_RA_name, table_Dec_name]
-            target_id = []
-            target_RA, table_Dec = [], []
-            for idx in range(len(catalogue)):
-                table_source_id = catalogue[source_ids][idx][0]
-                query_source_in_table = tap_queries.create_query_table(target_table,
-                                                                       columns=target_table_columns)
-                query_source_in_table = query_source_in_table + tap_queries.condition_source_ids_like(
-                    [table_source_id], source_id_name=info_target_table['table_ID'][0])
-                query_target_table = query_catalogues.ESOCatalogues(query=query_source_in_table,
-                                                                    type_of_query=type_of_query,
-                                                                    maxrec=_get_catalogue_length_from_table(
-                                                                        target_table, all_versions=all_versions))
-                query_target_table.run_query(to_string=True)
-                target_catalogue = query_target_table.get_result_from_query()
-                target_id.append(target_catalogue[info_target_table['table_ID'][0]][0])
-
-
-            # Now the two tables should match source_id in catalogue
-            # and info_target_table['table_ID'][0] in target_catalogue
-            match_column = catalogue[source_id].copy(
-                data=target_catalogue[info_target_table['table_ID'][0]].data)
-            target_catalogue.add_column(match_column)
-            target_catalogue.rename_column(info_target_table['table_ID'][0], 'target_ID')
-            target_catalogue.rename_column(info_target_table['table_RA'][0], 'target_RA')
-            target_catalogue.rename_column(info_target_table['table_Dec'][0], 'target_Dec')
-            from IPython import embed
-            embed()
-            catalogue = join(catalogue, target_catalogue, keys=source_id, join_type='left')
         list_of_catalogues.append(catalogue)
         msgs.info('The query to {} returned {} entries (with a limit set to maxrec={})'.format(table_name,
                                                                                                len(catalogue),
