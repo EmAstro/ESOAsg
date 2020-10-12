@@ -26,9 +26,8 @@ env:
         # to repeat them for all configurations.
         - FOLDERNAME='ESOAsg'
         - PYTHON_VERSION=3.7
-        - ASTROPY_VERSION=4.0
-        - NUMPY_VERSION=1.18
-        #- SKLEARN_VERSION=stable
+        - ASTROPY_VERSION=stable
+        - NUMPY_VERSION=stable
         - MAIN_CMD='python setup.py'
         - SETUP_CMD='test'
         - CONDA_DEPENDENCIES='astropy ipython matplotlib numpy packaging requests'
@@ -45,7 +44,7 @@ env:
 
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
-        - SETUP_XVFB=True
+        # - SETUP_XVFB=True
 
     matrix:
       # Extra context is a way to override options that the user normally
@@ -108,16 +107,19 @@ matrix:
         #  env: NUMPY_VERSION=1.14
 
         # Try numpy 1.18
-        - os: linux
-          env: NUMPY_VERSION=1.18
+        # - os: linux
+        #   env: NUMPY_VERSION=1.18
+        # Try numpy 1.19
+        # - os: linux
+        #   env: NUMPY_VERSION=1.19
         # Try numpy pre-release
-        - os: linux
-          env: NUMPY_VERSION=prerelease
-               EVENT_TYPE='pull_request push cron'
+        # - os: linux
+        #  env: NUMPY_VERSION=prerelease
+        #       EVENT_TYPE='pull_request push cron'
 
         # Do a PEP8 test with pycodestyle
-        - os: linux
-          env: MAIN_CMD='pycodestyle packagename --count' SETUP_CMD=''
+        # - os: linux
+        #  env: MAIN_CMD='pycodestyle packagename --count' SETUP_CMD=''
 
     allow_failures:
         # Do a PEP8 test with pycodestyle
@@ -135,9 +137,6 @@ install:
     # - conda install ligo.skymap -c conda-forge
 
 script:
-    - $MAIN_CMD $SETUP_CMD
 
-
-after_success:
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then coveralls --rcfile='ESOAsg/tests/coveragerc'; fi
+    - py.test
 
