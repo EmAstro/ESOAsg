@@ -12,6 +12,12 @@ Current developments are:
 * fixing header manipulation tools
 * improving documentation
 
+ESOAsg V0.1.1dev
+================
+
+* New HowTo on obtaining data from catalogues
+* Improved tap query to obtain ESO catalogues
+
 ESOAsg V0.1
 ===========
 

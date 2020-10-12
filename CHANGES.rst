@@ -1,5 +1,5 @@
-0.1.1 (2020-10-06)
-------------------
+0.1.1dev (2020-10-06)
+---------------------
 
 - New HowTo on obtaining data from catalogues
 - Improved tap query to obtain ESO catalogues
