@@ -32,10 +32,17 @@ Archive access
    archive_science_portal
    archive_scripts
 
+Phase 3 validation
+==================
+
+.. toctree::
+   :maxdepth: 2
+
+   phase3
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
-
 
    api
 

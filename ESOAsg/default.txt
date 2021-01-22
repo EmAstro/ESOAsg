@@ -24,8 +24,3 @@ eso_archive_url::http://archive.eso.org/
 # Link to ESO Archive Science Portal
 eso_asp_url::http://archive.eso.org/scienceportal/home?
 #################################################################
-# verbose level -> work in progress
-# in order of verbosity:
-# quiet=0, normal=1, chatty=2, debug=3
-verbosity::3
-#################################################################

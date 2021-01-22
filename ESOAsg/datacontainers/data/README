@@ -1,0 +1,20 @@
+Data directory for the ESOAsg python package
+--------------------------------------------
+Last updated 16 November 2020 by EMA
+* Added file: p3sdpstd_header_keywords.csv
+* Added file: p3sdpstd_header_keywords_notes.csv 
+--------------------------------------------
+* p3sdpstd_header_keywords.csv
+  List of mandatory/recommended/etc. keyword for PRODCATG='SCIENCE.*' files
+  This is essentially a copy of Table 7 in:
+     ESO Science Data Products Standard
+     Document Number: ESO-044286
+     Document Version: 6
+     Released On: 2020-06-15
+* p3sdpstd_header_keywords_notes.csv
+  Notes to entries in p3sdpstd_header_keywords.csv
+  These are the notes related to Table 7 in:
+     ESO Science Data Products Standard
+     Document Number: ESO-044286
+     Document Version: 6
+     Released On: 2020-06-15

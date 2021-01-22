@@ -1,5 +1,5 @@
 """
-Version checking.
+Version checking
 """
 
 import pkg_resources

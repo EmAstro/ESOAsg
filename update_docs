@@ -1,12 +1,46 @@
 #!/bin/bash
 
+CURRENT_OS="OSX" #CENTOS, UBUNUTU are other valid options
+function findCurrentOSType()
+{
+    osType=$(uname)
+    case "$osType" in
+            "Darwin")
+            {
+                echo "Running on Mac OSX."
+                CURRENT_OS="OSX"
+            } ;;    
+            "Linux")
+            {
+                # If available, use LSB to identify distribution
+                if [ -f /etc/lsb-release -o -d /etc/lsb-release.d ]; then
+                    DISTRO=$(gawk -F= '/^NAME/{print $2}' /etc/os-release)
+                else
+                    DISTRO=$(ls -d /etc/[A-Za-z]*[_-][rv]e[lr]* | grep -v "lsb" | cut -d'/' -f3 | cut -d'-' -f1 | cut -d'_' -f1)
+                fi
+                CURRENT_OS=$(echo $DISTRO | tr 'a-z' 'A-Z')
+            } ;;
+            *) 
+            {
+                echo "Unsupported OS, exiting"
+                exit
+            } ;;
+    esac
+}
+
+
 cd doc
 make clean; make html
 cd ../
 git add doc/*.rst
 
-
-firefox ./doc/_build/html/index.html
+findCurrentOSType
+if [ $CURRENT_OS == "OSX" ]; then
+    echo "Open for $CURRENT_OS"
+    open -a firefox ./doc/_build/html/index.html
+else
+    firefox ./doc/_build/html/index.html
+fi
 
 printf "Now check the modified files with:\n\n    git status\n\nAnd commit the changes with: \n\n   git commit -m 'updated docs'\n\n"
 

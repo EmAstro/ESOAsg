@@ -1,39 +1,26 @@
 # from ESOAsg import msgs
 
-__all__ = ['DataContainer']
+import collections
 
-PRODCATG = ['SCIENCE.IMAGE',
-            'SCIENCE.MEFIMAGE',
-            'SCIENCE.IMAGE.FLUXMAP',
-            'SCIENCE.SPECTRUM',
-            'SCIENCE.SRCTBL',
-            'SCIENCE.CUBE.IFS',
-            'SCIENCE.VISIBILITY',
-            'SCIENCE.CATALOG',
-            'SCIENCE.MCATALOG',
-            'SCIENCE.CATALOGTILE'
-            ]
+from ESOAsg.datacontainers import eso_prodcatg
+
+__all__ = ['DataContainer']
 
 
 class DataContainer:
     r"""Base class that dictate the general behaviour of a data container
 
     Attributes:
+        prodcatg (:obj:`eso_prodcatg.ProdCatg`)
 
     """
 
-    def __init__(self, primary_header=None, header=None, data=None, error=None, background=None, quality=None,
-                 mask=None, others=None):
-        r"""Instantiate the class LightCurves
+    def __init__(self, prodcatg_type=None):
+        r"""Instantiate the class DataContainer
 
         """
-        self.primary_header = primary_header
-        self.header = header
-        self.data = data
-        self.error = error
-        self.background = background
-        self.quality = quality
-        self.mask = mask
-        self.others = others
+        self.prodcatg = eso_prodcatg.ProdCatg(prodcatg_type=prodcatg_type)
+
+
 
 

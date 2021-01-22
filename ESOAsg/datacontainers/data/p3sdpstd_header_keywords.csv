@@ -1,0 +1,126 @@
+﻿Num;KEYWORD;SCIENCE.IMAGE;SCIENCE.MEFIMAGE;SCIENCE.IMAGE.FLUXMAP;SCIENCE.SPECTRUM;SCIENCE.CUBE.IFS;SCIENCE.VISIBILITY;SCIENCE.SRCTBL;SCIENCE.MCATALOGUE;SCIENCE.CATALOGTILE;SCIENCE.CATALOG
+1;PRODCATG;M;M;M;M;M;M;M;M;M;M
+2;ASSOCi;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;N/A;Mapp 27;Mapp 27
+3;ASSONi;Mapp 28;Mapp 28;M 29;Mapp 28;M 30;Mapp 28;Mapp 28;N/A;Mapp 28;Mapp 28
+4;ASSOMi;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;Mapp 27;N/A;Mapp 27;Mapp 27
+5;ORIGIN;M;M;M;M;M;M;M;M;M;M
+6;"TELESCOP TELESCi";M;M;M;M;M;M;M;M;M;M
+7;"INSTRUME INSTRi";M;M;M;M;M;M;M;M;M;M
+8;"FILTER FILTERi";M;M;M;N/A;N/A;N/A;M;Mapp 31;Mapp 31;Mapp 31
+9;OBJECT;M;M;M;M Mext;M;M;M;M;M;M
+10;"RA DEC";M;M;M;M Mext;M;M;M;N/A;M;Mapp 32
+11;EQUINOX;Mapp 33;Mapp 33;Mapp 33;Mapp 33;Mapp 33;Mapp 33;Mapp 33;N/A;Mapp 33;Mapp 33 32
+12;RADESYS;M;M;M;M;M;M;M;N/A;M;Mapp 32
+13;TIMESYS;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34;Mapp 34
+14;EXPTIME;M;M;M;M;M;M;M;N/A;N/A;N/A
+15;TEXPTIME;M;M;M;M;M;M;M;N/A;N/A;N/A
+16;MJD-OBS;M;M;M;M;M;M;M;M;M;M
+17;MJD-END;M;M;M;M;M;M;M;M;M;M
+18;"PROG_ID PROGIDi";Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso
+19;OBIDi;Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso
+20;NCOMBINE;Meso;Meso;Meso;Meso;Meso;Meso;Meso;N/A;N/A;N/A
+21;OBSTECH;M;M;M;M;M;M;M;Mapp 35;Mapp 35;Mapp 35
+22;FLUXCAL;M;M;M;M;M;N/A;N/A;N/A;N/A;N/A
+23;PROCSOFT;M;M;M;M;M;M;M;M;M;M
+24;REFERENC;M 36;M 36;M 36;M 36;M 36;M 36;M 36;M 36;M 36;M 36
+25;"PROVi PROVXTN";Meso;Meso;Meso;Meso;Meso;Meso;Meso;Meso;N/A;Meso
+26;BUNIT;M;Mext;M;NotAlw;M;N/A;N/A;N/A;N/A;N/A
+27;GAIN;O;O;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+28;DETRON;O;O;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+29;EFFRON;O;O;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+30;WEIGHT;O;O;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+31;CRVALi;M;Mext;M;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+32;CRPIXi;M;Mext;M;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+33;CTYPEi;M;Mext;M;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+34;CUNITi;M;Mext;M;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+35;CDi_j;M;Mext;M;NotAlw;Mext;N/A;N/A;N/A;N/A;N/A
+36;CSYERi;R;Rext;R;N/A;Rext;N/A;N/A;N/A;N/A;N/A
+37;CRDERi;R;Rext;R;N/A;Rext;N/A;N/A;N/A;N/A;N/A
+38;PHOTZP;M;Mext;N/A;N/A;N/A;N/A;Mextapp 37;N/A;N/A;N/A
+39;PHOTZPER;R;Rext;N/A;N/A;N/A;N/A;Rext;N/A;N/A;N/A
+40;PHOTSYS;M;Mext;N/A;N/A;N/A;N/A;Mext;M;M;M
+41;SPECSYS;N/A;N/A;N/A;M;M;M;N/A;N/A;N/A;N/A
+42;EXT_OBJ;N/A;N/A;N/A;Mapp 38;N/A;N/A;N/A;N/A;N/A;N/A
+43;CONTNORM;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A
+44;TOT_FLUX;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A
+45;FLUXERR;N/A;N/A;M;M 39;N/A;N/A;N/A;N/A;N/A;N/A
+46;WAVELMIN;N/A;N/A;M;M;M;M;N/A;Mapp 40;Mapp 40;Mapp 40
+47;WAVELMAX;N/A;N/A;M;M;M;M;N/A;Mapp 40;Mapp 40;Mapp 40
+48;LAMRMS;N/A;N/A;N/A;O;N/A;N/A;N/A;N/A;N/A;N/A
+49;LAMNLIN;N/A;N/A;N/A;O;N/A;N/A;N/A;N/A;N/A;N/A
+50;SPEC_BIN;N/A;N/A;N/A;M;NotAlw;N/A;N/A;N/A;N/A;N/A
+51;SPEC_ERR;N/A;N/A;N/A;R;N/A;M;N/A;N/A;N/A;N/A
+52;SPEC_SYE;N/A;N/A;N/A;R;N/A;M;N/A;N/A;N/A;N/A
+53;RA_ERR;NotAlw;NotAlw;NotAlw;R;NotAlw;N/A;N/A;N/A;N/A;N/A
+54;DEC_ERR;NotAlw;NotAlw;NotAlw;R;NotAlw;N/A;N/A;N/A;N/A;N/A
+55;NELEM;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+56;VOCLASS;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+57;VOPUB;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+58;TITLE;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+59;APERTURE;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+60;TELAPSE;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+61;TMID;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+62;SPEC_VAL;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+63;SPEC_BW;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A;N/A
+64;BNOISE;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 41
+65;MAPMODE;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 41
+66;FEBEi;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 41
+67;CONTENT;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+68;INSMODE;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+69;BASE_MIN;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+70;BASE_MAX;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+71;NUM_CHAN;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+72;VIS2ERR;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+73;T3PHIERR;N/A;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A
+74;STOKES;Contact;Contact;Contact;Contact;Contact;Contact;Contact;Contact;Contact;Contact
+75;HDUCLASS;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+76;HDUCLASi;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+77;HDUDOC;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+78;HDUVERS;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A;N/A;N/A
+79;SCIDATA;N/A;N/A;N/A;N/A;Mextapp 42;N/A;N/A;N/A;N/A;N/A
+80;ERRDATA;N/A;N/A;N/A;N/A;Mextapp 42;N/A;N/A;N/A;N/A;N/A
+81;QUALDATA;N/A;N/A;N/A;N/A;Mextapp 42;N/A;N/A;N/A;N/A;N/A
+82;ABMAGLIM;M;Mext;NotAlw;N/A;M;N/A;Mext;Mapp 43;Mapp 43;Mapp 43
+83;PIXNOISE;N/A;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A
+84;MAGLIMi;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 44;Mapp 44;Mapp 44
+85;ABMAGSAT;M;Mext;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A
+86;PSF_FWHM;M;Mext;N/A;N/A;N/A;N/A;Mext;N/A;N/A;N/A
+87;ELLIPTIC;M 45;Mext 45;N/A;N/A;O;N/A;Mext 45;N/A;N/A;N/A
+88;SNR;N/A;N/A;N/A;M;N/A;N/A;N/A;N/A;N/A;N/A
+89;SPEC_RES;N/A;N/A;N/A;M;M;M;N/A;N/A;N/A;N/A
+90;SKY_RES;N/A;N/A;M;N/A;M;N/A;N/A;N/A;N/A;Mapp 41
+91;SKY_RERR;N/A;N/A;Mapp 46;N/A;Mapp 46;N/A;N/A;N/A;N/A;Mapp 46
+92;STREHL;Mapp 47;Mapp 47;N/A;Mapp 47;Mapp 47;N/A;Mapp 47;N/A;N/A;N/A
+93;ARCFILE;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved
+94;CHECKSUM;M;M;M;M;M;M;M;M;M;M
+95;DATASUM;M;M;M;M;M;M;M;M;M;M
+96;ORIGFILE;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved
+97;P3ORIG;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved;Reserved
+98;NDIT;Mapp 48;Mapp 48;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+99;NJITTER;Mapp 48;Mapp 48;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+100;NOFFSETS;Mapp 48;Mapp 48;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+101;NUSTEP;Mapp 48;Mapp 48;N/A;N/A;N/A;N/A;N/A;N/A;N/A;N/A
+102;FPRAia;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 49;M;Mapp 50
+103;FPDEia;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 49;M;Mapp 50
+104;SKYSQDEG;N/A;N/A;N/A;N/A;N/A;N/A;N/A;M;M;Mapp 50
+105;M_EPOCH;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 51;Mapp 51;Mapp 51
+106;APMATCHD;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 52;Mapp 52;Mapp 52
+107;TXLNKi;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 53;Mapp 53 54;Mapp 53 54
+108;TXRGF;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 53;N/A;Mapp 53
+109;TXCTY;N/A;N/A;N/A;N/A;N/A;N/A;N/A;Mapp 53;N/A;Mapp 53
+110;NOESODAT;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55;Mapp 55
+111;TFIELDS;N/A;N/A;N/A;Mext;N/A;Mext;Mext;Mext;Mext;Mext
+112;TTYPEi;N/A;N/A;N/A;Mext;N/A;Mext;Mext;Mext;Mext;Mext
+113;TFORMi;N/A;N/A;N/A;Mext;N/A;Mext;Mext;Mext;Mext;Mext
+114;TCOMMi;N/A;N/A;N/A;Oext;N/A;Oext;Oext;Mext;Mext;Mext
+115;TUNITi;N/A;N/A;N/A;Mext 57;N/A;Mextapp 56;Mextapp 56;Mext 57;Mext 57;Mext 57
+116;TUTYPi;N/A;N/A;N/A;Mext 58;N/A;N/A;N/A;N/A;N/A;N/A
+117;TUCDi;N/A;N/A;N/A;Mext;N/A;Oext;Oext;Mext;Mext;Mext
+118;TDMINi;N/A;N/A;N/A;Mextapp 59;N/A;Oext;Oext;Oext;Oext;Oext
+119;TDMAXi;N/A;N/A;N/A;Mextapp 59;N/A;Oext;Oext;Oext;Oext;Oext
+120;TNULLi;N/A;N/A;N/A;N/A;N/A;Oext;Oext;Mextapp 60;Mextapp 60;Mextapp 60
+121;EXTNAME;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61;Mextapp 61
+122;TZEROi;None;None;None;None;None;None;None;NotAlw;NotAlw;NotAlw
+123;TSCALi;None;None;None;None;None;None;None;NotAlw;NotAlw;NotAlw
+124;EXTVER;None;None;None;None;None;None;None;NotAlw;NotAlw;NotAlw
+125;EXTLEVEL;None;None;None;None;None;None;None;NotAlw;NotAlw;NotAlw
