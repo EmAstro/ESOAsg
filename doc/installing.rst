@@ -21,7 +21,7 @@ ESOAsg runs with `python <http://www.python.org/>`_ 3.7 and with the following d
 * `python <http://www.python.org/>`_ -- version 3.7 or later
 * `astropy <https://www.astropy.org/>`_ -- version 4.2 or later
 * `astroquery <https://astroquery.readthedocs.io/en/latest/>`_ -- version 0.4 or later
-* `IPython <https://ipython.org>`_ -- version 7.13 or later
+* `IPython <https://ipython.org>`_ -- version 7.12 or later
 * `matplotlib <https://matplotlib.org/>`_ -- version 3.3 or later
 * `numpy <http://www.numpy.org/>`_ -- version 1.19 or later
 * `packaging <https://packaging.python.org/>`_ -- version 20.4 or later
