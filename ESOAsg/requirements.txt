@@ -1,7 +1,7 @@
 # Required Packages for ESOAsg
 astropy>=4.0
 astroquery>=0.4
-IPython>=7.13
+IPython>=7.12
 matplotlib>=3.3
 numpy>=1.19
 packaging>=20.4
