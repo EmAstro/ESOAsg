@@ -11,10 +11,10 @@ from ESOAsg import archive_catalogues
 def test_query_observations():
     r"""Test for from ESOAsg.queries import query_observations
     """
-    query = "SELECT instrument_name FROM ivoa.ObsCore WHERE instrument_name = 'ALMA'"
-    alma_query = query_observations.ESOObservations(query=query, maxrec=1)
-    alma_query.run_query()
-    assert alma_query.result_from_query['instrument_name'] == 'ALMA', r'Unable to find ALMA data'
+    query = "SELECT instrument_name FROM ivoa.ObsCore WHERE instrument_name = 'OMEGACAM'"
+    lpo_query = query_observations.ESOObservations(query=query, maxrec=1)
+    lpo_query.run_query()
+    assert lpo_query.result_from_query['instrument_name'] == 'OMEGACAM', r'Unable to find LPO data'
 
 
 def test_all_catalogues():
