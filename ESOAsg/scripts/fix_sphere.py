@@ -1,105 +1,109 @@
-#!/usr/bin/env python3
+r"""
+fix_sphere
+==========
+Script to make data produced by the `SPHERE Data Center <https://sphere.osug.fr>`_ (almost) phase 3 compliant
+
+.. topic:: Inputs:
+
+    - **input_fits** - Input probability map out of the GW event pipeline
+
+"""
+
 
 import argparse
 
-import numpy as np
-import os
-
-from astropy.io import fits
-from astropy import units as u
-
-# from astropy import coordinates
-
 from ESOAsg import __version__
-from ESOAsg import msgs
-from ESOAsg import images
-# from ESOAsg.core import astro
-from ESOAsg.core import fitsfiles
-from ESOAsg.core import download_archive
-from ESOAsg.ancillary import checks
+from ESOAsg import default
+
+EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
+               r"""Create the 50% confidence contours from the S191205ah_bayestar HEALPix maps, """ +
+               r"""show their distribution on the sky, open links to the ESO ASP webpages showing """ +
+               r"""ESO data within each of the retrieved contours, """ +
+               r"""and download one of the `MUSE` cubes present: """ + """\n""" +
+               r"""> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
+               r"""--confidence_level 50. """ +
+               r"""--show_sky """ +
+               r"""--asp_link """ +
+               r"""--download_data """ +
+               r"""--instruments MUSE """ +
+               r"""--max_rec 1 """ + """\n""" +
+               r""" """)
 
 
-def parse_arguments():
+def parser(options=None):
     parser = argparse.ArgumentParser(
-        description=r"""
-        Manipulates SPHERE data to become compliant with the Phase 3 standard
-        
-        This code takes care of a series of simple rearrangements that transform SPHERE data coming from the pipeline
-        into (almost) Phase 3 compliant cubes (almost) ready to be ingested on the ESO Archive. The code trys its best
-        to get all the keywords properly, however, the user should always double check the outcome to be sure that 
-        everything is on place.
-        
-        To summarize the steps:
+        description=r"""Manipulate SPHERE data produced by `SPHERE Data Center <https://sphere.osug.fr>`_ """ +
+                    r"""and make them compliant with the  """ +
+                    r"""`ESO Phase 3 Standard <https://www.eso.org/sci/observing/phase3/p3sdpstd.pdf>`_. """ +
+                    """\n""" + """\n""" +
+                    r"""This code takes care of a series of rearrangements that transform SPHERE """ +
+                    r"""data into (almost) Phase 3 compliant data (almost) ready to be ingested on the ESO """ +
+                    r"""Archive. The code tries its best to get all the keywords properly. """ +
+                    r"""However, it is user's responsibility to check the outcome """ +
+                    r"""and to make sure that everything is on place. """ +
+                    """\n""" + """\n""" +
+                    r"""To summarize the steps:
             1. Creates a PrimaryHDU and put the data in the `DATA` extension (similar to MUSE datacubes).
             2. Places properly header cards into the PrimaryHDU and in `DATA`
             3. Creates the white-light image 
             4. Performs few consistency checks for header values:
                 * EXPTIME > 0 : If not, an attempt is made to recover the error from the PROV-j entries
-        
+
         The following header keywords can be added by user. We refer to the `ESO Science Data Products Standard` for a
         exhaustive explanation of meanings and rules associated to them.
             * PrimaryHDU:
                 * `FLUXCAL`  : either `ABSOLUTE` (`default`) or `UNCALIBRATED`
                 * `REFERENC` : DOI to the related scientific publication
                 * `ABMAGLIM` : 5-sigma detection limit derived from the white-light image
-        
-        Note that, if `output` is not defined, the fits file will be overwritten. 
-        
-        This uses ESOAsg version {__version__:s}
-        """,
+
+        Note that, if `output` is not defined, the fits file will be overwritten.  """ +
+                    """\n""" + """\n""" +
+                    r"""This uses ESOAsg version {:s}""".format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=EXAMPLES)
 
-    parser.add_argument('input_fits', nargs='+', type=str,
-                        help='SPHERE fits file to be modified. This may contain wildcards.')
-    parser.add_argument('-out', '--output', nargs='+', type=str, default=None,
-                        help='Name of the output modified file')
-    parser.add_argument('-cal', '--fluxcal', type=str, default='ABSOLUTE',
-                        help='Value for the header keyword: `FLUXCAL`')
-    parser.add_argument('-r', '--referenc', nargs='+', type=str, default=None,
-                        help='DOI of the related scientific publication')
-    parser.add_argument('-mlim', '--abmaglim', nargs='+', type=float, default=None,
-                        help='5-sigma detection limit in the AB system')
-    parser.add_argument('-v', '--version', action='version', version=__version__)
+    parser.add_argument("input_fits", nargs="+", type=str,
+                        help="Input probability map out of the GW event pipeline")
+    parser.add_argument("-cl", "--confidence_level", nargs="+", type=float, default=50.0,
+                        help="Confidence level at which extract the contours. Default is 50.0")
+    parser.add_argument("-mv", "--max_vertices", nargs="+", type=int, default=30,
+                        help="Max number of vertices to be considered in the conversion from" +
+                             "contours to polygons. Default it 30")
+    parser.add_argument("-s", "--show_sky", action="store_true", default=False,
+                        help="Show the contours on a sky-map")
+    parser.add_argument("-a", "--asp_link", action="store_true", default=False,
+                        help="Open ASP web-pages of the selected contours")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
 
-EXAMPLES = r"""
-        Example:
-        fix_sphere.py input_fits.fits 
-        fix_sphere.py input_fits.fits -out _cleaned -cal ABSOLUTE
-        """
+def main(args):
+    from ESOAsg.ancillary import astro
+    from ESOAsg.ancillary import cleaning_lists
+    from ESOAsg.ancillary import polygons
+    from ESOAsg import archive_science_portal
+    from ESOAsg import archive_observations
+    from ESOAsg import msgs
 
-if __name__ == '__main__':
-    args = parse_arguments()
-
-    # File_names
-    input_fits_files = []
-    for file_name in args.input_fits:
-        if not checks.fits_file_is_valid(file_name):
-            msgs.warning('File {} is not a valid fits file. Skipping the procedure'.format(file_name))
-        elif len(fitsfiles.get_hdul(file_name)) > 1:
-            msgs.warning('{} cube already processed? Skipping the procedure'.format(file_name))
-        else:
-            input_fits_files.append(file_name)
-    if len(input_fits_files) == 0:
-        msgs.error('No valid file to process')
+    # Cleaning input lists
+    input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
 
     # output
     if args.output is not None:
         overwrite = False
         if len(input_fits_files) == 1:
             output_fits_files = [output_fits_temp if output_fits_temp.endswith('.fits') else np.str(
-                output_fits_temp)+'.fits' for output_fits_temp in [args.output[0]]]
+                output_fits_temp) + '.fits' for output_fits_temp in [args.output[0]]]
             output_fits_images = [output_fits_image.replace('.fits', '_whitelight.fits') for output_fits_image
                                   in output_fits_files]
         else:
             if np.str(args.output[0]).endswith('.fits'):
                 output_ending = np.str(args.output[0])
             else:
-                output_ending = np.str(args.output[0])+'.fits'
+                output_ending = np.str(args.output[0]) + '.fits'
             output_fits_files = [output_temp.replace('.fits', output_ending) for output_temp in input_fits_files]
-            output_fits_images = [output_fits_image.replace('.fits', '_whitelight'+output_ending) for output_fits_image
+            output_fits_images = [output_fits_image.replace('.fits', '_whitelight' + output_ending) for
+                                  output_fits_image
                                   in input_fits_files]
 
     else:
@@ -217,7 +221,7 @@ if __name__ == '__main__':
                                and hdr0[hdr0_card.replace('NAME', 'CATG')].startswith('OBJECT')]
 
         for prov, prov_number in zip(prov_to_be_transfer, range(1, len(prov_to_be_transfer), 1)):
-            hdr0['PROV'+str(prov_number)] = hdr0[prov]
+            hdr0['PROV' + str(prov_number)] = hdr0[prov]
             msgs.work('    - {}'.format(hdr0[prov]))
             msgs.work('      {}'.format(hdr0[prov.replace('NAME', 'CATG')]))
 
@@ -269,7 +273,7 @@ if __name__ == '__main__':
         else:
             msgs.error('Spectral unit: {} not recognized'.format(hdr1['CUNIT3']))
         delta_wave_bin = hdr1['CDELT3']
-        image_hdul.append(fits.ImageHDU(to_ang*delta_wave_bin*np.nansum(hdul[1].data, axis=0, dtype=np.float_)))
+        image_hdul.append(fits.ImageHDU(to_ang * delta_wave_bin * np.nansum(hdul[1].data, axis=0, dtype=np.float_)))
         image_hdr0 = image_hdul[0].header
         image_hdr1 = image_hdul[1].header
         card_for_image0 = ['WAVELMIN', 'WAVELMAX', 'OBJECT', 'TELESCOP', 'INSTRUME', 'RADECSYS', 'RA', 'DEC',
@@ -278,7 +282,7 @@ if __name__ == '__main__':
         image_hdr0['PRODCATG'] = str('ANCILLARY.IMAGE.WHITELIGHT')
 
         card_for_image1 = ['CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2', 'CDELT1', 'CDELT2', 'CUNIT1', 'CUNIT2',
-                            'NAXIS1', 'NAXIS2', 'EXTNAME', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CTYPE1', 'CTYPE2']
+                           'NAXIS1', 'NAXIS2', 'EXTNAME', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CTYPE1', 'CTYPE2']
         fitsfiles.transfer_header_cards(hdr1, image_hdr1, card_for_image1, with_comment=True, delete_card=False)
 
         # 5. few checks
@@ -288,15 +292,15 @@ if __name__ == '__main__':
             get_prov = [hdr0[prov] for prov in hdr0 if prov.startswith('PROV')]
             if len(get_prov) > 0:
                 msgs.warning('Inconsiste value for EXPTIME: {}. Tying to fix it with provenances'.format(hdr0[
-                                                                                                            'EXPTIME']))
+                                                                                                             'EXPTIME']))
                 msgs.work('Downloading {} headers'.format(len(get_prov)))
                 EXPTIME_sec = 0
                 for prov_number in hdr0['PROV*']:
                     file_id = hdr0[prov_number].replace('.fits', '')
-                    download_archive.get_header_from_archive(file_id, text_file=file_id+'.hdr')
-                    hdr_prov = fitsfiles.header_from_txt_file(file_id+'.hdr')
+                    download_archive.get_header_from_archive(file_id, text_file=file_id + '.hdr')
+                    hdr_prov = fitsfiles.header_from_txt_file(file_id + '.hdr')
                     msgs.work('{} has EXPTIME of: {}'.format(file_id, hdr_prov['EXPTIME']))
-                    EXPTIME_sec = EXPTIME_sec+hdr_prov['EXPTIME']
+                    EXPTIME_sec = EXPTIME_sec + hdr_prov['EXPTIME']
                 hdr0['EXPTIME'] = np.float(EXPTIME_sec)
                 msgs.warning('Updating value for EXPTIME to: {}'.format(EXPTIME_sec))
                 fitsfiles.add_header_card(hdr0, 'TEXPTIME', EXPTIME_sec)
@@ -318,11 +322,11 @@ if __name__ == '__main__':
                 whitelight_mean, whitelight_median, whitelight_std = whitelight.get_clean_stats(nsigma=3.)
                 # ToDO
                 # Improve on this
-                n_pixels_psf = np.pi*(3)**2.
-                five_sigma_nu = 5.*3.34e4*np.power((WAVELMAX+WAVELMIN)*to_ang/2.,
-                                                   2.)*whitelight_std*n_pixels_psf/(delta_wave_bin*to_ang)
-                hdr0['ABMAGLIM'] = -2.5*np.log10(five_sigma_nu/3631.)
-                msgs.warning('ABMAGLIM={}. This is most probably not correct at the moment'.format(hdr0['ABMAGLIM'] ))
+                n_pixels_psf = np.pi * (3) ** 2.
+                five_sigma_nu = 5. * 3.34e4 * np.power((WAVELMAX + WAVELMIN) * to_ang / 2.,
+                                                       2.) * whitelight_std * n_pixels_psf / (delta_wave_bin * to_ang)
+                hdr0['ABMAGLIM'] = -2.5 * np.log10(five_sigma_nu / 3631.)
+                msgs.warning('ABMAGLIM={}. This is most probably not correct at the moment'.format(hdr0['ABMAGLIM']))
 
         # 6. update checksum and datasum
         msgs.work('Updating checksum and datasum')

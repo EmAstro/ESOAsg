@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+
+r"""Make SPHERE data produced by the `SPHERE Data Center` (almost) Phase 3 compliant
+"""
+
+from ESOAsg.scripts import fix_sphere
+
+if __name__ == '__main__':
+    args = fix_sphere.parser()
+    fix_sphere.main(args)
