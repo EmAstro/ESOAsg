@@ -14,44 +14,46 @@ from ESOAsg import msgs
 from ESOAsg import default
 
 
-def check_disk_space(min_disk_space=float(default.get_value('min_disk_space'))):
-    r"""
-    Given a limit in GB in the variable min_disk_space the macro returns `True` if there is enough space and rises
-    an error otherwise.
+def check_disk_space(min_disk_space=float(default.get_value('min_disk_space'))) -> bool:
+    r"""Check that there is enough space on the location where the code is running
+
+    Given a disk space limit in GB, the macro returns `True` if the disk where the code is running has more free GB
+    than the given limit.
+
+    .. warning::
+        The current implementation checks the disk where the code is running (i.e., from the directory: `./`).
+        This may cause some troubles with shared disks.
 
     Args:
-        min_disk_space (`float`):
-            Size of free space on disk required
+        min_disk_space (float): Size of free space on disk required
 
     Returns:
-        enough_space (`bool`):
-            True if there is enough space on disk
+        bool: `True` if there is enough space on disk
+
     """
     total, used, free = shutil.disk_usage("./")
-    total = total / (1024 ** 3)
-    used = used / (1024 ** 3)
-    free = free / (1024 ** 3)
-    msgs.info('Your disk has: Total: {0:.2f} GB, Used: {0:.2f} GB, Free: {0:.2f} GB'.format(total, used, free))
+    total = total / (1024. ** 3.)
+    used = used / (1024. ** 3.)
+    free = free / (1024. ** 3.)
+    msgs.info('Your disk has:')
+    msgs.info('Total: {0:.2f} GB, Used: {0:.2f} GB, Free: {0:.2f} GB'.format(total, used, free))
     if free > min_disk_space:
-        enough_space = np.bool(1)
+        enough_space = True
     else:
-        enough_space = np.bool(0)
-        msgs.error('Not enough space on disk')
+        enough_space = False
+        msgs.warning('Not enough space on disk')
     return enough_space
 
 
-def connection_to_website(url, timeout=1):  # written by Ema 05.03.2020
+def connection_to_website(url, timeout=1.) -> bool:  # written by Ema 05.03.2020
     r"""Check there is an active connection to a website
 
     Args:
-        url (`str`):
-            link to the website you want to check
-        timeout (`int`, `float`):
-            timeout waiting for the website to respond
+        url (str): link to the website you want to check
+        timeout (float): timeout waiting for the website to respond
 
     Returns:
-         is_active (`boolean`):
-            `True` if there is an active connection, `False` and error raised if not.
+         bool: `True` if there is an active connection, `False` and error raised if not.
 
     """
     # Checks for url
@@ -76,27 +78,23 @@ def connection_to_website(url, timeout=1):  # written by Ema 05.03.2020
     return is_active
 
 
-def fits_file_is_valid(fits_file, verify_fits=False, overwrite=False):  # Written by Ema 05.03.2020
+def fits_file_is_valid(fits_file, verify_fits=False, overwrite=False) -> bool:  # Written by Ema 05.03.2020
     r"""Check if a file exists and has a valid extension
 
     The option `verify_fits` checks the header of the fits file using `astropy.io.fits.verify`
 
     Args:
-        fits_file (`str`):
-            fits file you would like to check
-        verify_fits (`bool`):
-            if set to `True`, it will verify that the fits file is complaint to the FITS standard.
-        overwrite (`bool`):
-            if `True`, overwrite the input fits file with the header corrections from `verify_fits`
+        fits_file (str): fits file you would like to check
+        verify_fits (bool): if set to `True`, it will verify that the fits file is complaint to the FITS standard.
+        overwrite (bool): if `True`, overwrite the input fits file with the header corrections from `verify_fits`
 
     Returns:
-        is_fits (`boolean`):
-            `True` if exists `False` and warning raised if not.
+        bool: `True` if exists `False` and warning raised if not.
 
     """
     is_fits = True
     # Checks if it is a string
-    assert isinstance(fits_file, str), 'input fits needs to be a string'
+    assert isinstance(fits_file, str), 'input `fits_file` needs to be a string'
     # Check for ending
     if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz') and not fits_file.endswith('.fits.gz'):
         msgs.warning('File: {} does not end with `fits` or `fits.fz` or `fits.gz`'.format(fits_file))
@@ -126,7 +124,16 @@ def fits_file_is_valid(fits_file, verify_fits=False, overwrite=False):  # Writte
     return is_fits
 
 
-def check_checksums(hdul):
+def check_checksums(hdul) -> bool:
+    r"""Test if the `datasum` and `checksum` keywords in a `HDUList` are present and up-to-date
+
+    Args:
+        hdul (:py:obj:`astropy.io.fits.hdu.hdulist.HDUList`): list of `astropy` HDUs to be checked
+
+    Returns:
+        bool: `True` all the HDUs in the input HDUL have the correct `datasum` and `checksum`
+
+    """
     is_good_checksum = True
     for hdu in hdul:
         checks_for_checksum = hdu.verify_checksum()
@@ -146,16 +153,14 @@ def check_checksums(hdul):
     return is_good_checksum
 
 
-def image2d_is_valid(image2d):  # Written by Ema 12.03.2020
+def image2d_is_valid(image2d) -> bool:  # Written by Ema 12.03.2020
     r"""Check if a 2D image is valid
 
     Args:
-        image2d (np.array):
-            image that you would like to check
+        image2d (obj:`numpy.ndarray`): image that you would like to check
 
     Returns:
-        is_image2d (`boolean`):
-            `True` if a valid 2D image `False` and error raised if not.
+        bool: `True` if a valid 2D image `False` and error raised if not.
     """
     is_image2d = True
 

@@ -3,27 +3,28 @@
 
 
 import numpy as np
-from astropy.table import Column, MaskedColumn
+from astropy.table import MaskedColumn
 import astropy.units as u
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
 
-def make_list_of_fits_files(args_input, length=None):
+def make_list_of_fits_files(args_input):
     r"""Cleaning an input list of fits files
 
     Args:
-        args_input ('list'):
+        args_input (list):
             input list of fits files that will be checked (usually is coming from
             `parse_arguments()` in a macro).
+
     Returns:
-        list_of_fits_files ('list'):
+        list_of_fits_files (list):
             list containing all the valid fits files given in input
     """
     list_of_fits_files = []
     if not isinstance(args_input, list):
-        args_input_files = [args_input]
+        args_input_files: list = [args_input]
     else:
         args_input_files = args_input
     for args_input_file in args_input_files:
@@ -33,6 +34,22 @@ def make_list_of_fits_files(args_input, length=None):
             msgs.warning('{} excluded because not a valid fits file'.format(args_input_file))
     if len(list_of_fits_files) == 0:
         msgs.error('No valid fits files present')
+    return list_of_fits_files
+
+
+def make_list_of_fits_files_and_append_string(args_input):
+    r"""
+
+    Args:
+        args_input (list):
+            input list of fits files that will be checked (usually is coming from
+            `parse_arguments()` in a macro).
+
+    Returns:
+
+    """
+    list_of_fits_files = make_list_of_fits_files(args_input)
+
     return list_of_fits_files
 
 
@@ -131,7 +148,7 @@ def from_element_to_list(element, element_type=str):
             assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
         return element
     elif isinstance(element, np.ndarray):
-        element_list = element.tolist()
+        element_list: list = element.tolist()
         for element_in_list in element_list:
             assert isinstance(element_in_list, element_type), r'{} must be a {}'.format(element_in_list, element_type)
         return element_list
@@ -256,12 +273,10 @@ def remove_non_ascii(text_string):
     r"""Replace non ascii characters from a string
 
     Args:
-        text_string (`str`):
-            input string from which the non ascii characters will be removed
+        text_string (str): input string from which the non ascii characters will be removed
 
     Returns:
-        text_string_cleaned ('str'):
-            string from which the non ASCII characters have been removed.
+        text_string_cleaned (str): string from which the non ASCII characters have been removed
 
     """
     text_string_cleaned = "".join(character for character in text_string if 31 < ord(character) < 123)

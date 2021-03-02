@@ -16,16 +16,6 @@ from ESOAsg import __version__
 from ESOAsg import default
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
-               r"""Create the 50% confidence contours from the S191205ah_bayestar HEALPix maps, """ +
-               r"""show their distribution on the sky, open links to the ESO ASP webpages showing """ +
-               r"""ESO data within each of the retrieved contours, """ +
-               r"""and download one of the `MUSE` cubes present: """ + """\n""" +
-               r"""> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
-               r"""--confidence_level 50. """ +
-               r"""--show_sky """ +
-               r"""--asp_link """ +
-               r"""--download_data """ +
-               r"""--instruments MUSE """ +
                r"""--max_rec 1 """ + """\n""" +
                r""" """)
 
@@ -64,15 +54,6 @@ def parser(options=None):
 
     parser.add_argument("input_fits", nargs="+", type=str,
                         help="Input probability map out of the GW event pipeline")
-    parser.add_argument("-cl", "--confidence_level", nargs="+", type=float, default=50.0,
-                        help="Confidence level at which extract the contours. Default is 50.0")
-    parser.add_argument("-mv", "--max_vertices", nargs="+", type=int, default=30,
-                        help="Max number of vertices to be considered in the conversion from" +
-                             "contours to polygons. Default it 30")
-    parser.add_argument("-s", "--show_sky", action="store_true", default=False,
-                        help="Show the contours on a sky-map")
-    parser.add_argument("-a", "--asp_link", action="store_true", default=False,
-                        help="Open ASP web-pages of the selected contours")
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
@@ -112,6 +93,11 @@ def main(args):
                               input_fits_files]
         overwrite = True
 
+    from IPython import embed
+    embed()
+
+    '''
+
     # reference
     if args.referenc is not None:
         reference = str(args.referenc[0])
@@ -134,6 +120,7 @@ def main(args):
             msgs.error('ABMAGLIM must be positive')
     else:
         abmaglim = np.float_(-1.)
+    '''
 
     msgs.start()
 
@@ -151,6 +138,7 @@ def main(args):
         hdr0 = hdul[0].header
         hdr1 = hdul[1].header
 
+        '''
         # 1.1 Check for HISTORY
 
         if 'HISTORY' in hdr0.keys():
@@ -349,5 +337,5 @@ def main(args):
         hdul.close()
         msgs.info('File {} produced.'.format(fits_out))
         msgs.info('Image {} produced.'.format(image_out))
-
+        '''
     msgs.end()

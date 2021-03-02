@@ -83,4 +83,13 @@ science_cube_ifs
 .. automodule:: ESOAsg.datacontainers.science_cube_ifs
    :members:
 
+
+ESOASG.ancillary
+----------------
+
+checks
+++++++
+
+.. automodule:: ESOAsg.ancillary.checks
+   :members:
  
