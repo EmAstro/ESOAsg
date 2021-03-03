@@ -37,7 +37,7 @@ EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""--asp_link """ +
                r"""--download_data """ +
                r"""--instruments MUSE """ +
-               r"""--max_rec 1 """ + """\n""" +
+               r"""--maxrec 1 """ + """\n""" +
                r""" """)
 
 

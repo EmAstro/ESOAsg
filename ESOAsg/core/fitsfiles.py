@@ -52,7 +52,7 @@ def header_from_fits_file(fits_name, which_hdu=0):  # Written by Ema 05.03.2020
         fits_name (`str`):
             fits file name
         which_hdu (`numpy.int`):
-            select from which HDU you are getting the header. Default = 1
+            select from which HDU you are getting the header. Default = 0
 
     Returns:
          header (`hdu.header`):
@@ -189,14 +189,17 @@ def check_value(value):  # written by Ema 05.03.2020
             value = np.bool(True)
         elif value == 'F':
             value = np.bool(False)
-        elif special_char.search(value) is None:
-            value = str(value)
+        elif special_char.search(value) is not None:
+                value = str(value)
         else:
-            value = ast.literal_eval(value)
+            try:
+                value = ast.literal_eval(value)
+            except ValueError:
+                msgs.warning('Cannot recognize format')
     return value
 
 
-def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True):
+def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True, fix_header=False):
     r"""
     Create a fits file called `fits_new` that has the standard HDUL[0] and the HDUL[`which_hdul`] from
     `source_fits` appended one after the other.
@@ -220,8 +223,29 @@ def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True):
     output_hdul = fits.HDUList([output_hdu])
     for output_which_hdul in which_hdul:
         output_hdul.append(source_hdul[output_which_hdul])
+    if fix_header:
+        for output_hdu in output_hdul:
+            print(output_hdu)
+            output_hdu.header = _clean_header(output_hdu.header)
     output_hdul.writeto(output_fits, overwrite=overwrite, checksum=True)
     source_hdul.close()
+
+
+def _clean_header(header):
+    r"""This is really badly coded.
+
+    Args:
+        header:
+
+    Returns:
+
+    """
+    for keyword in header:
+        if keyword.startswith('='):
+            header.remove(keyword)
+        if (len(keyword) <= 8) and (' ' in keyword):
+            header.rename_keyword(keyword, keyword.replace(' ', '_'))
+    return header
 
 
 def transfer_header_cards(source_header, output_header, source_cards, output_cards=None,

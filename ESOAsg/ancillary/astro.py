@@ -298,7 +298,8 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
         object_name = 'GW event - {}'.format(file_name)
 
     # start the plot
-
+    # ToDo fix matplotlibe error
+    """ 
     plt.figure(figsize=(10., 7.))
     ax = plt.axes([0.1, 0.1, 0.9, 0.9], projection='astro degrees mollweide')
 
@@ -324,6 +325,7 @@ def show_contours_from_gw_bayestar(file_name, contours=None, cmap='cylon', conto
         plt.show()
 
     plt.close()
+    """
 
     # Bringing back the previously used matplotlib backend
     matplotlib.use(STARTING_MATPLOTLIB_BACKEND)

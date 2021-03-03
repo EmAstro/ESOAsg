@@ -194,7 +194,6 @@ def get_catalogues(collections=None, tables=None, columns=None, type_of_query='s
 
     """
     # ToDo EMA: conditions to select properties from catalogues should be added in this. Both with ANDs and with ORs
-
     # Obtain list of all tables derived from the merger of collections and tables
     clean_tables = _is_collection_and_table_list_at_eso(collections=collections, tables=tables,
                                                         all_versions=all_versions)
@@ -264,7 +263,7 @@ def _get_tables_from_collection(collection, all_versions=False):
         return None
     table_all_catalogues = all_catalogues_info(verbose=False, all_versions=all_versions)
     table_selected_catalogues = table_all_catalogues[(table_all_catalogues['collection'].data == collection)]
-    list_selected_tables = table_selected_catalogues['table_name'].data.data.to_list()
+    list_selected_tables = table_selected_catalogues['table_name'].data.data.tolist()
     return list_selected_tables
 
 
@@ -330,7 +329,7 @@ def _is_collection_and_table_list_at_eso(collections=None, tables=None, all_vers
         clean_tables = []
     if clean_collections is not None:
         for clean_collection in clean_collections:
-            clean_tables.append(_get_tables_from_collection(clean_collection, all_versions=all_versions))
+            clean_tables += _get_tables_from_collection(clean_collection, all_versions=all_versions)
     # This removes possible duplicates and removes None
     clean_tables = list(filter(None, list(set(clean_tables))))
     return clean_tables

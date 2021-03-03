@@ -5,7 +5,7 @@ Script to make data produced by the `SPHERE Data Center <https://sphere.osug.fr>
 
 .. topic:: Inputs:
 
-    - **input_fits** - Input probability map out of the GW event pipeline
+    - **input_fits** - Input fits file
 
 """
 
@@ -13,7 +13,6 @@ Script to make data produced by the `SPHERE Data Center <https://sphere.osug.fr>
 import argparse
 
 from ESOAsg import __version__
-from ESOAsg import default
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""--max_rec 1 """ + """\n""" +
@@ -53,23 +52,24 @@ def parser(options=None):
         epilog=EXAMPLES)
 
     parser.add_argument("input_fits", nargs="+", type=str,
-                        help="Input probability map out of the GW event pipeline")
+                        help="Input SPHERE datacube")
+    parser.add_argument('-out', '--output', nargs='+', type=str, default=None,
+                        help='Name of the output modified file')
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
 
 def main(args):
-    from ESOAsg.ancillary import astro
+    import numpy as np
+    import os
     from ESOAsg.ancillary import cleaning_lists
-    from ESOAsg.ancillary import polygons
-    from ESOAsg import archive_science_portal
-    from ESOAsg import archive_observations
+    from ESOAsg.core import fitsfiles
     from ESOAsg import msgs
 
     # Cleaning input lists
     input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
 
-    # output
+   # output
     if args.output is not None:
         overwrite = False
         if len(input_fits_files) == 1:
@@ -92,9 +92,6 @@ def main(args):
         output_fits_images = [output_fits_image.replace('.fits', '_whitelight.fits') for output_fits_image in
                               input_fits_files]
         overwrite = True
-
-    from IPython import embed
-    embed()
 
     '''
 
@@ -132,15 +129,37 @@ def main(args):
             os.rename(image_out, image_out.replace('.fits', '_old.fits'))
             msgs.warning('{} already exists. Backup created.'.format(image_out))
 
+        from IPython import embed
+        embed()
+
         # 1. create a copy of the file where there is a primary HDU and data are in the 'DATA" HDU
-        fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite)
+        fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
         hdul = fitsfiles.get_hdul(fits_out, 'update', checksum=True)
         hdr0 = hdul[0].header
         hdr1 = hdul[1].header
 
-        '''
-        # 1.1 Check for HISTORY
+        msgs.work('Updating PRODCATG')
+        hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
 
+        # 2. update cards for headers:
+
+        # Updating values with different CARD in the header
+        CARDS_INPUT = ['CRPIX4', 'CRVAL4', 'CTYPE4', 'CUNIT4']
+        CARDS_OUTPUT = ['CRPIX3', 'CRVAL3', 'CTYPE3', 'CUNIT3']
+        fitsfiles.transfer_header_cards(hdr1, hdr1, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
+
+        # 6. update checksum and datasum
+        msgs.work('Updating checksum and datasum')
+        hdul[0].add_datasum()
+        hdul[1].add_datasum()
+        hdul[0].add_checksum(override_datasum=True)
+        hdul[1].add_checksum(override_datasum=True)
+        hdul.flush()
+        hdul.close()
+
+    msgs.end()
+
+    '''
         if 'HISTORY' in hdr0.keys():
             history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
                                   if history_card_hdr0.startswith('HISTORY')]
@@ -157,14 +176,7 @@ def main(args):
                 else:
                     hdr1['HISTORY'][history_number] = str(' ')
 
-        # 2. update cards for headers:
 
-        # Updating values with different CARD in the header
-        CARDS_INPUT = ['ESO OBS ID', 'ESO OBS PROG ID', 'ESO PRO ANCESTOR', 'ESO PRO DATANCOM',
-                       'ESO PRO TECH', 'ESO PRO REC1 PIPE ID']
-        CARDS_OUTPUT = ['OBID1', 'PROG_ID', 'PROV1', 'NCOMBINE',
-                        'OBSTECH', 'PROCSOFT']
-        fitsfiles.transfer_header_cards(hdr1, hdr0, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
 
         # Transfer cards from HDU1 to the PrimaryHDU
         not_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if
@@ -193,8 +205,7 @@ def main(args):
         hdr0['COMMENT'] = "  FITS (Flexible Image Transport System) format is defined in 'Astronomy" \
                           + "  and Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H"
 
-        msgs.work('Updating PRODCATG')
-        hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
+
 
         if abmaglim > 0.:
             msgs.work('Updating ABMAGLIM')
@@ -237,7 +248,6 @@ def main(args):
 
         # update cards for `DATA` header
         fitsfiles.add_header_card(hdr1, 'EXTNAME', 'DATA', 'This extension contains data value')
-        fitsfiles.add_header_card(hdr1, 'XTENSION', 'IMAGE', 'IMAGE extension')
 
         #  Dealing with douplicate FITS comments
         all_comments = [comment for comment in hdr1['COMMENT']]
@@ -316,6 +326,7 @@ def main(args):
                 hdr0['ABMAGLIM'] = -2.5 * np.log10(five_sigma_nu / 3631.)
                 msgs.warning('ABMAGLIM={}. This is most probably not correct at the moment'.format(hdr0['ABMAGLIM']))
 
+ 
         # 6. update checksum and datasum
         msgs.work('Updating checksum and datasum')
         hdul[0].add_datasum()
@@ -337,5 +348,6 @@ def main(args):
         hdul.close()
         msgs.info('File {} produced.'.format(fits_out))
         msgs.info('Image {} produced.'.format(image_out))
-        '''
-    msgs.end()
+    '''
+
+
