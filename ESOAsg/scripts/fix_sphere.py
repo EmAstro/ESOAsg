@@ -14,6 +14,8 @@ import argparse
 
 from ESOAsg import __version__
 
+SUPPORTED_INSTRUMENT = ['IFS', 'IRDIS']
+
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""--max_rec 1 """ + """\n""" +
                r""" """)
@@ -21,9 +23,9 @@ EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
 
 def parser(options=None):
     parser = argparse.ArgumentParser(
-        description=r"""Manipulate SPHERE data produced by `SPHERE Data Center <https://sphere.osug.fr>`_ """ +
+        description=r"""Manipulate SPHERE data produced by the `SPHERE Data Center` (https://sphere.osug.fr) """ +
                     r"""and make them compliant with the  """ +
-                    r"""`ESO Phase 3 Standard <https://www.eso.org/sci/observing/phase3/p3sdpstd.pdf>`_. """ +
+                    r"""`ESO Phase 3 Standard` (https://www.eso.org/sci/observing/phase3/p3sdpstd.pdf). """ +
                     """\n""" + """\n""" +
                     r"""This code takes care of a series of rearrangements that transform SPHERE """ +
                     r"""data into (almost) Phase 3 compliant data (almost) ready to be ingested on the ESO """ +
@@ -31,9 +33,11 @@ def parser(options=None):
                     r"""However, it is user's responsibility to check the outcome """ +
                     r"""and to make sure that everything is on place. """ +
                     """\n""" + """\n""" +
-                    r"""To summarize the steps:
-            1. Creates a PrimaryHDU and put the data in the `DATA` extension (similar to MUSE datacubes).
-            2. Places properly header cards into the PrimaryHDU and in `DATA`
+                    r"""To summarize the steps for IFS data: """ +
+                    """\n""" +
+                    r"""1. Creates a PrimaryHDU and put the data in the `DATA` extension; """ +
+                    """\n""" +
+                    r"""2. Places properly header cards into the PrimaryHDU and in `DATA`
             3. Creates the white-light image 
             4. Performs few consistency checks for header values:
                 * EXPTIME > 0 : If not, an attempt is made to recover the error from the PROV-j entries
@@ -52,9 +56,12 @@ def parser(options=None):
         epilog=EXAMPLES)
 
     parser.add_argument("input_fits", nargs="+", type=str,
-                        help="Input SPHERE datacube")
-    parser.add_argument('-out', '--output', nargs='+', type=str, default=None,
-                        help='Name of the output modified file')
+                        help=r"Input SPHERE datacubes")
+    parser.add_argument("-s", "--suffix", nargs="+", type=str, default=None,
+                        help=r"Suffix to be added to file names the will be used as output." +
+                             r"If it is not set, the input files will be overwritten")
+    parser.add_argument("-wl", "--whitelight", action="store_true", default=False,
+                        help=r"Create the white light image for IFS cubes")
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
@@ -62,39 +69,33 @@ def parser(options=None):
 def main(args):
     import numpy as np
     import os
+    import shutil
     from ESOAsg.ancillary import cleaning_lists
     from ESOAsg.core import fitsfiles
     from ESOAsg import msgs
 
     # Cleaning input lists
     input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
-
-   # output
-    if args.output is not None:
-        overwrite = False
-        if len(input_fits_files) == 1:
-            output_fits_files = [output_fits_temp if output_fits_temp.endswith('.fits') else np.str(
-                output_fits_temp) + '.fits' for output_fits_temp in [args.output[0]]]
-            output_fits_images = [output_fits_image.replace('.fits', '_whitelight.fits') for output_fits_image
-                                  in output_fits_files]
-        else:
-            if np.str(args.output[0]).endswith('.fits'):
-                output_ending = np.str(args.output[0])
-            else:
-                output_ending = np.str(args.output[0]) + '.fits'
-            output_fits_files = [output_temp.replace('.fits', output_ending) for output_temp in input_fits_files]
-            output_fits_images = [output_fits_image.replace('.fits', '_whitelight' + output_ending) for
-                                  output_fits_image
-                                  in input_fits_files]
-
+    # Make whitelight images
+    if args.whitelight:
+        make_whitelight_image = True
     else:
-        output_fits_files = input_fits_files.copy()
-        output_fits_images = [output_fits_image.replace('.fits', '_whitelight.fits') for output_fits_image in
-                              input_fits_files]
+        make_whitelight_image = False
+    # Creating output list
+    if args.suffix is None:
+        overwrite = False
+        msgs.warning('The file will overwrite the input files')
+    else:
         overwrite = True
-
+    suffix_string = cleaning_lists.make_string(args.suffix)
+    output_fits_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
+                                                                                 suffix=suffix_string)
+    if make_whitelight_image:
+        output_whitelight_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
+                                                                                           suffix=suffix_string + '_WL')
+    else:
+        output_whitelight_files = [None] * len(input_fits_files)
     '''
-
     # reference
     if args.referenc is not None:
         reference = str(args.referenc[0])
@@ -121,41 +122,71 @@ def main(args):
 
     msgs.start()
 
-    for fits_in, fits_out, image_out in zip(input_fits_files, output_fits_files, output_fits_images):
+    for fits_in, fits_out, image_out in zip(input_fits_files, output_fits_files, output_whitelight_files):
         if os.path.exists(fits_out):
-            os.rename(fits_out, fits_out.replace('.fits', '_old.fits'))
+            shutil.copy(fits_out, fits_out.replace('.fit', '_old.fit'))
             msgs.warning('{} already exists. Backup created.'.format(fits_out))
-        if os.path.exists(image_out):
-            os.rename(image_out, image_out.replace('.fits', '_old.fits'))
-            msgs.warning('{} already exists. Backup created.'.format(image_out))
+        if image_out is not None:
+            if os.path.exists(image_out):
+                shutil.copy(image_out, image_out.replace('.fit', '_old.fit'))
+                msgs.warning('{} already exists. Backup created.'.format(image_out))
 
-        from IPython import embed
-        embed()
+        full_hdul = fitsfiles.get_hdul(fits_in)
+        try:
+            instrument = full_hdul[0].header['HIERARCH ESO SEQ ARM']
+        except KeyError:
+            msgs.error('Failed to read the keyword HIERARCH ESO SEQ ARM from the primary header')
+        finally:
+            if instrument in SUPPORTED_INSTRUMENT:
+                msgs.info('The input file is from SPHERE/{}'.format(instrument))
+            else:
+                msgs.warning('Instrument SPHERE/{} not supported'.format(instrument))
 
-        # 1. create a copy of the file where there is a primary HDU and data are in the 'DATA" HDU
-        fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
-        hdul = fitsfiles.get_hdul(fits_out, 'update', checksum=True)
-        hdr0 = hdul[0].header
-        hdr1 = hdul[1].header
+        # ToDo
+        # These needs to be transformed in objects
+        if instrument.startswith('IFS'):
+            msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
 
-        msgs.work('Updating PRODCATG')
-        hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
+            # 1. create a copy of the file where there is a primary HDU and data are in the 'DATA" HDU
+            fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
+            hdul = fitsfiles.get_hdul(fits_out, 'update', checksum=True)
+            hdr0 = hdul[0].header
+            hdr1 = hdul[1].header
 
-        # 2. update cards for headers:
+            # 2. updating file prodcatg
+            msgs.work('Updating PRODCATG to SCIENCE.CUBE.IFS')
+            hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
+            msgs.work('Setting NAXIS = 0 in primary header')
+            hdr0['NAXIS'] = 0
 
-        # Updating values with different CARD in the header
-        CARDS_INPUT = ['CRPIX4', 'CRVAL4', 'CTYPE4', 'CUNIT4']
-        CARDS_OUTPUT = ['CRPIX3', 'CRVAL3', 'CTYPE3', 'CUNIT3']
-        fitsfiles.transfer_header_cards(hdr1, hdr1, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
+            # 3. update cards for headers:
 
-        # 6. update checksum and datasum
-        msgs.work('Updating checksum and datasum')
-        hdul[0].add_datasum()
-        hdul[1].add_datasum()
-        hdul[0].add_checksum(override_datasum=True)
-        hdul[1].add_checksum(override_datasum=True)
-        hdul.flush()
-        hdul.close()
+            # Updating values with different CARD in the header
+            CARDS_INPUT = ['CRPIX4', 'CRVAL4', 'CTYPE4', 'CUNIT4']
+            CARDS_OUTPUT = ['CRPIX3', 'CRVAL3', 'CTYPE3', 'CUNIT3']
+            fitsfiles.transfer_header_cards(hdr1, hdr1, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
+
+            # Remove not used values
+            CARDS_TO_BE_REMOVED_HDR1 = ['CD1_4', 'CD2_4', 'CD3_4', 'CD4_1', 'CD4_2', 'CD4_3', 'CD4_4']
+            for card_to_be_removed in CARDS_TO_BE_REMOVED_HDR1:
+                hdr1.remove(card_to_be_removed, ignore_missing=True)
+
+
+            # Remove
+            # 6. update checksum and datasum
+            msgs.work('Updating checksum and datasum')
+            hdul[0].add_checksum(override_datasum=False)
+            hdul[1].add_datasum()
+            hdul[1].add_checksum(override_datasum=True)
+            hdul.flush()
+            hdul.close()
+
+        elif instrument.startswith('IRDIS'):
+            msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
+
+        else:
+            msgs.warning('The Instrument {} is not supported \nThe file {} will not be processed'.format(instrument,
+                                                                                                         fits_in))
 
     msgs.end()
 
@@ -349,5 +380,3 @@ def main(args):
         msgs.info('File {} produced.'.format(fits_out))
         msgs.info('Image {} produced.'.format(image_out))
     '''
-
-

@@ -14,29 +14,30 @@ import ast
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
+# Only fits files with the following extensions are permitted
+PERMITTED_FITS_ENDINGS = ['fits', 'fits.gz', 'fits.fz']
+
 
 def get_hdul(fits_name, mode='readonly', checksum=True):  # Written by Ema 05.03.2020
     r"""Wrapper for astropy `fits.open`. It checks if the file exists and in case returns its HDUList.
 
     Args:
-        fits_name (`str`):
-            fits file name
-        mode (`str`):
-            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`
-        checksum (`bool`):
-            If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU header)
-            match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
+        fits_name (str): fits file name
+        mode (str): Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`,
+            or `ostream`
+        checksum (bool): If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU
+            header) match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
             will preserve and update the existing checksums unless this argument is given a value of `remove`,
             in which case the `CHECKSUM` and `DATASUM` values are not checked, and are removed when saving
             changes to the file
 
     Returns:
-        hdul (`hdul`):
-            list-like collection of HDU objects
+        hdul: list-like collection of HDU objects
 
     """
     if not checks.fits_file_is_valid(fits_name):
         msgs.error('Fits file not valid')
+        return None
     else:
         hdul = fits.open(fits_name, mode=mode, checksum=checksum)
         msgs.info('The fits file {} contains {} HDUs'.format(fits_name, len(hdul)))
@@ -324,3 +325,19 @@ def add_header_card(header, card, value, comment=None):
         header[card] = value
     else:
         header[card] = value, comment
+
+
+def remove_header_cards(header, cards, ignore_missing=True):
+    r"""
+
+    Args:
+        header:
+        cards:
+        ignore_missing:
+
+    Returns:
+
+    """
+    for card in cards:
+        header.remove(cards, ignore_missing=ignore_missing)
+        msgs.work('card {} removed from the header'.format(card))

@@ -12,6 +12,10 @@ from astropy.io import fits
 # ESOAsg imports
 from ESOAsg import msgs
 from ESOAsg import default
+from ESOAsg.core import fitsfiles
+
+# Only fits files with the following extensions are permitted
+# PERMITTED_FITS_ENDING = fitsfiles.PERMITTED_FITS_ENDINGS
 
 
 def check_disk_space(min_disk_space=float(default.get_value('min_disk_space'))) -> bool:
@@ -96,6 +100,8 @@ def fits_file_is_valid(fits_file, verify_fits=False, overwrite=False) -> bool:  
     # Checks if it is a string
     assert isinstance(fits_file, str), 'input `fits_file` needs to be a string'
     # Check for ending
+    # ToDo
+    # to be updated to: PERMITTED_FITS_ENDINGS
     if not fits_file.endswith('.fits') and not fits_file.endswith('.fits.fz') and not fits_file.endswith('.fits.gz'):
         msgs.warning('File: {} does not end with `fits` or `fits.fz` or `fits.gz`'.format(fits_file))
         is_fits = False

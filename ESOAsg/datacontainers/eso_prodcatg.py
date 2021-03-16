@@ -12,7 +12,6 @@ from ESOAsg import msgs
 
 # Ordered dictionary that defines all properties of different PRODCATG
 PRODCATG = collections.OrderedDict()
-
 PRODCATG['SCIENCE.IMAGE'] = {'data_format': 'Single image stored in the primary HDU.'}
 PRODCATG['SCIENCE.MEFIMAGE'] = {'data_format': 'Multiple images stored in multi-extension ' +
                                                'FITS format (MEF).'}
@@ -68,7 +67,7 @@ HEADER_KEYWORDS_TABLE_LEGEND['Contact'] = 'Please contact usd-help@eso.org subje
 HEADER_KEYWORDS_TABLE_LEGEND['None'] = 'Not in use for the selected PRODCATG'
 
 
-def _read_header_keywords_notes_table():
+def _read_header_keywords_notes_table() -> dict:
     r"""Read the notes of the table describing the `PRODCATG` keywords in the ESO Science Data Products Standard
 
     Returns:
@@ -84,7 +83,7 @@ def _read_header_keywords_notes_table():
     return notes_dict
 
 
-def _read_header_keywords_table(prodcatg_type):
+def _read_header_keywords_table(prodcatg_type) -> dict:
     r"""Read the table describing the `PRODCATG` header keywords in the ESO Science Data Products Standard
 
     For a given `PRODCATG` it reads the table containing the information regarding the header keywords and set it in
@@ -105,13 +104,14 @@ def _read_header_keywords_table(prodcatg_type):
     header_keywords_table = ascii.read(header_keywords, format='csv', delimiter=';', comment='#')
     header_keywords_notes = _read_header_keywords_notes_table()
 
+    keyword_list = []
+    iterable_list = []
+    condition_list = []
+    header_list = []
+    note_list = []
+
     for col_name in header_keywords_table.colnames:
         if col_name.startswith(prodcatg_type):
-            keyword_list = []
-            iterable_list = []
-            condition_list = []
-            header_list = []
-            note_list = []
             for idx_keyword in range(0, len(header_keywords_table['KEYWORD', col_name])):
                 # setting keyword list
                 _keyword_split = header_keywords_table['KEYWORD'][idx_keyword].split(' ')
@@ -160,17 +160,21 @@ def _read_header_keywords_table(prodcatg_type):
     return keywords_dict
 
 
-def get_header_table_legend(short_name):
-    r"""
+def _get_header_table_legend(short_name) -> str:
+    r"""Read the table
 
     Args:
-        short_name:
+        short_name (str):
 
     Returns:
+        str: string containing the explicit value of `short_name`
 
     """
     if short_name in list(HEADER_KEYWORDS_TABLE_LEGEND.keys()):
         return HEADER_KEYWORDS_TABLE_LEGEND[short_name]
+    else:
+        raise ValueError('{} is not present in the legend table.'.format(short_name)
+                         + 'Possible values are: \n {}'.format(HEADER_KEYWORDS_TABLE_LEGEND.keys()))
 
 
 class ProdCatg:
@@ -277,19 +281,32 @@ class ProdCatg:
                          '{}'.format(self.header_keywords.keys()))
             return None
 
-    def show_header_keyword_info(self, header_keyword):
-        r"""
+    def _show_header_keyword_info(self, header_keyword):
+        r"""Given the name of a header keyword, the method prints its status for the assigned `prodcatg`
 
         Args:
-            header_keyword:
-
-        Returns:
+            header_keyword (str):
 
         """
         keyword_dictionary = self.get_header_keyword_dictionary(header_keyword)
         msgs.info('The keyword {} for a {} is:'.format(header_keyword, self.prodcatg))
         for condition_value in keyword_dictionary['condition']:
             msgs.pre_indent('{} - {} '.format(condition_value,
-                                              get_header_table_legend(condition_value)))
+                                              _get_header_table_legend(condition_value)))
+
+        return None
+
+    def show_header_keywords_info(self, header_keyword):
+        r"""Given the name of a header keywords, the method prints its status for the assigned `prodcatg`
+
+        Args:
+            header_keyword (list):
+
+        """
+        keyword_dictionary = self.get_header_keyword_dictionary(header_keyword)
+        msgs.info('The keyword {} for a {} is:'.format(header_keyword, self.prodcatg))
+        for condition_value in keyword_dictionary['condition']:
+            msgs.pre_indent('{} - {} '.format(condition_value,
+                                              _get_header_table_legend(condition_value)))
 
         return None

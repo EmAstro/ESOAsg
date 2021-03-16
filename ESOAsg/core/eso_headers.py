@@ -1,4 +1,5 @@
 from ESOAsg import msgs
+import astropy
 
 PRODCATG = ['SCIENCE.IMAGE',
             'SCIENCE.MEFIMAGE',
@@ -11,4 +12,6 @@ PRODCATG = ['SCIENCE.IMAGE',
             'SCIENCE.MCATALOG',
             'SCIENCE.CATALOGTILE'
             ]
+
+
 

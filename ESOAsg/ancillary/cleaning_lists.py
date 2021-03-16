@@ -10,25 +10,25 @@ from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
 
-def make_list_of_fits_files(args_input):
+def make_list_of_fits_files(args_input, verify_fits=False) -> list:
     r"""Cleaning an input list of fits files
 
     Args:
-        args_input (list):
-            input list of fits files that will be checked (usually is coming from
-            `parse_arguments()` in a macro).
+        args_input (list): input list of fits files that will be checked (usually is coming from `parse_arguments()` in
+            a macro)
+        verify_fits (bool): if set to `True`, it will verify that the fits file is complaint to the FITS standard
 
     Returns:
-        list_of_fits_files (list):
-            list containing all the valid fits files given in input
+        list: list containing all the valid fits files given in input
+
     """
     list_of_fits_files = []
     if not isinstance(args_input, list):
         args_input_files: list = [args_input]
     else:
-        args_input_files = args_input
+        args_input_files: list = args_input
     for args_input_file in args_input_files:
-        if checks.fits_file_is_valid(args_input_file, overwrite=False, verify_fits=False):
+        if checks.fits_file_is_valid(args_input_file, overwrite=False, verify_fits=verify_fits):
             list_of_fits_files.append(args_input_file)
         else:
             msgs.warning('{} excluded because not a valid fits file'.format(args_input_file))
@@ -37,36 +37,84 @@ def make_list_of_fits_files(args_input):
     return list_of_fits_files
 
 
-def make_list_of_fits_files_and_append_string(args_input):
-    r"""
+def make_list_of_fits_files_and_append_suffix(args_input, suffix=None) -> list:
+    r"""Given a list of fits files, returns a list of fits files with the format filename`suffix`.fits*
+
+    First the list of files in input are tested using the `make_list_of_fits_files`. Then at each file is it added
+    `suffix` before `.fits`. If `suffix` is set to `None` the code will return the cleaned list of fits files.
 
     Args:
-        args_input (list):
-            input list of fits files that will be checked (usually is coming from
-            `parse_arguments()` in a macro).
+        args_input (list): input list of fits files that will be checked (usually is coming from `parse_arguments()` in
+            a macro)
+        suffix (str): string to be used as suffix for the fix files
 
     Returns:
+        list: list of fits files with `suffix` attached
 
     """
-    list_of_fits_files = make_list_of_fits_files(args_input)
+    list_of_fits_files: list = make_list_of_fits_files(args_input)
+    if suffix is None:
+        return list_of_fits_files
+    else:
+        assert(isinstance(suffix, str)), '`suffix` must be a string'
+        list_of_fits_files_with_appended_string: list = []
+        for single_fits_file in list_of_fits_files:
+            list_of_fits_files_with_appended_string.append(single_fits_file.replace('.fit', suffix + '.fit'))
+    return list_of_fits_files_with_appended_string
 
-    return list_of_fits_files
+
+def make_string(args_input):
+    r"""Make an input to be string
+
+    Given an input, the macro tries to convert it into a string
+
+    Args:
+        args_input (str): string that will be checked (usually is coming from `parse_arguments()` in a macro)
+
+    Returns:
+        str: args_input converted to string format
+
+    """
+    if args_input is None:
+        return None
+    if isinstance(args_input, str):
+        output_string = args_input
+    elif isinstance(args_input, list):
+        if len(args_input) > 1:
+            raise ValueError('Input list must contain a single element')
+        else:
+            output_string_temp = args_input[0]
+            if isinstance(output_string_temp, str):
+                output_string = output_string_temp
+            elif isinstance(output_string_temp, int):
+                output_string = str(output_string_temp)
+            elif isinstance(output_string_temp, float):
+                output_string = str(output_string_temp)
+            else:
+                raise TypeError('Cannot convert the input from {} in a list into a string'.format(
+                                    type(output_string_temp)))
+    elif isinstance(args_input, int):
+        output_string = str(args_input)
+    elif isinstance(args_input, float):
+        output_string = str(args_input)
+    else:
+        raise TypeError('Cannot convert the input {} into a string'.format(type(args_input)))
+    return output_string
 
 
 def make_list_of_strings(args_input, length=None):
     r"""Cleaning an input list of strings
 
     Args:
-        args_input (`list`):
-            input list of strings that will be checked (usually is coming from
-            `parse_arguments()` in a macro).
-        length (`int`):
-            If set to a value, the code will check that the length of `list_of_string` will match `length`. If not
-            the code will further check if `args_input` contains only one element. In this case the output list will
-            contain this values `length` times. If this situation does not happen, an error is raised.
+        args_input (list): input list of strings that will be checked (usually is coming from `parse_arguments()` in
+            a macro)
+        length (int): If set to a value, the code will check that the length of `list_of_string` will match `length`.
+            If not the code will further check if `args_input` contains only one element. In this case the output list
+            will contain this values `length` times. If this situation does not happen, an error is raised.
+
     Returns:
-        list_of_string (`list`):
-            list containing all the valid strings given in input
+        list: list containing all the valid strings given in input
+
     """
     if length is not None:
         assert(isinstance(length, int)), '`length` must be an integer'
@@ -182,7 +230,7 @@ def from_element_to_list_of_quantities(element, unit=None):
         return [element*unit]
     elif isinstance(element, np.ndarray) and not isinstance(element, u.Quantity):
         element_list_clean = []
-        element_list = np.copy(element).tolist()
+        element_list: list = np.copy(element).tolist()
         for element_in_list in element_list:
             element_list_clean.append(element_in_list*unit)
         return element_list_clean
