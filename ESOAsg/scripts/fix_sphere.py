@@ -469,6 +469,14 @@ def main(args):
                 # Updating file prodcatg
                 msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
                 hdr0['PRODCATG'] = str('SCIENCE.IMAGE')
+
+                if 'PROGID' not in hdr0.keys():
+                    msgs.warning('PROG_ID missing')
+                    if 'ESO OBS PROG ID' in hdr0.keys():
+                        msgs.info('Deriving PROG_ID from HIERARCH ESO OBS PROG ID')
+                        msgs.work('Updating PROG_ID to {}'.format(str(hdr0['HIERARCH ESO OBS PROG ID'])))
+                        hdr0['PROG_ID'] = str(hdr0['HIERARCH ESO OBS PROG ID'])
+
                 # Update checksum and datasum
                 msgs.work('Updating checksum and datasum')
                 hdul[0].add_checksum(override_datasum=False)
