@@ -373,7 +373,7 @@ def main(args):
             hdul[0].add_checksum(override_datasum=False)
             hdul[1].add_datasum()
             hdul[1].add_checksum(override_datasum=True)
-            hdul.flush()
+            hdul.flush(output_verify='fix')
             hdul.close()
             msgs.info('File {} produced.'.format(fits_out))
             if make_whitelight_image:
@@ -381,7 +381,7 @@ def main(args):
                 image_hdul[1].add_datasum()
                 image_hdul[0].add_checksum(override_datasum=True)
                 image_hdul[1].add_checksum(override_datasum=True)
-                image_hdul.writeto(image_out)
+                image_hdul.writeto(image_out, overwrite=True, output_verify='fix')
             msgs.info('Image {} produced.'.format(image_out))
 
         elif instrument.startswith('IRDIS'):
@@ -397,14 +397,83 @@ def main(args):
             else:
                 msgs.error('Cannot recognize the observing technique')
 
-            from IPython import embed
-            embed()
-            fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
+            # defining the two fits_out files:
+            fits_out_index = [0, 1]
+            fits_out_files = []
+            for index in fits_out_index:
+                fits_out_file = fits_out.replace('.fit', '_' + str(index) + '.fit')
+                if os.path.exists(fits_out_file):
+                    shutil.copy(fits_out_file, fits_out_file.replace('.fit', '_old.fit'))
+                    msgs.warning('{} already exists. Backup created.'.format(fits_out))
+                fitsfiles.new_fits_like(fits_in, [0], fits_out_file, overwrite=overwrite,
+                                        fix_header=True, empty_primary_hdu=False)
+                fits_out_files.append(fits_out_file)
 
-            # Updating file prodcatg
-            msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
-            # hdr0['PRODCATG'] = str('SCIENCE.IMAGE')
+            for index, fits_out_file in zip(fits_out_index, fits_out_files):
+                hdul = fitsfiles.get_hdul(fits_out_file, 'update', checksum=True)
+                hdr0 = hdul[0].header
+                hdul[0].data = hdul[0].data[index, :, :]
+                # Check for HISTORY
+                # Primary Header
+                if 'HISTORY' in hdr0.keys():
+                    history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
+                                          if history_card_hdr0.startswith('HISTORY')]
+                    history_values_hdr0 = [hdr0[history_card_hdr0] for history_card_hdr0 in hdr0
+                                           if history_card_hdr0.startswith('HISTORY')]
+                    for history_card_hdr0, history_value_hdr0 in zip(history_cards_hdr0, history_values_hdr0):
+                        msgs.work('Cleaning cards: {} = {}'.format(history_card_hdr0, history_value_hdr0))
+                    del hdr0['HISTORY'][:]
+                # Try to guess coordinates
+                if 'CRVAL1' not in hdr0.keys():
+                    msgs.warning('CRVAL position keywords not preset')
+                    if 'OBJECT' in hdr0.keys():
+                        try:
+                            object_coordinate = SkyCoord.from_name(str(hdr0['OBJECT']).strip())
+                            ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
+                            if 'RA' in hdr0.keys() and 'DEC' in hdr0.keys():
+                                pointing_coordinate = SkyCoord(float(hdr0['RA']), float(hdr0['DEC']), unit='deg')
+                                msgs.work('Testing from separation from pointing position')
+                                separation = object_coordinate.separation(pointing_coordinate).arcsec
+                                if separation < 120.:
+                                    msgs.info('Object - Pointing separation is {}'.format(separation))
+                                    msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
+                                    msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
+                                    hdr0['CRVAL1'] = ra_obj
+                                    hdr0['CRVAL2'] = dec_obj
+                                    msgs.work('Updating CUNIT')
+                                    hdr0['CUNIT1'] = 'deg'
+                                    hdr0['CUNIT2'] = 'deg'
+                                    msgs.work('Updating CTYPE')
+                                    hdr0['CTYPE1'] = 'RA---TAN'
+                                    hdr0['CTYPE2'] = 'DEC--TAN'
+                                    msgs.work('Updating CRPIX')
+                                    hdr0['CRPIX1'] = float(hdul[0].data.shape[1]) / 2.
+                                    hdr0['CRPIX2'] = float(hdul[0].data.shape[0]) / 2.
+                                    msgs.info('Updating CD1 and CD2')
+                                    hdr0['CD1_1'] = hdr0['PIXSCAL'] * 2.778E-4 / 1000.
+                                    hdr0['CD2_2'] = hdr0['PIXSCAL'] * 2.778E-4 / 1000.
+                                    hdr0['CD1_2'] = 0.
+                                    hdr0['CD2_1'] = 0.
+                                    msgs.work('Updating RA, DEC')
+                                    hdr0['RA'] = ra_obj
+                                    hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
+                                    hdr0['DEC'] = dec_obj
+                                    hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
+                                else:
+                                    msgs.warning('Object - Pointing separation is {}'.format(separation))
+                                    msgs.warning('This is suspicious, CRVAL not updated')
+                        except name_resolve.NameResolveError:
+                            msgs.warning('Object {} not recognized'.format(str(hdr0['OBJECT']).strip()))
+                            msgs.warning('CRVAL not updated')
 
+                # Updating file prodcatg
+                msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
+                hdr0['PRODCATG'] = str('SCIENCE.IMAGE')
+                # Update checksum and datasum
+                msgs.work('Updating checksum and datasum')
+                hdul[0].add_checksum(override_datasum=False)
+                hdul.flush(output_verify='fix')
+                hdul.close()
         else:
             msgs.warning('The Instrument {} is not supported \nThe file {} will not be processed'.format(instrument,
                                                                                                          fits_in))

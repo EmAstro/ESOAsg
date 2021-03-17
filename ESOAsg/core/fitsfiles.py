@@ -191,7 +191,7 @@ def check_value(value):  # written by Ema 05.03.2020
         elif value == 'F':
             value = np.bool(False)
         elif special_char.search(value) is not None:
-                value = str(value)
+            value = str(value)
         else:
             try:
                 value = ast.literal_eval(value)
@@ -200,35 +200,46 @@ def check_value(value):  # written by Ema 05.03.2020
     return value
 
 
-def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True, fix_header=False):
-    r"""
-    Create a fits file called `fits_new` that has the standard HDUL[0] and the HDUL[`which_hdul`] from
-    `source_fits` appended one after the other.
+def new_fits_like(source_fits, which_hdul, output_fits, empty_primary_hdu=True, overwrite=True, fix_header=False) -> \
+        None:
+    r"""Create a modified version of the input fits file
+
+    Create a new fits file containing the HDU selected with `which_hdul` appended one after the other.
+
+    If  `empty_primary_hdu` is `True`, the HDUL[0] will be created with `astropy.io.fits.PrimaryHDU` beforehand (so it
+    will be empty) and the subsequent HDUs will be appended after this. Otherwise, the first element of `which_hdul`
+    will be used as `PrimaryHDU`.
 
     Args:
-        source_fits (`str`):
-            input fits file name
-        which_hdul (`numpy.array`):
-            select from which HDUL will be copied in the `source_fits`. It needs to be an array of integer. So
-            for a single HDUL use [0], while for multiple: [0,1,2]..
-        output_fits (`str`):
-            output fits file name
-        overwrite (`bool`):
-            if `True` overwrite the `output_fits` file
+        source_fits (str): input fits file name
+        which_hdul (list): list of HDUs that will be copied in the new file
+        output_fits (str): output fits file name
+        empty_primary_hdu (bool): if `True` a PrimaryHDU with no data will be created. Otherwise, the PrimaryHDU will
+            be the first element of `which_hdul`
+        overwrite (bool): if `True` the output file will be overwritten (if present)
         fix_header (bool): if errors are present in the headers, the code will try to fix them
 
     Returns:
-        The code creates a new fits file with the same HDUL[0] of the input file.
+        None: The new file is created
+
     """
+    assert isinstance(which_hdul, list), r'which_hdul must be a list'
     source_hdul = get_hdul(source_fits, mode='readonly', checksum=True)
-    output_hdu = fits.PrimaryHDU()
-    output_hdul = fits.HDUList([output_hdu])
-    for output_which_hdul in which_hdul:
-        output_hdul.append(source_hdul[output_which_hdul])
+    if empty_primary_hdu:
+        output_hdu = fits.PrimaryHDU()
+        output_hdul = fits.HDUList([output_hdu])
+        for output_which_hdul in which_hdul:
+            output_hdul.append(source_hdul[output_which_hdul])
+    else:
+        output_hdu = fits.PrimaryHDU(source_hdul[which_hdul[0]].data, source_hdul[which_hdul[0]].header)
+        output_hdul = fits.HDUList([output_hdu])
+        for output_which_hdul in which_hdul[1:]:
+            output_hdul.append(source_hdul[output_which_hdul])
     if fix_header:
         for output_hdu in output_hdul:
             print(output_hdu)
             output_hdu.header = _clean_header(output_hdu.header)
+            output_hdu.verify('fix')
     output_hdul.writeto(output_fits, overwrite=overwrite, checksum=True)
     source_hdul.close()
 
