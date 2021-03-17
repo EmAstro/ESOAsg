@@ -215,6 +215,7 @@ def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True, fix_head
             output fits file name
         overwrite (`bool`):
             if `True` overwrite the `output_fits` file
+        fix_header (bool): if errors are present in the headers, the code will try to fix them
 
     Returns:
         The code creates a new fits file with the same HDUL[0] of the input file.

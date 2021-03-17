@@ -70,6 +70,10 @@ def main(args):
     import numpy as np
     import os
     import shutil
+    from astropy.coordinates import SkyCoord
+    from astropy.coordinates import name_resolve
+    from astropy import units as u
+    from astropy.io import fits
     from ESOAsg.ancillary import cleaning_lists
     from ESOAsg.core import fitsfiles
     from ESOAsg import msgs
@@ -147,42 +151,259 @@ def main(args):
         if instrument.startswith('IFS'):
             msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
 
-            # 1. create a copy of the file where there is a primary HDU and data are in the 'DATA" HDU
+            # Create a copy of the file where there is a primary HDU and data are in the 'DATA" HDU
+            msgs.work('Reshaping cube into PrimaryHEADER and Data Header')
             fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
             hdul = fitsfiles.get_hdul(fits_out, 'update', checksum=True)
             hdr0 = hdul[0].header
             hdr1 = hdul[1].header
 
-            # 2. updating file prodcatg
+            # Check for HISTORY
+            # Primary Header
+            if 'HISTORY' in hdr0.keys():
+                history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
+                                      if history_card_hdr0.startswith('HISTORY')]
+                history_values_hdr0 = [hdr0[history_card_hdr0] for history_card_hdr0 in hdr0
+                                       if history_card_hdr0.startswith('HISTORY')]
+                for history_card_hdr0, history_value_hdr0 in zip(history_cards_hdr0, history_values_hdr0):
+                    msgs.work('Cleaning cards: {} = {}'.format(history_card_hdr0, history_value_hdr0))
+                del hdr0['HISTORY'][:]
+            # Data Header
+            if 'HISTORY' in hdr1.keys():
+                history_values_hdr1 = hdr1['HISTORY'][:]
+                for history_number in range(0, len(history_values_hdr1)):
+                    clean_history = cleaning_lists.remove_non_ascii(history_values_hdr1[history_number])
+                    if len(clean_history) > 0:
+                        hdr1['HISTORY'][history_number] = str(clean_history)
+                    else:
+                        hdr1['HISTORY'][history_number] = str(' ')
+
+            # Update cards for headers:
+            # Updating values with different CARD in the header
+            cards_input = ['CRPIX4', 'CRVAL4', 'CTYPE4', 'CUNIT4', 'CD4_4', 'CD1_4', 'CD2_4', 'CD4_1', 'CD4_2']
+            cards_output = ['CRPIX3', 'CRVAL3', 'CTYPE3', 'CUNIT3', 'CD3_3', 'CD1_3', 'CD2_3', 'CD3_1', 'CD3_2']
+            fitsfiles.transfer_header_cards(hdr1, hdr1, cards_input, output_cards=cards_output, delete_card=True)
+            # Remove not used values
+            cards_to_be_removed_hdr1 = ['CD4_3', 'CD3_4']
+            for card_to_be_removed_hdr1 in cards_to_be_removed_hdr1:
+                hdr1.remove(card_to_be_removed_hdr1, ignore_missing=True)
+
+            # Transfer cards from HDU1 to the PrimaryHDU
+            not_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if
+                                  hdr1_card.startswith('COMMENT') or
+                                  hdr1_card.startswith('EXTNAME') or
+                                  hdr1_card.startswith('BITPIX') or
+                                  hdr1_card.startswith('NAXIS') or
+                                  hdr1_card.startswith('CRPIX') or
+                                  hdr1_card.startswith('CRVAL') or
+                                  hdr1_card.startswith('CDELT') or
+                                  hdr1_card.startswith('CTYPE') or
+                                  hdr1_card.startswith('CD1_') or
+                                  hdr1_card.startswith('CD2_') or
+                                  hdr1_card.startswith('CD3_') or
+                                  hdr1_card.startswith('CUNIT') or
+                                  hdr1_card.startswith('CSYER') or
+                                  hdr1_card.startswith('HDUCLAS') or
+                                  hdr1_card.startswith('XTENSION') or
+                                  hdr1_card.startswith('PCOUNT') or
+                                  hdr1_card.startswith('GCOUNT') or
+                                  hdr1_card.startswith('HDUDOC') or
+                                  hdr1_card.startswith('HDUVER') or
+                                  hdr1_card.startswith('HISTORY')]
+            cards_to_be_transfer = []
+            for hdr1_card in hdr1:
+                if hdr1_card not in not_to_be_transfer:
+                    cards_to_be_transfer.append(hdr1_card)
+            fitsfiles.transfer_header_cards(hdr1, hdr0, cards_to_be_transfer, with_comment=True, delete_card=True)
+
+            # Try to guess coordinates
+            if 'CRVAL1' not in hdr1.keys():
+                msgs.warning('CRVAL position keywords not preset')
+                if 'OBJECT' in hdr0.keys():
+                    try:
+                        object_coordinate = SkyCoord.from_name(str(hdr0['OBJECT']).strip())
+                        ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
+                        if 'RA' in hdr0.keys() and 'DEC' in hdr0.keys():
+                            pointing_coordinate = SkyCoord(float(hdr0['RA']), float(hdr0['DEC']), unit='deg')
+                            msgs.work('Testing from separation from pointing position')
+                            separation = object_coordinate.separation(pointing_coordinate).arcsec
+                            if separation < 120.:
+                                msgs.info('Object - Pointing separation is {}'.format(separation))
+                                msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
+                                msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
+                                hdr1['CRVAL1'] = ra_obj
+                                hdr1['CRVAL2'] = dec_obj
+                                msgs.work('Updating CUNIT')
+                                hdr1['CUNIT1'] = 'deg'
+                                hdr1['CUNIT2'] = 'deg'
+                                msgs.work('Updating CTYPE')
+                                hdr1['CTYPE1'] = 'RA---TAN'
+                                hdr1['CTYPE2'] = 'DEC--TAN'
+                                msgs.work('Updating CRPIX')
+                                hdr1['CRPIX1'] = float(hdul[1].data.shape[2])/2.
+                                hdr1['CRPIX2'] = float(hdul[1].data.shape[1])/2.
+                                msgs.info('Updating CD1 and CD2')
+                                hdr1['CD1_1'] = 2.06E-06
+                                hdr1['CD2_2'] = 2.06E-06
+                                hdr1['CD1_2'] = 0.
+                                hdr1['CD2_1'] = 0.
+                                msgs.work('Updating RA, DEC')
+                                hdr0['RA'] = ra_obj
+                                hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
+                                hdr0['DEC'] = dec_obj
+                                hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
+                            else:
+                                msgs.warning('Object - Pointing separation is {}'.format(separation))
+                                msgs.warning('This is suspicious, CRVAL not updated')
+                    except name_resolve.NameResolveError:
+                        msgs.warning('Object {} not recognized'.format(str(hdr0['OBJECT']).strip()))
+                        msgs.warning('CRVAL not updated')
+
+            # Updating file prodcatg
             msgs.work('Updating PRODCATG to SCIENCE.CUBE.IFS')
             hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
+            # Some more updates
             msgs.work('Setting NAXIS = 0 in primary header')
             hdr0['NAXIS'] = 0
-
-            # 3. update cards for headers:
-
-            # Updating values with different CARD in the header
-            CARDS_INPUT = ['CRPIX4', 'CRVAL4', 'CTYPE4', 'CUNIT4']
-            CARDS_OUTPUT = ['CRPIX3', 'CRVAL3', 'CTYPE3', 'CUNIT3']
-            fitsfiles.transfer_header_cards(hdr1, hdr1, CARDS_INPUT, output_cards=CARDS_OUTPUT, delete_card=True)
+            if 'OBSTECH' not in hdr0.keys():
+                msgs.warning('OBSTECH missing')
+                if 'ESO PRO TECH' in hdr0.keys():
+                    msgs.info('Deriving OBSTECH from HIERARCH ESO PRO TECH')
+                    msgs.work('Updating OBSTECH to {}'.format(str(hdr0['HIERARCH ESO PRO TECH'])))
+                    hdr0['OBSTECH'] = str(hdr0['HIERARCH ESO PRO TECH'])
+            if 'EXPTIME' not in hdr0.keys():
+                msgs.warning('EXPTIME missing')
+                if 'ESO DET SEQ1 REALDIT' in hdr0.keys() and 'ESO DET NDIT' in hdr0.keys():
+                    msgs.info('Deriving EXPTIME and TEXPTIME as REALDIT * DIT')
+                    hdr0['EXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 REALDIT'] * hdr0['HIERARCH ESO DET NDIT']
+                    hdr0['TEXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 REALDIT'] * hdr0['HIERARCH ESO DET NDIT']
+                    msgs.work('Updating EXPTIME to {}'.format(str(hdr0['EXPTIME'])))
+                    msgs.work('Updating TEXPTIME to {}'.format(str(hdr0['TEXPTIME'])))
+            if 'WAVELMIN' not in hdr0.keys():
+                msgs.warning('WAVELMIN missing')
+                z_pixel = np.arange(int(hdul[1].data.shape[0]))
+                z_wave = float(hdr1['CRVAL3']) + (z_pixel * float(hdr1['CD3_3']))
+                if str(hdr1['CUNIT3']).strip().upper() == 'MICRONS':
+                    msgs.info('Deriving WAVELMIN and WAVELMAX from CRVAL1')
+                    z_wave = z_wave * 1000. # convert to nanometers
+                    hdr0['WAVELMIN'] = np.nanmin(z_wave)
+                    hdr0['WAVELMAX'] = np.nanmax(z_wave)
+                    msgs.work('Updating WAVELMIN to {}'.format(str(hdr0['WAVELMIN'])))
+                    msgs.work('Updating WAVELMAX to {}'.format(str(hdr0['WAVELMAX'])))
+                else:
+                    msgs.warning('Unknown units {}. WAVELMIN and WAVELMAX not calculated'.format(str(hdr1['CUNIT3'])))
+            if 'SPEC_RES' not in hdr0.keys():
+                msgs.warning('SPEC_RES missing')
+                if 'WAVELMAX' in hdr0.keys():
+                    msgs.info('Deriving SPEC_RES from WAVELMAX')
+                    if (float(hdr0['WAVELMAX']) > 1300.) and (float(hdr0['WAVELMAX']) < 1400.):
+                        hdr0['SPEC_RES'] = 50.
+                        msgs.work('Updating SPEC_RES to {}'.format(str(hdr0['SPEC_RES'])))
+                    elif (float(hdr0['WAVELMAX']) > 1600.) and (float(hdr0['WAVELMAX']) < 1700.):
+                        hdr0['SPEC_RES'] = 30.
+                        msgs.work('Updating SPEC_RES to {}'.format(str(hdr0['SPEC_RES'])))
+                    else:
+                        msgs.warning('WAVELMAX = {} is not in the expected ' /
+                                     + 'range of possible values'.format(str(hdr0['WAVELMAX'])))
+            if 'PROGID' not in hdr0.keys():
+                msgs.warning('PROG_ID missing')
+                if 'ESO OBS PROG ID' in hdr0.keys():
+                    msgs.info('Deriving PROG_ID from HIERARCH ESO OBS PROG ID')
+                    msgs.work('Updating PROG_ID to {}'.format(str(hdr0['HIERARCH ESO OBS PROG ID'])))
+                    hdr0['PROG_ID'] = str(hdr0['HIERARCH ESO OBS PROG ID'])
+            if 'MJD-END' not in hdr0.keys():
+                msgs.warning('MJD-END missing')
+                if 'TEXPTIME' in hdr0.keys():
+                    msgs.info('Deriving MJD-END from MJD-OBS and TEXPTIME')
+                    texptime_sec = float(hdr0['TEXPTIME'])
+                    texptime_day = texptime_sec / (60. * 60. * 24.)
+                    mjdend = float(hdr0['MJD-OBS']) + texptime_day
+                    fitsfiles.add_header_card(hdr0, 'MJD-END', mjdend, 'End of observation')
+                    msgs.work('MJD-OBS = {} and TEXPTIME = {} days'.format(str(hdr0['MJD-OBS']), str(texptime_day)))
+                    msgs.work('Updating MJD-END to {}'.format(str(hdr0['MJD-END'])))
 
             # Remove not used values
-            CARDS_TO_BE_REMOVED_HDR1 = ['CD1_4', 'CD2_4', 'CD3_4', 'CD4_1', 'CD4_2', 'CD4_3', 'CD4_4']
-            for card_to_be_removed in CARDS_TO_BE_REMOVED_HDR1:
-                hdr1.remove(card_to_be_removed, ignore_missing=True)
+            cards_to_be_removed_hdr0 = ['ERRDATA', 'QUALDATA', 'SCIDATA']
+            for card_to_be_removed_hdr0 in cards_to_be_removed_hdr0:
+                hdr0.remove(card_to_be_removed_hdr0, ignore_missing=True)
+            cards_to_be_removed_hdr1 = ['HDUCLASS3']
+            for card_to_be_removed_hdr1 in cards_to_be_removed_hdr1:
+                hdr1.remove(card_to_be_removed_hdr1, ignore_missing=True)
 
+            # Updating the FITS file definition comment line
+            hdr0.add_comment("  FITS (Flexible Image Transport System) format is defined in 'Astronomy" + "  and "
+                             "Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H", after='EXTEND')
+            if 'COMMENT' in hdr1.keys():
+                comment_values_hdr1 = hdr1['COMMENT'][:]
+                for index, comment_value_hdr1 in enumerate(comment_values_hdr1):
+                    msgs.work('Removing COMMENT card : {}'.format(comment_value_hdr1))
+                hdr1.remove('COMMENT', ignore_missing=True, remove_all=True)
 
-            # Remove
-            # 6. update checksum and datasum
+            # Creating white light image keyword:
+            if make_whitelight_image:
+                fitsfiles.add_header_card(hdr0, 'ASSON1', image_out.split('/')[-1],
+                                          'ANCILLARY.IMAGE.WHITELIGHT filename')
+                msgs.work('Updating ASSON1 to {}'.format(hdr0['ASSON1']))
+
+            # Actually creating the white-light image
+            if make_whitelight_image:
+                msgs.info('Making white light image')
+                image_hdu = fits.PrimaryHDU()
+                image_hdul = fits.HDUList([image_hdu])
+                if str(hdr1['CUNIT3']).strip().upper() == 'MICRONS':
+                    to_ang = 10000.
+                else:
+                    msgs.error('Spectral unit: {} not recognized'.format(hdr1['CUNIT3']))
+                delta_wave_bin = hdr1['CD3_3']
+                image_hdul.append(fits.ImageHDU(to_ang * delta_wave_bin * np.nansum(hdul[1].data,
+                                                                                    axis=0, dtype=np.float_)))
+                image_hdr0 = image_hdul[0].header
+                image_hdr1 = image_hdul[1].header
+                card_for_image0 = ['WAVELMIN', 'WAVELMAX', 'OBJECT', 'TELESCOP', 'INSTRUME', 'RADECSYS', 'RA', 'DEC',
+                                   'EQUINOX']
+                fitsfiles.transfer_header_cards(hdr0, image_hdr0, card_for_image0, with_comment=True, delete_card=False)
+                image_hdr0['PRODCATG'] = str('ANCILLARY.IMAGE.WHITELIGHT')
+
+                card_for_image1 = ['CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2', 'CUNIT1', 'CUNIT2',
+                                   'NAXIS1', 'NAXIS2', 'EXTNAME', 'CD1_1', 'CD1_2', 'CD2_1', 'CD2_2', 'CTYPE1', 'CTYPE2']
+                fitsfiles.transfer_header_cards(hdr1, image_hdr1, card_for_image1, with_comment=True, delete_card=False)
+
+            # Update checksum and datasum
             msgs.work('Updating checksum and datasum')
             hdul[0].add_checksum(override_datasum=False)
             hdul[1].add_datasum()
             hdul[1].add_checksum(override_datasum=True)
             hdul.flush()
             hdul.close()
+            msgs.info('File {} produced.'.format(fits_out))
+            if make_whitelight_image:
+                image_hdul[0].add_datasum()
+                image_hdul[1].add_datasum()
+                image_hdul[0].add_checksum(override_datasum=True)
+                image_hdul[1].add_checksum(override_datasum=True)
+                image_hdul.writeto(image_out)
+            msgs.info('Image {} produced.'.format(image_out))
 
         elif instrument.startswith('IRDIS'):
             msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
+            hdr = fitsfiles.header_from_fits_file(fits_in)
+            if 'ESO DPR TECH' in hdr.keys():
+                if str(hdr['ESO DPR TECH']).strip() == 'IMAGE,DUAL,CORONOGRAPHY':
+                    msgs.work('Working with {} as observing technique'.format(str(hdr['ESO DPR TECH']).strip()))
+                elif 'DUAL' in str(hdr['ESO DPR TECH']).strip():
+                    msgs.error('{} needs to be tested'.format(str(hdr['ESO DPR TECH']).strip()))
+                else:
+                    msgs.error('Only DUAL imaging currently implemented')
+            else:
+                msgs.error('Cannot recognize the observing technique')
+
+            from IPython import embed
+            embed()
+            fitsfiles.new_fits_like(fits_in, [0], fits_out, overwrite=overwrite, fix_header=True)
+
+            # Updating file prodcatg
+            msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
+            # hdr0['PRODCATG'] = str('SCIENCE.IMAGE')
 
         else:
             msgs.warning('The Instrument {} is not supported \nThe file {} will not be processed'.format(instrument,
@@ -191,52 +412,6 @@ def main(args):
     msgs.end()
 
     '''
-        if 'HISTORY' in hdr0.keys():
-            history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
-                                  if history_card_hdr0.startswith('HISTORY')]
-            history_values_hdr0 = [hdr0[history_card_hdr0] for history_card_hdr0 in hdr0
-                                   if history_card_hdr0.startswith('HISTORY')]
-            del hdr0['HISTORY'][:]
-
-        if 'HISTORY' in hdr1.keys():
-            history_values_hdr1 = hdr1['HISTORY'][:]
-            for history_number in range(0, len(history_values_hdr1)):
-                clean_history = checks.remove_non_ascii(history_values_hdr1[history_number])
-                if len(clean_history) > 0:
-                    hdr1['HISTORY'][history_number] = str(clean_history)
-                else:
-                    hdr1['HISTORY'][history_number] = str(' ')
-
-
-
-        # Transfer cards from HDU1 to the PrimaryHDU
-        not_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if
-                              hdr1_card.startswith('COMMENT') or
-                              hdr1_card.startswith('NAXIS') or
-                              hdr1_card.startswith('CRPIX') or
-                              hdr1_card.startswith('CRVAL') or
-                              hdr1_card.startswith('CDELT') or
-                              hdr1_card.startswith('CTYPE') or
-                              hdr1_card.startswith('CD1_') or
-                              hdr1_card.startswith('CD2_') or
-                              hdr1_card.startswith('CD3_') or
-                              hdr1_card.startswith('CUNIT') or
-                              hdr1_card.startswith('CSYER') or
-                              hdr1_card.startswith('HDUCLAS') or
-                              hdr1_card.startswith('XTENSION') or
-                              hdr1_card.startswith('PCOUNT') or
-                              hdr1_card.startswith('GCOUNT') or
-                              hdr1_card.startswith('HDUDOC') or
-                              hdr1_card.startswith('HDUVER') or
-                              hdr1_card.startswith('HISTORY')]
-        cards_to_be_transfer = [hdr1_card for hdr1_card in hdr1 if hdr1_card not in not_to_be_transfer]
-        fitsfiles.transfer_header_cards(hdr1, hdr0, cards_to_be_transfer, with_comment=True, delete_card=True)
-
-        # Updating the FITS file definition comment line
-        hdr0['COMMENT'] = "  FITS (Flexible Image Transport System) format is defined in 'Astronomy" \
-                          + "  and Astrophysics', volume 376, page 359; bibcode: 2001A&A...376..359H"
-
-
 
         if abmaglim > 0.:
             msgs.work('Updating ABMAGLIM')
