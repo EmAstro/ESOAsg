@@ -370,19 +370,43 @@ def condition_source_ids_like(source_ids, source_id_name='SOURCEID'):
 # Observations
 
 
-def create_query_obscore_base():
+def create_query_obscore_base(columns=None):
     r"""Create the base string for a query to `ivoa.ObsCore`
+
+    If `columns` is set to None, default list of columns is set by the global variable `COLUMNS_FROM_OBSCORE`
+
+    Args:
+        columns (list, optional): list of `str` containing the columns that will be queried
 
     Returns:
         str: Base for the `ivoa.ObsCore` queries
 
     """
+    if columns is None:
+        columns = COLUMNS_FROM_OBSCORE
     query_base = '''
             SELECT
                 {}
             FROM
-                ivoa.ObsCore'''.format(_create_comma_separated_list(COLUMNS_FROM_OBSCORE))
+                ivoa.ObsCore'''.format(_create_comma_separated_list(columns))
     return query_base
+
+
+def create_query_obscore_all_columns():
+    r"""Create a query that get names (and corresponding info) of the columns present `ivoa.ObsCore`
+
+    Returns:
+        str: string containing the query to obtain information on all columns present in `ivoa.ObsCore`
+
+    """
+    query_obscore_all_columns = '''
+        SELECT 
+            table_name, column_name, ucd, datatype, description, unit, utype
+        FROM 
+            TAP_SCHEMA.columns
+        WHERE 
+            table_name='ivoa.ObsCore' '''
+    return query_obscore_all_columns
 
 
 def condition_intersects_ra_dec(ra, dec, radius=None):
