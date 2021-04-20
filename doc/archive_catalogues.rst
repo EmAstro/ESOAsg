@@ -61,7 +61,7 @@ In general, it is possible to explore which catalogue are available in the ESO a
     WHERE 
         schema_name = 'safcat'
 
-or this one to obtain `only the latest version of the catalogues <http://archive.eso.org/programmatic/#TAP?e=1&f=text&m=200&q=SELECT%20t1.cat_id%2C%20t1.collection%2C%20t1.table_name%2C%20t1.title%2C%20t1.number_rows%2C%20t1.number_columns%2C%20t1.version%2C%20t1.acknowledgment%20FROM%20tables%20t1%20LEFT%20OUTER%20JOIN%20tables%20t2%20ON%20(t1.title%20%3D%20t2.title%20AND%20t1.version%20%3C%20t2.version)%20WHERE%20t2.title%20IS%20null%20AND%20t1.cat_id%20IS%20NOT%20null%20AND%20t1.schema_name%20%3D%20'safcat'%0A&>`_:
+or this one to obtain `only the latest version of the catalogues <http://archive.eso.org/programmatic/#TAP?e=7&f=text&m=200&q=SELECT%20t1.cat_id%2C%20t1.collection%2C%20t1.table_name%2C%20t1.title%2C%20t1.number_rows%2C%20t1.number_columns%2C%20t1.version%2C%20t1.acknowledgment%20FROM%20tables%20t1%0ALEFT%20OUTER%20JOIN%20tables%20t2%20ON%20(t1.title%20%3D%20t2.title%20AND%20t1.version%20%3C%20t2.version)%0AWHERE%20t2.title%20IS%20null%20AND%20t1.cat_id%20IS%20NOT%20null%20AND%20t1.schema_name%20%3D%20'safcat'&>`_:
 ::
 
     SELECT
@@ -75,11 +75,12 @@ or this one to obtain `only the latest version of the catalogues <http://archive
     WHERE
        t2.title IS null AND t1.cat_id IS NOT null AND t1.schema_name = 'safcat'
 
-Alternatively, it is possible to obtain an `astropy.table` containing information on all catalogues and all their versions using (note that the query is more complicated of the ones above because more information are collected):
+Alternatively, it is possible to obtain an `astropy.table` containing information on all catalogues and all their
+versions using (note that the query is more complicated of the ones above because more information are collected):
 ::
 
     from ESOAsg import archive_catalogues
-    archive_catalogues.all_catalogues(all_versions=True)
+    archive_catalogues.all_catalogues_info(all_versions=True)
 
 This returns an `astropy.table` containing:
 

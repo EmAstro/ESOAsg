@@ -236,9 +236,9 @@ if __name__ == '__main__':
             msgs.work('      {}'.format(hdr0[prov.replace('NAME', 'CATG')]))
 
         msgs.work('Updating MJD-END')
-        EXPTIME_sec = np.float32(hdr0['EXPTIME'])
-        EXPTIME_day = EXPTIME_sec / (60. * 60. * 24.)
-        MJDEND = np.float32(hdr0['MJD-OBS']) + EXPTIME_day
+        TEXPTIME_sec = np.float32(hdr0['TEXPTIME'])
+        TEXPTIME_day = TEXPTIME_sec / (60. * 60. * 24.)
+        MJDEND = np.float32(hdr0['MJD-OBS']) + TEXPTIME_day
         fitsfiles.add_header_card(hdr0, 'MJD-END', MJDEND, 'End of observation')
 
         msgs.work('Updating TEXPTIME')

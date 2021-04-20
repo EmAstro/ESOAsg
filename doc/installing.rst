@@ -19,20 +19,20 @@ python and dependencies
 ESOAsg runs with `python <http://www.python.org/>`_ 3.7 and with the following dependencies:
 
 * `python <http://www.python.org/>`_ -- version 3.7 or later
-* `astropy <https://www.astropy.org/>`_ -- version 4.0 or later
+* `astropy <https://www.astropy.org/>`_ -- version 4.2 or later
 * `astroquery <https://astroquery.readthedocs.io/en/latest/>`_ -- version 0.4 or later
 * `IPython <https://ipython.org>`_ -- version 7.12 or later
 * `matplotlib <https://matplotlib.org/>`_ -- version 3.3 or later
 * `numpy <http://www.numpy.org/>`_ -- version 1.19 or later
 * `packaging <https://packaging.python.org/>`_ -- version 20.4 or later
-* `pytest <https://docs.pytest.org/>`_ version 6.0 or later
-* `pyvo <https://pypi.org/project/pyvo/>`_ -- version 1.0 or later
-* `requests <https://requests.readthedocs.io/>`_ -- version 2.23 or later
+* `pytest <https://docs.pytest.org/>`_ version 6.2 or later
+* `pyvo <https://pypi.org/project/pyvo/>`_ -- version 1.1 or later
+* `requests <https://requests.readthedocs.io/>`_ -- version 2.25 or later
 
 The following packages are required to work on Ligo gravitational wave events, see for instance `this notebook <https://github.com/EmAstro/ESOAsg/blob/master/doc/notebooks/HOWTO_getDataFromGWContours.ipynb>`_:
 
-* `healpy <https://healpy.readthedocs.io/>`_ -- version 1.13 or later
-* `ligo.skymap <https://lscsoft.docs.ligo.org/ligo.skymap/>`_ -- version 0.3 or later
+* `healpy <https://healpy.readthedocs.io/>`_ -- version 1.14 or later
+* `ligo.skymap <https://lscsoft.docs.ligo.org/ligo.skymap/>`_ -- version 0.5 or later
 
 If you are using Anaconda, you can check the presence of these packages with::
 

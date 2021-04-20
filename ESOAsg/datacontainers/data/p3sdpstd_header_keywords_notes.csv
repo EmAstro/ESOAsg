@@ -1,0 +1,36 @@
+Number; Note
+27; Mandatory for the cases where ancillary files are provided in a non-FITS format.
+28; Mandatory for the cases where ancillary files are provided in association with the scientific data.
+29; The flux map must always be associated with the RMS noise map, or the SNR map, or both.
+30; The IFS 3D cube must always be associated with the white-light image.
+31; Applicable to photometric catalogues as well as APEX catalogues.
+32; There can be cases where that keyword does not apply, for instance in the case of target catalogues of spectroscopic surveys, e.g. PESSTO where no appropriate RA/DEC value can be defined to characterise the catalogue as a whole.
+33; If RADESYS='FK5', EQUINOX=2000.0 is mandatory. If RADESYS='ICRS', EQUINOX is tolerated and its value needs to be 2000.0.
+34; Must be present if the system used is other than UTC.
+35; Does not apply to catalogues for which no unique value of OBSTECH can be identified.
+36; If a refereed publication is not available at the time of the data release going public, the value can be left to an empty string.
+37; Mandatory depending on whether fluxes or magnitudes are provided in the source list.
+38; EXT_OBJ is mandatory for externally submitted data products (e.g. spectroscopic public surveys). EXT_OBJ is not applicable to data processed in an unsupervised way, for which the keyword value cannot be assessed and thus the property is not known.
+39; FLUXERR applies to SCIENCE.SPECTRUM with FLUXCAL='ABSOLUTE'. In case of SCIENCE.SPECTRUM with FLUXCAL='UNCALIBRATED', the FLUXERR keyword shall be set to -1. The special value -2 is reserved for the case when the flux error cannot be determined.
+40; Applicable to spectroscopic and APE X catalogues. For photometric catalogues, the value is calculated by the P3 system unless the combination (INSTRi, FILTERi) is not unique, in which case please contact usd-help@eso.org, subject: Phase 3 to assess the correct value of the WAVELMIN/MAX keywords, to be added in the headers.
+41; For APEX catalogues only.
+42; SCIDATA is not applicable if there is no error extension. ERRDATA / QUALDATA shall be used if there is an error/quality extension, respectively.
+43; For photometric catalogues. And if there is more than one filter, it is not applicable. Use MAGLIMi instead.
+44; For photometric catalogues with more than one filter.
+45; For VIRCAM and OmegaCAM only.
+46; Applicable to the case when SKY_RES is expected to vary within the data collection due to the way it is estimated.
+47; For AO observations only.
+48; NIR image data products qualify for the keyword if, and only if, all exposures and observations contributing to the given product share the same value for the respective parameter. If, for example, the product has been created from exposures taken with di fferent detector integration time, the keyword DIT should not be defined in the FITS header.
+49; Not mandatory in case of complex footprints.
+50; Does not apply to spectroscopic catalogues for which no coverage pattern exists.
+51; Applicable to multi-epoch catal ogues only.
+52; For aperture-matched catalogues only.
+53; In case data link is used.
+54; In case provenance per catalogue record is used.
+55; Applicable to products originating or containing data from a non-ESO facility.
+56; Keyword may be absent for columns representing quantities having no units of measurement, otherwise it must be present.
+57; For quantities having no units of measurement, the value shall be set to an empty string.
+58; In case the UType is not defined in the IVOA document [3] like e.g. for CONTINUUM, the corresponding TUTYPi keyword shall be set to an empty string.
+59; Mandatory for the TTYPE1 array only (start/stop spectral coordinates).
+60; See section 5.18 and section 12.2.6 for applicability. Also Req-9 in section 12.4.1.
+61; A specific value is requested in particular cases: 'PHASE3PROVENANCE', 'PHASE3CATALOG', 'PHASE3FILELIST'.

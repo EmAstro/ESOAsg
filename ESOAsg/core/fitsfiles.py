@@ -14,29 +14,30 @@ import ast
 from ESOAsg import msgs
 from ESOAsg.ancillary import checks
 
+# Only fits files with the following extensions are permitted
+PERMITTED_FITS_ENDINGS = ['fits', 'fits.gz', 'fits.fz']
+
 
 def get_hdul(fits_name, mode='readonly', checksum=True):  # Written by Ema 05.03.2020
     r"""Wrapper for astropy `fits.open`. It checks if the file exists and in case returns its HDUList.
 
     Args:
-        fits_name (`str`):
-            fits file name
-        mode (`str`):
-            Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`, or `ostream`
-        checksum (`bool`):
-            If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU header)
-            match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
+        fits_name (str): fits file name
+        mode (str): Open mode for the file. Possibilities are: `readonly’, `update`, `append`, `denywrite`,
+            or `ostream`
+        checksum (bool): If True, verifies that both `DATASUM` and `CHECKSUM` card values (when present in the HDU
+            header) match the header and data of all HDU’s in the file. Updates to a file that already has a checksum
             will preserve and update the existing checksums unless this argument is given a value of `remove`,
             in which case the `CHECKSUM` and `DATASUM` values are not checked, and are removed when saving
             changes to the file
 
     Returns:
-        hdul (`hdul`):
-            list-like collection of HDU objects
+        hdul: list-like collection of HDU objects
 
     """
     if not checks.fits_file_is_valid(fits_name):
         msgs.error('Fits file not valid')
+        return None
     else:
         hdul = fits.open(fits_name, mode=mode, checksum=checksum)
         msgs.info('The fits file {} contains {} HDUs'.format(fits_name, len(hdul)))
@@ -52,7 +53,7 @@ def header_from_fits_file(fits_name, which_hdu=0):  # Written by Ema 05.03.2020
         fits_name (`str`):
             fits file name
         which_hdu (`numpy.int`):
-            select from which HDU you are getting the header. Default = 1
+            select from which HDU you are getting the header. Default = 0
 
     Returns:
          header (`hdu.header`):
@@ -192,36 +193,72 @@ def check_value(value):  # written by Ema 05.03.2020
         elif special_char.search(value) is not None:
             value = str(value)
         else:
-            value = ast.literal_eval(value)
+            try:
+                value = ast.literal_eval(value)
+            except ValueError:
+                msgs.warning('Cannot recognize format')
     return value
 
 
-def new_fits_like(source_fits, which_hdul, output_fits, overwrite=True):
-    r"""
-    Create a fits file called `fits_new` that has the standard HDUL[0] and the HDUL[`which_hdul`] from
-    `source_fits` appended one after the other.
+def new_fits_like(source_fits, which_hdul, output_fits, empty_primary_hdu=True, overwrite=True, fix_header=False) -> \
+        None:
+    r"""Create a modified version of the input fits file
+
+    Create a new fits file containing the HDU selected with `which_hdul` appended one after the other.
+
+    If  `empty_primary_hdu` is `True`, the HDUL[0] will be created with `astropy.io.fits.PrimaryHDU` beforehand (so it
+    will be empty) and the subsequent HDUs will be appended after this. Otherwise, the first element of `which_hdul`
+    will be used as `PrimaryHDU`.
 
     Args:
-        source_fits (`str`):
-            input fits file name
-        which_hdul (`numpy.array`):
-            select from which HDUL will be copied in the `source_fits`. It needs to be an array of integer. So
-            for a single HDUL use [0], while for multiple: [0,1,2]..
-        output_fits (`str`):
-            output fits file name
-        overwrite (`bool`):
-            if `True` overwrite the `output_fits` file
+        source_fits (str): input fits file name
+        which_hdul (list): list of HDUs that will be copied in the new file
+        output_fits (str): output fits file name
+        empty_primary_hdu (bool): if `True` a PrimaryHDU with no data will be created. Otherwise, the PrimaryHDU will
+            be the first element of `which_hdul`
+        overwrite (bool): if `True` the output file will be overwritten (if present)
+        fix_header (bool): if errors are present in the headers, the code will try to fix them
 
     Returns:
-        The code creates a new fits file with the same HDUL[0] of the input file.
+        None: The new file is created
+
     """
+    assert isinstance(which_hdul, list), r'which_hdul must be a list'
     source_hdul = get_hdul(source_fits, mode='readonly', checksum=True)
-    output_hdu = fits.PrimaryHDU()
-    output_hdul = fits.HDUList([output_hdu])
-    for output_which_hdul in which_hdul:
-        output_hdul.append(source_hdul[output_which_hdul])
+    if empty_primary_hdu:
+        output_hdu = fits.PrimaryHDU()
+        output_hdul = fits.HDUList([output_hdu])
+        for output_which_hdul in which_hdul:
+            output_hdul.append(source_hdul[output_which_hdul])
+    else:
+        output_hdu = fits.PrimaryHDU(source_hdul[which_hdul[0]].data, source_hdul[which_hdul[0]].header)
+        output_hdul = fits.HDUList([output_hdu])
+        for output_which_hdul in which_hdul[1:]:
+            output_hdul.append(source_hdul[output_which_hdul])
+    if fix_header:
+        for output_hdu in output_hdul:
+            print(output_hdu)
+            output_hdu.header = _clean_header(output_hdu.header)
+            output_hdu.verify('fix')
     output_hdul.writeto(output_fits, overwrite=overwrite, checksum=True)
     source_hdul.close()
+
+
+def _clean_header(header):
+    r"""This is really badly coded.
+
+    Args:
+        header:
+
+    Returns:
+
+    """
+    for keyword in header:
+        if keyword.startswith('='):
+            header.remove(keyword)
+        if (len(keyword) <= 8) and (' ' in keyword):
+            header.rename_keyword(keyword, keyword.replace(' ', '_'))
+    return header
 
 
 def transfer_header_cards(source_header, output_header, source_cards, output_cards=None,
@@ -300,3 +337,19 @@ def add_header_card(header, card, value, comment=None):
         header[card] = value
     else:
         header[card] = value, comment
+
+
+def remove_header_cards(header, cards, ignore_missing=True):
+    r"""
+
+    Args:
+        header:
+        cards:
+        ignore_missing:
+
+    Returns:
+
+    """
+    for card in cards:
+        header.remove(cards, ignore_missing=ignore_missing)
+        msgs.work('card {} removed from the header'.format(card))

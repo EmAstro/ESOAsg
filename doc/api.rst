@@ -69,8 +69,27 @@ The asp_queries module
 ESOAsg.datacontainers
 ---------------------
 
-ligthcurves
-+++++++++++
 
-.. automodule:: ESOAsg.datacontainers.lightcurves
+eso_prodcatg
+++++++++++++
+
+.. automodule:: ESOAsg.datacontainers.eso_prodcatg
    :members:
+
+
+science_cube_ifs
++++++++++++++++++
+
+.. automodule:: ESOAsg.datacontainers.science_cube_ifs
+   :members:
+
+
+ESOASG.ancillary
+----------------
+
+checks
+++++++
+
+.. automodule:: ESOAsg.ancillary.checks
+   :members:
+ 

@@ -246,7 +246,7 @@ class LightCurves:
             self.others = others
         else:
             self.others = Table()
-        self._datatype = 'LightCurves'
+        self._datatype = 'LightCurve'
 
     def load_from_table(self, table, primary_header=None, copy_header=True, where_time='TIME',
                         where_time_bin='TIME_BIN', where_flux='FLUX',
