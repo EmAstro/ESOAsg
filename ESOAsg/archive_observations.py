@@ -99,12 +99,7 @@ def query_from_radec(positions=None, radius=None, instruments=None, data_types=N
         results_from_query.append(result_from_query)
 
     # Returning results
-    if len(results_from_query) == 0:
-        return None
-    elif len(results_from_query) == 1:
-        return results_from_query[0]
-    else:
-        return results_from_query
+    return _return_results_from_query(results_from_query)
 
 
 def query_from_polygons(polygons, instruments=None, data_types=None, verbose=False, columns=None, maxrec=None):
@@ -178,12 +173,7 @@ def query_from_polygons(polygons, instruments=None, data_types=None, verbose=Fal
         results_from_query.append(result_from_query)
 
     # Returning results
-    if len(results_from_query) == 0:
-        return None
-    elif len(results_from_query) == 1:
-        return results_from_query[0]
-    else:
-        return results_from_query
+    return _return_results_from_query(results_from_query)
 
 
 def download(dp_ids, min_disk_space=float(default.get_value('min_disk_space'))):
@@ -273,3 +263,28 @@ def _is_column_in_obscore(column_name):
         msgs.warning('Column: {} not recognized. Possible values are:\n{}'.format(column_name, all_column_list))
         is_in_obscore = False
     return is_in_obscore
+
+
+def _return_results_from_query(results_from_query):
+    r"""Return the result from a query
+
+    This is ancillary to return the result from a query in different format depending on the input. There are three
+    options:
+
+    - if len(`results_from_query`) == 0: it returns `None`
+    - if len(`results_from_query`) == 1: it returns a single astropy table
+    - if len(`results_from_query`) > 1: it returns a list of astropy tables
+
+    Args:
+        results_from_query (list): input list of tables to be transformed (if necessary)
+
+    Returns:
+        any: `None`, a single astropy table, or a list of astropy tables depending on the input
+
+    """
+    if len(results_from_query) == 0:
+        return None
+    elif len(results_from_query) == 1:
+        return results_from_query[0]
+    else:
+        return results_from_query
