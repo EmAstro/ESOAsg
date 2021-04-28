@@ -1,0 +1,10 @@
+#!/usr/bin/env python3
+
+r"""Make VLT/FLAMES TARANTULA data produced by the group (almost) Phase 3 compliant
+"""
+
+from ESOAsg.scripts.survey_specific import fix_spectra_vlt_flames_tarantula
+
+if __name__ == '__main__':
+    args = fix_spectra_vlt_flames_tarantula.parser()
+    fix_spectra_vlt_flames_tarantula.main(args)
