@@ -99,7 +99,6 @@ def main(args):
         col3 = fits.Column(name='BGFLUX', format=col_format, unit='adu',
                            array=[np.array(BGFLUX, dtype=col_dtype)])
 
-
         hdu1_out = fits.BinTableHDU.from_columns([col1, col2, col3], nrows=1)
         hdu1_out.header['EXTNAME'] = 'SPECTRUM'
         hdu1_out.header['TUCD1'] = 'em.wl'
