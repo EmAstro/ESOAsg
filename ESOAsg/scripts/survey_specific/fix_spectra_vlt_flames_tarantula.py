@@ -80,6 +80,7 @@ def main(args):
         hdul_out = fits.HDUList([hdu0_out])
         FLUX = hdul_in['SKY SUBTRACTED'].data
         ERR = hdul_in['ORIGINAL ERROR'].data
+        BGFLUX = hdul_in['MEDIAN SKY'].data
         CRVAL1 = hdul_in['SKY SUBTRACTED'].header['CRVAL1']
         CRPIX1 = hdul_in['SKY SUBTRACTED'].header['CRPIX1']
         CDELT1 = hdul_in['SKY SUBTRACTED'].header['CRPIX1']
@@ -95,6 +96,9 @@ def main(args):
                            array=[np.array(FLUX, dtype=col_dtype)])
         col3 = fits.Column(name='ERR', format=col_format, unit='adu',
                            array=[np.array(ERR, dtype=col_dtype)])
+        col3 = fits.Column(name='BGFLUX', format=col_format, unit='adu',
+                           array=[np.array(BGFLUX, dtype=col_dtype)])
+
 
         hdu1_out = fits.BinTableHDU.from_columns([col1, col2, col3], nrows=1)
         hdu1_out.header['EXTNAME'] = 'SPECTRUM'
