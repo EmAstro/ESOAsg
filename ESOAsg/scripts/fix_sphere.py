@@ -99,12 +99,17 @@ def main(args):
                                                                                            suffix=suffix_string + '_WL')
     else:
         output_whitelight_files = [None] * len(input_fits_files)
-    '''
-    # reference
     if args.referenc is not None:
         reference = str(args.referenc[0])
     else:
-        reference = str(' ')
+        reference = str('10.1051/0004-6361/201832973') 
+        # Galicher, R., Boccaletti, A., Mesa, D., et al. (2018) "Astrometric and 
+        #photometric accuracies in high contrast imaging: The SPHERE speckle 
+        #calibration tool (SpeCal)," A&A, 615, A92 - 2018A&A...615A..92G 
+        #https://ui.adsabs.harvard.edu/abs/2018A%26A...615A..92G/abstract
+
+    '''
+    # reference
 
     # fluxcal
     if args.fluxcal == 'ABSOLUTE':
@@ -388,12 +393,13 @@ def main(args):
             msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
             hdr = fitsfiles.header_from_fits_file(fits_in)
             if 'ESO DPR TECH' in hdr.keys():
-                if str(hdr['ESO DPR TECH']).strip() == 'IMAGE,DUAL,CORONOGRAPHY':
+                if str(hdr['ESO DPR TECH']).strip() == 'IMAGE,DUAL,CORONOGRAPHY' or \
+                   str(hdr['ESO DPR TECH']).strip() == 'IMAGE,CLASSICAL,CORONOGRAPHY':
                     msgs.work('Working with {} as observing technique'.format(str(hdr['ESO DPR TECH']).strip()))
                 elif 'DUAL' in str(hdr['ESO DPR TECH']).strip():
                     msgs.error('{} needs to be tested'.format(str(hdr['ESO DPR TECH']).strip()))
                 else:
-                    msgs.error('Only DUAL imaging currently implemented')
+                    msgs.error('Only DUAL and CLASSICAL imaging currently implemented')
             else:
                 msgs.error('Cannot recognize the observing technique')
 
@@ -485,6 +491,9 @@ def main(args):
         else:
             msgs.warning('The Instrument {} is not supported \nThe file {} will not be processed'.format(instrument,
                                                                                                          fits_in))
+        # Updating the reference
+        msgs.work('Updating REFERENC to {0:s}'.format(reference))
+        hdr0['REFERENC'] = reference
 
     msgs.end()
 
@@ -494,8 +503,6 @@ def main(args):
             msgs.work('Updating ABMAGLIM')
             hdr0['ABMAGLIM'] = abmaglim
 
-        msgs.work('Updating REFERENC')
-        hdr0['REFERENC'] = reference
 
         msgs.work('Updating PROVENANCE')
         prov_to_be_transfer = [hdr0_card for hdr0_card in hdr0 if hdr0_card.startswith('ESO PRO REC')
