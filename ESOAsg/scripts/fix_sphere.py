@@ -62,6 +62,11 @@ def parser(options=None):
                              r"If it is not set, the input files will be overwritten")
     parser.add_argument("-wl", "--whitelight", action="store_true", default=False,
                         help=r"Create the white light image for IFS cubes")
+    parser.add_argument("-r", "--reference", type=str, default=None,
+                        help=r"DOI of the reference publication. By default, " +
+                             r"use 10.1051/0004-6361/201832973 (Galicher et al. 2018)")
+    parser.add_argument("-c","--contrast", type=str,default=None,
+                        help=r"optional contrast curve to extract the sensitivity in the background")
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
@@ -99,18 +104,18 @@ def main(args):
                                                                                            suffix=suffix_string + '_WL')
     else:
         output_whitelight_files = [None] * len(input_fits_files)
-    if args.referenc is not None:
-        reference = str(args.referenc[0])
+    if args.reference is not None:
+        reference = str(args.reference)
     else:
         reference = str('10.1051/0004-6361/201832973') 
         # Galicher, R., Boccaletti, A., Mesa, D., et al. (2018) "Astrometric and 
         #photometric accuracies in high contrast imaging: The SPHERE speckle 
         #calibration tool (SpeCal)," A&A, 615, A92 - 2018A&A...615A..92G 
         #https://ui.adsabs.harvard.edu/abs/2018A%26A...615A..92G/abstract
+    if args.contrast is not None:            
+        contrast_file = str(args.contrast)    
 
     '''
-    # reference
-
     # fluxcal
     if args.fluxcal == 'ABSOLUTE':
         fluxcal = 'ABSOLUTE'
@@ -248,8 +253,10 @@ def main(args):
                                 hdr1['CRPIX1'] = float(hdul[1].data.shape[2])/2.
                                 hdr1['CRPIX2'] = float(hdul[1].data.shape[1])/2.
                                 msgs.info('Updating CD1 and CD2')
-                                hdr1['CD1_1'] = 2.06E-06
-                                hdr1['CD2_2'] = 2.06E-06
+                                hdr1['CD1_1'] = 2.06E-06 # 2.06E-06*3600*1000 = 7.416 mas/px. 
+                                                        # [Julien] We should avoid using a hardcoded value here but 
+                                                        # read the value from the PIXTOARC or PIXSCAL and convert in deg.
+                                hdr1['CD2_2'] = 2.06E-06 # same comment here
                                 hdr1['CD1_2'] = 0.
                                 hdr1['CD2_1'] = 0.
                                 msgs.work('Updating RA, DEC')
@@ -260,6 +267,9 @@ def main(args):
                             else:
                                 msgs.warning('Object - Pointing separation is {}'.format(separation))
                                 msgs.warning('This is suspicious, CRVAL not updated')
+                                # [Julien] We could avoid to fail in this case by checking if there are stars
+                                # with R<14 within 2 arcsec. If there is one and only one, this is necessarily the
+                                # target. If there are more than one, we cannot decide.                                 
                     except name_resolve.NameResolveError:
                         msgs.warning('Object {} not recognized'.format(str(hdr0['OBJECT']).strip()))
                         msgs.warning('CRVAL not updated')
@@ -309,7 +319,7 @@ def main(args):
                         msgs.work('Updating SPEC_RES to {}'.format(str(hdr0['SPEC_RES'])))
                     else:
                         msgs.warning('WAVELMAX = {} is not in the expected ' /
-                                     + 'range of possible values'.format(str(hdr0['WAVELMAX'])))
+                                   + 'range of possible values'.format(str(hdr0['WAVELMAX'])))
             if 'PROGID' not in hdr0.keys():
                 msgs.warning('PROG_ID missing')
                 if 'ESO OBS PROG ID' in hdr0.keys():
@@ -488,6 +498,45 @@ def main(args):
                 hdul[0].add_checksum(override_datasum=False)
                 hdul.flush(output_verify='fix')
                 hdul.close()
+                
+                if contrast_file is not None and 'ABMAGLIM' not in hdr0.keys():
+                    try:
+                        contrast_table_hdu = fits.open(contrast_file)
+                        contrast_table = contrast_table_hdu[1].data
+                        wavelength = contrast_table['LAM'][index]
+                        contrast_curve = contrast_table['NSIGMA_CONTRAST'][index]
+                        separation = contrast_table['SEPARATION'][index]
+                        pixel_scale = contrast_table['PIXSCALE'][index]
+                        median_contrast = np.nanmedian(contrast_curve[contrast_curve>0])
+                        # the contrast is set to 0 in the outer part of the image, so we 
+                        # ignore these values 
+                        msgs.work('Updating ABLIM to ')
+                        
+                        # [Julien] to be continued. 
+                        star_flux_Jy = 1. # [Julien] we have to retrieve the star flux density in the correct filter from simbad here.
+                        flux_Jy_lim = star_flux_Jy*median_contrast
+                        abmaglim = 2.5*np.log10(flux_Jy_lim*1e-26)-48.60  # we convert f_nu in AB mag 
+                        hdr0['ABMAGLIM'] = abmaglim
+
+                        # if hdr0['FLUXCAL'] is 'ABSOLUTE':
+                        #     if 'ABMAGLIM' not in hdr0.keys():
+                        #         msgs.warning('Missing ABMAGLIM keyword')
+                        #         msgs.warning('Trying to estimate it from whitelight image')
+                        #         whitelight = images.Images(data=image_hdul[1].data)
+                        #         whitelight.calc_background(method='median', nsigma=3., find_sources=True, src_nsigma=3.,
+                        #                                    src_npixels=5, src_dilate_size=2)
+                        #         whitelight_mean, whitelight_median, whitelight_std = whitelight.get_clean_stats(nsigma=3.)
+                        #         # ToDO
+                        #         # Improve on this
+                        #         n_pixels_psf = np.pi * (3) ** 2.
+                        #         five_sigma_nu = 5. * 3.34e4 * np.power((WAVELMAX + WAVELMIN) * to_ang / 2.,
+                        #                                                2.) * whitelight_std * n_pixels_psf / (delta_wave_bin * to_ang)
+                        #         hdr0['ABMAGLIM'] = -2.5 * np.log10(five_sigma_nu / 3631.)
+                        #         msgs.warning('ABMAGLIM={}. This is most probably not correct at the moment'.format(hdr0['ABMAGLIM']))
+
+                        fits.close(contrast_file)
+                    except:
+                        msgs.warning('Unable to retrieve the contrast. ABLIM keyword will not be set.')                        
         else:
             msgs.warning('The Instrument {} is not supported \nThe file {} will not be processed'.format(instrument,
                                                                                                          fits_in))
