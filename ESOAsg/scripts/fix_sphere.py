@@ -17,7 +17,7 @@ from ESOAsg import __version__
 SUPPORTED_INSTRUMENT = ['IFS', 'IRDIS']
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
-               r"""--max_rec 1 """ + """\n""" +
+               r"""TO BE DONE """ + """\n""" +
                r""" """)
 
 
