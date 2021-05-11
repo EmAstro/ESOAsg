@@ -1,4 +1,7 @@
 r"""Module that performs some useful and basic checks and transformations
+
+.. include:: ./include/links.rst
+
 """
 
 # import sys
@@ -200,16 +203,21 @@ def table_is_valid(table):  # Written by Ema 08.04.2020
     return is_table
 
 
-def header_is_valid(header):
+def header_is_valid(input_header):
     r"""Check if an header is valid
+
+    Args:
+        input_header (`fits.Header`_): header to be checked
+
+    Returns:
+        bool: `True` if a valid instance of `fits.Header`_ and `False` and error raised if not.
 
     """
     is_header = True
-
-    # Check if is a fits.header
-    assert isinstance(header, fits.Header), 'The header is not an instance of `astropy.fits.io.header`'
-    if len(header) == 0:
+    # Check if it is an instance of fits.header
+    assert isinstance(input_header, fits.header.Header), 'The header is not an instance of `astropy.fits.io.header`'
+    # Check if the header is empty
+    if len(input_header) == 0:
         msgs.warning('Empty Header')
         is_header = False
-
     return is_header

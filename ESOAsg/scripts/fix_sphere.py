@@ -56,7 +56,7 @@ def parser(options=None):
         epilog=EXAMPLES)
 
     parser.add_argument("input_fits", nargs="+", type=str,
-                        help=r"Input SPHERE datacubes")
+                        help=r"Input SPHERE fits file")
     parser.add_argument("-s", "--suffix", nargs="+", type=str, default=None,
                         help=r"Suffix to be added to file names the will be used as output." +
                              r"If it is not set, the input files will be overwritten")
@@ -75,6 +75,7 @@ def main(args):
     from astropy import units as u
     from astropy.io import fits
     from ESOAsg.ancillary import cleaning_lists
+    from ESOAsg.ancillary import cleaning_headers
     from ESOAsg.core import fitsfiles
     from ESOAsg import msgs
 
@@ -160,14 +161,7 @@ def main(args):
 
             # Check for HISTORY
             # Primary Header
-            if 'HISTORY' in hdr0.keys():
-                history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
-                                      if history_card_hdr0.startswith('HISTORY')]
-                history_values_hdr0 = [hdr0[history_card_hdr0] for history_card_hdr0 in hdr0
-                                       if history_card_hdr0.startswith('HISTORY')]
-                for history_card_hdr0, history_value_hdr0 in zip(history_cards_hdr0, history_values_hdr0):
-                    msgs.work('Cleaning cards: {} = {}'.format(history_card_hdr0, history_value_hdr0))
-                del hdr0['HISTORY'][:]
+            _ = cleaning_headers.delete_history_keywords(hdr0, verbose=True, in_place=True)
             # Data Header
             if 'HISTORY' in hdr1.keys():
                 history_values_hdr1 = hdr1['HISTORY'][:]

@@ -25,8 +25,6 @@ The archive_science_portal module
 .. automodule:: ESOAsg.archive_science_portal
    :members:
 
-
-
 ESOAsg.queries
 --------------
 
@@ -91,5 +89,11 @@ checks
 ++++++
 
 .. automodule:: ESOAsg.ancillary.checks
+   :members:
+   
+cleaning_headers
+++++++++++++++++
+
+.. automodule:: ESOAsg.ancillary.cleaning_headers
    :members:
  
