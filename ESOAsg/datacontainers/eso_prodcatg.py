@@ -9,6 +9,7 @@ import pkg_resources
 from astropy.io import ascii
 
 from ESOAsg import msgs
+from ESOAsg.ancillary import cleaning_lists
 
 # Ordered dictionary that defines all properties of different PRODCATG
 PRODCATG = collections.OrderedDict()
@@ -296,17 +297,19 @@ class ProdCatg:
 
         return None
 
-    def show_header_keywords_info(self, header_keyword):
+    def show_header_keywords_info(self, header_keywords):
         r"""Given the name of a header keywords, the method prints its status for the assigned `prodcatg`
 
         Args:
-            header_keyword (list):
+            header_keywords (list):
 
         """
-        keyword_dictionary = self.get_header_keyword_dictionary(header_keyword)
-        msgs.info('The keyword {} for a {} is:'.format(header_keyword, self.prodcatg))
-        for condition_value in keyword_dictionary['condition']:
-            msgs.pre_indent('{} - {} '.format(condition_value,
-                                              _get_header_table_legend(condition_value)))
+        header_keywords_list = cleaning_lists.make_list_of_strings(header_keywords)
+        for header_keyword in header_keywords_list:
+            keyword_dictionary = self.get_header_keyword_dictionary(header_keyword)
+            msgs.info('The keyword {} for a {} is:'.format(header_keyword, self.prodcatg))
+            for condition_value in keyword_dictionary['condition']:
+                msgs.pre_indent('{} - {} '.format(condition_value,
+                                                  _get_header_table_legend(condition_value)))
 
         return None
