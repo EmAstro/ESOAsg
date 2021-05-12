@@ -17,7 +17,17 @@ from ESOAsg import __version__
 SUPPORTED_INSTRUMENT = ['IFS', 'IRDIS']
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
-               r"""TO BE DONE """ + """\n""" +
+               r""" """ +
+               r"""Give a IFS file in input from the `SPHERE Data Center` transform it in a """ +
+               r"""fits file that is (almost) compliant with the """ +
+               r"""format of a PRODCATG = '': """ + """\n""" +
+               r""">>> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
+               r"""--confidence_level 50. """ +
+               r"""--show_sky """ +
+               r"""--asp_link """ +
+               r"""--download_data """ +
+               r"""--instruments MUSE """ +
+               r"""--maxrec 1 """ + """\n""" +
                r""" """)
 
 
@@ -35,21 +45,43 @@ def parser(options=None):
                     """\n""" + """\n""" +
                     r"""To summarize the steps for IFS data: """ +
                     """\n""" +
-                    r"""1. Creates a PrimaryHDU and put the data in the `DATA` extension; """ +
+                    r"""- Creates a PrimaryHDU and put the data in the `DATA` extension; """ +
                     """\n""" +
-                    r"""2. Places properly header cards into the PrimaryHDU and in `DATA`
-            3. Creates the white-light image 
-            4. Performs few consistency checks for header values:
-                * EXPTIME > 0 : If not, an attempt is made to recover the error from the PROV-j entries
-
-        The following header keywords can be added by user. We refer to the `ESO Science Data Products Standard` for a
-        exhaustive explanation of meanings and rules associated to them.
-            * PrimaryHDU:
-                * `FLUXCAL`  : either `ABSOLUTE` (`default`) or `UNCALIBRATED`
-                * `REFERENC` : DOI to the related scientific publication
-                * `ABMAGLIM` : 5-sigma detection limit derived from the white-light image
-
-        Note that, if `output` is not defined, the fits file will be overwritten.  """ +
+                    r"""- Places properly header cards into the PrimaryHDU and in `DATA` """ +
+                    """\n""" +
+                    r"""- Fix astrometry based on object name """ +
+                    """\n""" +
+                    r"""- Try to reconstruct some missing header keywords """ +
+                    """\n""" +
+                    r"""- Make files fits compliant """ +
+                    """\n""" +
+                    r"""- Creates the white-light images """ +
+                    """\n""" + """\n""" +
+                    r"""To summarize the steps for IRDIS data: """ +
+                    """\n""" +
+                    r"""- Creates a PrimaryHDU and put the data in the `DATA` extension; """ +
+                    """\n""" +
+                    r"""- Places properly header cards into the PrimaryHDU and in `DATA` """ +
+                    """\n""" +
+                    r"""- Fix astrometry based on object name """ +
+                    """\n""" +
+                    r"""- Try to reconstruct some missing header keywords """ +
+                    """\n""" +
+                    r"""- Make files fits compliant """ +
+                    """\n""" + """\n""" +
+                    r"""The following header keywords can be added by user. """ +
+                    r"""We refer to the `ESO Science Data Products Standard` for an exhaustive explanation """ +
+                    r"""of meanings and rules associated to them. """ +
+                    """\n""" +
+                    r"""PrimaryHDU: """ +
+                    """\n""" +
+                    r"""* `FLUXCAL`  : either `ABSOLUTE` (`default`) or `UNCALIBRATED` """ +
+                    """\n""" +
+                    r"""* `REFERENC` : DOI to the related scientific publication """ +
+                    """\n""" +
+                    r"""* `ABMAGLIM` : 5-sigma detection limit derived from the white-light image """ +
+                    """\n""" + """\n""" +
+                    r"""Note that, if `suffix` is not defined, the fits file will be overwritten.  """ +
                     """\n""" + """\n""" +
                     r"""This uses ESOAsg version {:s}""".format(__version__),
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -161,7 +193,7 @@ def main(args):
 
             # Check for HISTORY
             # Primary Header
-            _ = cleaning_headers.delete_history_keywords(hdr0, verbose=True, in_place=True)
+            _ = cleaning_headers.history_keywords_delete(hdr0, verbose=True, in_place=True)
             # Data Header
             if 'HISTORY' in hdr1.keys():
                 history_values_hdr1 = hdr1['HISTORY'][:]

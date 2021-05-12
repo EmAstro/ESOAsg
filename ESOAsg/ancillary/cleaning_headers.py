@@ -9,7 +9,7 @@ from ESOAsg.ancillary import cleaning_lists
 from ESOAsg.ancillary import checks
 
 
-def delete_history_keywords(input_header, in_place=True, verbose=True):
+def history_keywords_delete(input_header, in_place=True, verbose=False):
     r"""Remove `HISTORY` keywords from an header
 
     Given an header as input, all the occurrences of the `HISTORY` keywords are removed. The default is to modify the
@@ -50,14 +50,19 @@ def delete_history_keywords(input_header, in_place=True, verbose=True):
         return input_header
 
 
-def clean_non_ascii_history_keywords(header):
-    r"""
+'''
+
+def history_keywords_clean_non_ascii(input_header, in_place=True, verbose=False):
+    r"""Remove non ascii characters from `HISTORY` keywords in an header
 
     Args:
-        header:
+        input_header (`header`_): header from which the `HISTORY` keywords will be removed
+        in_place (bool): if set to `True` the header will be modified in place, while if set to `False` a copy will be
+            created
+        verbose (bool): print on screen additional information on the process
 
     Returns:
-
+        `header`_: header with history keywords removed
     """
 
     # Data Header
@@ -70,3 +75,20 @@ def clean_non_ascii_history_keywords(header):
             else:
                 header['HISTORY'][history_number] = str(' ')
     return header
+
+
+def _header_keywords_clean_non_ascii(input_header, keywords, in_place=True, verbose=False):
+    r"""Remove non ascii characters from all instances of a given keyword in an header
+
+    Args:
+        input_header (`header`_): header from which the `HISTORY` keywords will be removed
+        keywords (str, list): header from which the `HISTORY` keywords will be removed
+        in_place (bool): if set to `True` the header will be modified in place, while if set to `False` a copy will be
+            created
+        verbose (bool): print on screen additional information on the process
+
+    Returns:
+        `header`_: header with history keywords removed
+    """
+
+'''

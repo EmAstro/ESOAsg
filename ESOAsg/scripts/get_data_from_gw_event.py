@@ -31,7 +31,7 @@ EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""show their distribution on the sky, open links to the ESO ASP webpages showing """ +
                r"""ESO data within each of the retrieved contours, """ +
                r"""and download one of the `MUSE` cubes present: """ + """\n""" +
-               r"""> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
+               r""">>> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
                r"""--confidence_level 50. """ +
                r"""--show_sky """ +
                r"""--asp_link """ +
