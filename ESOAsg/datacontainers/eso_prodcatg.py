@@ -308,10 +308,9 @@ class ProdCatg:
         for header_keyword in header_keywords_list:
             keyword_dictionary = self.get_header_keyword_dictionary(header_keyword)
             msgs.info('The keyword {} for a {} is:'.format(header_keyword, self.prodcatg))
-            for which_header in keyword_dictionary['header']:
-                msgs.pre_indent('Applicable to the {} header'.format(which_header))
             for condition_value in keyword_dictionary['condition']:
                 msgs.pre_indent('{} - {} '.format(condition_value,
                                                   _get_header_table_legend(condition_value)))
-
+            for which_header in keyword_dictionary['header']:
+                msgs.pre_indent('and is applicable to the {} header'.format(which_header))
         return None
