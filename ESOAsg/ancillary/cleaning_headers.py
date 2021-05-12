@@ -28,7 +28,6 @@ def history_keywords_delete(input_header, in_place=True, verbose=False):
         msgs.warning('The input header is not valid')
         return input_header
 
-    # Primary Header
     if 'HISTORY' in input_header.keys():
         if verbose:
             history_cards = [history_card for history_card in input_header
@@ -56,39 +55,45 @@ def history_keywords_clean_non_ascii(input_header, in_place=True, verbose=False)
     r"""Remove non ascii characters from `HISTORY` keywords in an header
 
     Args:
-        input_header (`header`_): header from which the `HISTORY` keywords will be removed
+        input_header (`header`_): header from which the `HISTORY` keywords will be cleaned
         in_place (bool): if set to `True` the header will be modified in place, while if set to `False` a copy will be
             created
         verbose (bool): print on screen additional information on the process
 
     Returns:
-        `header`_: header with history keywords removed
+        `header`_: header with history keywords cleaned
     """
+    if not checks.header_is_valid(input_header):
+        msgs.warning('The input header is not valid')
+        return input_header
 
-    # Data Header
-    if 'HISTORY' in header.keys():
-        history_values_hdr1 = header['HISTORY'][:]
-        for history_number in range(0, len(history_values_hdr1)):
-            clean_history = cleaning_lists.remove_non_ascii(history_values_hdr1[history_number])
-            if len(clean_history) > 0:
-                header['HISTORY'][history_number] = str(clean_history)
-            else:
-                header['HISTORY'][history_number] = str(' ')
-    return header
+    if 'HISTORY' in input_header.keys():
+        if in_place:
+            return _history_keywords_clean_non_ascii_in_place(input_header)
+        else:
+            return _history_keywords_clean_non_ascii_in_place(input_header.copy())
+    else:
+        if verbose:
+            msgs.info('No HISTORY cards in the header')
+        return input_header
 
 
-def _header_keywords_clean_non_ascii(input_header, keywords, in_place=True, verbose=False):
-    r"""Remove non ascii characters from all instances of a given keyword in an header
+def _history_keywords_clean_non_ascii_in_place(input_header):
+    r"""Remove non ascii characters from `HISTORY` keywords in an header
 
     Args:
-        input_header (`header`_): header from which the `HISTORY` keywords will be removed
-        keywords (str, list): header from which the `HISTORY` keywords will be removed
-        in_place (bool): if set to `True` the header will be modified in place, while if set to `False` a copy will be
-            created
-        verbose (bool): print on screen additional information on the process
+        input_header (`header`_): header from which the `HISTORY` keywords will be cleaned
 
     Returns:
-        `header`_: header with history keywords removed
+        `header`_: header with history keywords cleaned
     """
+    history_values_hdr = input_header['HISTORY'][:]
+    for history_number in range(0, len(history_values_hdr)):
+        clean_history = cleaning_lists.remove_non_ascii(history_values_hdr[history_number])
+        if len(clean_history) > 0:
+            input_header['HISTORY'][history_number] = str(clean_history)
+        else:
+            input_header['HISTORY'][history_number] = str(' ')
+    return input_header
 
 '''

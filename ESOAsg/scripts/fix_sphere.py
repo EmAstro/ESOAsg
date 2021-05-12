@@ -17,17 +17,14 @@ from ESOAsg import __version__
 SUPPORTED_INSTRUMENT = ['IFS', 'IRDIS']
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
-               r""" """ +
-               r"""Give a IFS file in input from the `SPHERE Data Center` transform it in a """ +
-               r"""fits file that is (almost) compliant with the """ +
-               r"""format of a PRODCATG = '': """ + """\n""" +
-               r""">>> get_data_from_gw_event S191205ah_bayestar.fits.gz """ +
-               r"""--confidence_level 50. """ +
-               r"""--show_sky """ +
-               r"""--asp_link """ +
-               r"""--download_data """ +
-               r"""--instruments MUSE """ +
-               r"""--maxrec 1 """ + """\n""" +
+               r"""Given a IFS file in input from the `SPHERE Data Center` transform it in a """ +
+               r"""fits file with the same name and suffix `_phase3` that is """ +
+               r"""(almost) compliant with the """ +
+               r"""format of a PRODCATG = 'SCIENCE.CUBE.IFS' and create the """ +
+               r"""corresponding whitelight image:""" + """\n""" +
+               r""">>> fix_sphere  BD11_IFS_CUBE_cADI.fits""" +
+               r"""--suffix _phase3 """ +
+               r"""--whitelight """ + """\n""" +
                r""" """)
 
 
@@ -191,18 +188,9 @@ def main(args):
             hdr0 = hdul[0].header
             hdr1 = hdul[1].header
 
-            # Check for HISTORY
-            # Primary Header
+            # Clean HISTORY keywords
             _ = cleaning_headers.history_keywords_delete(hdr0, verbose=True, in_place=True)
-            # Data Header
-            if 'HISTORY' in hdr1.keys():
-                history_values_hdr1 = hdr1['HISTORY'][:]
-                for history_number in range(0, len(history_values_hdr1)):
-                    clean_history = cleaning_lists.remove_non_ascii(history_values_hdr1[history_number])
-                    if len(clean_history) > 0:
-                        hdr1['HISTORY'][history_number] = str(clean_history)
-                    else:
-                        hdr1['HISTORY'][history_number] = str(' ')
+            _ = cleaning_headers.history_keywords_delete(hdr1, verbose=True, in_place=True)
 
             # Update cards for headers:
             # Updating values with different CARD in the header
@@ -234,8 +222,7 @@ def main(args):
                                   hdr1_card.startswith('PCOUNT') or
                                   hdr1_card.startswith('GCOUNT') or
                                   hdr1_card.startswith('HDUDOC') or
-                                  hdr1_card.startswith('HDUVER') or
-                                  hdr1_card.startswith('HISTORY')]
+                                  hdr1_card.startswith('HDUVER')]
             cards_to_be_transfer = []
             for hdr1_card in hdr1:
                 if hdr1_card not in not_to_be_transfer:
@@ -439,16 +426,9 @@ def main(args):
                 hdul = fitsfiles.get_hdul(fits_out_file, 'update', checksum=True)
                 hdr0 = hdul[0].header
                 hdul[0].data = hdul[0].data[index, :, :]
-                # Check for HISTORY
-                # Primary Header
-                if 'HISTORY' in hdr0.keys():
-                    history_cards_hdr0 = [history_card_hdr0 for history_card_hdr0 in hdr0
-                                          if history_card_hdr0.startswith('HISTORY')]
-                    history_values_hdr0 = [hdr0[history_card_hdr0] for history_card_hdr0 in hdr0
-                                           if history_card_hdr0.startswith('HISTORY')]
-                    for history_card_hdr0, history_value_hdr0 in zip(history_cards_hdr0, history_values_hdr0):
-                        msgs.work('Cleaning cards: {} = {}'.format(history_card_hdr0, history_value_hdr0))
-                    del hdr0['HISTORY'][:]
+
+                # Clean HISTORY keywords
+                _ = cleaning_headers.history_keywords_delete(hdr0, verbose=True, in_place=True)
                 # Try to guess coordinates
                 if 'CRVAL1' not in hdr0.keys():
                     msgs.warning('CRVAL position keywords not preset')
