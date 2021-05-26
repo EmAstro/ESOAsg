@@ -98,6 +98,12 @@ def parser(options=None):
 
 def get_object_coordinate(hdr):
     """
+    Tries to resolve the object name and compare the RA/DEC to the telescope 
+    pointing. In case of a match (<120arcsec), then returns the SkyCoord object
+    Input:
+        hdr: the header containing the keyword OBJECT, RA and DEC
+    Output:
+        a SkyCoord object
     """
     if 'OBJECT' in hdr.keys():
         try:
