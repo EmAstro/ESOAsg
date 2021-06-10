@@ -100,6 +100,7 @@ def get_object_coordinate(hdr):
     """
     Tries to resolve the object name and compare the RA/DEC to the telescope 
     pointing. In case of a match (<120arcsec), then returns the SkyCoord object
+    ToDo for Ema: complete the docs ! 
     Input:
         hdr: the header containing the keyword OBJECT, RA and DEC
     Output:
@@ -134,7 +135,7 @@ def get_platescale_deg(hdr):
     Input:
         hdr: the header containing the keyword PIXTOARC
     Output:
-        platescale value in deg, ready to be used in CD[1-2]-1
+        float: the platescale value in deg, ready to be used in CD[1-2]-1
     """
     if 'PIXTOARC' in hdr.keys():
         platescale_mas = hdr['PIXTOARC']
@@ -146,12 +147,12 @@ def get_platescale_deg(hdr):
             platescale_mas = 7.46
         elif hdr['HIERARCH ESO SEQ ARM'].startswith('IRDIS'):
             platescale_mas = 12.25            
+        else:
+            raise ValueError('Unable to guess the pixel scale')
         platescale_deg = platescale_mas/1000/3600
         msgs.warning('PIXTOARC not found. Assuming a platescale '+\
                      'of {0:.2f} mas/px'.format(platescale_mas))
     return platescale_deg            
-
-
 
 def main(args):
     import numpy as np
