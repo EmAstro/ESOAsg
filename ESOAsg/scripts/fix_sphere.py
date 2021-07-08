@@ -8,7 +8,9 @@ Script to make data produced by the `SPHERE Data Center <https://sphere.osug.fr>
     - **input_fits** - Input fits file
 
 """
-
+from astropy.coordinates import SkyCoord
+from astropy.coordinates import name_resolve
+from ESOAsg import msgs
 
 import argparse
 
@@ -94,19 +96,74 @@ def parser(options=None):
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
+def get_object_coordinate(hdr):
+    """
+    Tries to resolve the object name and compare the RA/DEC to the telescope 
+    pointing. In case of a match (<120arcsec), then returns the SkyCoord object
+    ToDo for Ema: complete the docs ! 
+    Input:
+        hdr: the header containing the keyword OBJECT, RA and DEC
+    Output:
+        a SkyCoord object
+    """
+    if 'OBJECT' in hdr.keys():
+        try:
+            object_coordinate = SkyCoord.from_name(str(hdr['OBJECT']).strip())
+            if 'RA' in hdr.keys() and 'DEC' in hdr.keys():
+                pointing_coordinate = SkyCoord(float(hdr['RA']), float(hdr['DEC']), unit='deg')
+                msgs.work('Testing from separation from pointing position')
+                separation = object_coordinate.separation(pointing_coordinate).arcsec
+                if separation < 120.:
+                    msgs.info('Object - Pointing separation is {0:.2f} arcsec'.format(separation))
+                    object_coordinate = None
+                else:
+                    msgs.warning('Object - Pointing separation is too large: {0:.2f} arcsec'.format(separation))
+                    msgs.warning('CRVAL not updated')
+                    object_coordinate = None
+        except name_resolve.NameResolveError:
+            msgs.warning('Object {} not recognized'.format(str(hdr['OBJECT']).strip()))
+            msgs.warning('CRVAL not updated')
+            object_coordinate = None
+    else:
+        object_coordinate = None
+    return object_coordinate
+                    
+def get_platescale_deg(hdr):
+    """
+    Reads the plate scale from the header and returns the value in 
+    deg/px. If the keyword is not there, uses a default value.
+    Input:
+        hdr: the header containing the keyword PIXTOARC
+    Output:
+        float: the platescale value in deg, ready to be used in CD[1-2]-1
+    """
+    if 'PIXTOARC' in hdr.keys():
+        platescale_mas = hdr['PIXTOARC']
+        platescale_deg = platescale_mas/1000/3600
+        msgs.info('Reading the platescale: '+\
+                  '{0:.2f} mas/px'.format(platescale_mas))
+    else:
+        if hdr['HIERARCH ESO SEQ ARM'].startswith('IFS'):
+            platescale_mas = 7.46
+        elif hdr['HIERARCH ESO SEQ ARM'].startswith('IRDIS'):
+            platescale_mas = 12.25            
+        else:
+            raise ValueError('Unable to guess the pixel scale')
+        platescale_deg = platescale_mas/1000/3600
+        msgs.warning('PIXTOARC not found. Assuming a platescale '+\
+                     'of {0:.2f} mas/px'.format(platescale_mas))
+    return platescale_deg            
 
 def main(args):
     import numpy as np
     import os
     import shutil
-    from astropy.coordinates import SkyCoord
-    from astropy.coordinates import name_resolve
     from astropy import units as u
     from astropy.io import fits
     from ESOAsg.ancillary import cleaning_lists
     from ESOAsg.ancillary import cleaning_headers
     from ESOAsg.core import fitsfiles
-    from ESOAsg import msgs
+    from astropy.time import Time
 
     # Cleaning input lists
     input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
@@ -117,15 +174,19 @@ def main(args):
         make_whitelight_image = False
     # Creating output list
     if args.suffix is None:
-        overwrite = False
+        overwrite = True
         msgs.warning('The file will overwrite the input files')
     else:
-        overwrite = True
+        overwrite = False
     suffix_string = cleaning_lists.make_string(args.suffix)
     output_fits_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
                                                                                  suffix=suffix_string)
     if make_whitelight_image:
-        output_whitelight_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
+        if args.suffix is None:
+            output_whitelight_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
+                                                                                           suffix='_WL')
+        else:
+            output_whitelight_files = cleaning_lists.make_list_of_fits_files_and_append_suffix(input_fits_files,
                                                                                            suffix=suffix_string + '_WL')
     else:
         output_whitelight_files = [None] * len(input_fits_files)
@@ -159,7 +220,8 @@ def main(args):
     for fits_in, fits_out, image_out in zip(input_fits_files, output_fits_files, output_whitelight_files):
         if os.path.exists(fits_out):
             shutil.copy(fits_out, fits_out.replace('.fit', '_old.fit'))
-            msgs.warning('{} already exists. Backup created.'.format(fits_out))
+            msgs.warning('{} already exists. Backup created as {}'.format(fits_out,
+                                                                          fits_out.replace('.fit', '_old.fit')))
         if image_out is not None:
             if os.path.exists(image_out):
                 shutil.copy(image_out, image_out.replace('.fit', '_old.fit'))
@@ -174,7 +236,7 @@ def main(args):
             if instrument in SUPPORTED_INSTRUMENT:
                 msgs.info('The input file is from SPHERE/{}'.format(instrument))
             else:
-                msgs.warning('Instrument SPHERE/{} not supported'.format(instrument))
+                msgs.warning('Instrument SPHERE/{} not supported'.format(instrument))            
 
         # ToDo
         # These needs to be transformed in objects
@@ -230,48 +292,36 @@ def main(args):
             fitsfiles.transfer_header_cards(hdr1, hdr0, cards_to_be_transfer, with_comment=True, delete_card=True)
 
             # Try to guess coordinates
-            if 'CRVAL1' not in hdr1.keys():
+            if 'CRVAL1' not in hdr0.keys():
                 msgs.warning('CRVAL position keywords not preset')
-                if 'OBJECT' in hdr0.keys():
-                    try:
-                        object_coordinate = SkyCoord.from_name(str(hdr0['OBJECT']).strip())
-                        ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
-                        if 'RA' in hdr0.keys() and 'DEC' in hdr0.keys():
-                            pointing_coordinate = SkyCoord(float(hdr0['RA']), float(hdr0['DEC']), unit='deg')
-                            msgs.work('Testing from separation from pointing position')
-                            separation = object_coordinate.separation(pointing_coordinate).arcsec
-                            if separation < 120.:
-                                msgs.info('Object - Pointing separation is {}'.format(separation))
-                                msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
-                                msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
-                                hdr1['CRVAL1'] = ra_obj
-                                hdr1['CRVAL2'] = dec_obj
-                                msgs.work('Updating CUNIT')
-                                hdr1['CUNIT1'] = 'deg'
-                                hdr1['CUNIT2'] = 'deg'
-                                msgs.work('Updating CTYPE')
-                                hdr1['CTYPE1'] = 'RA---TAN'
-                                hdr1['CTYPE2'] = 'DEC--TAN'
-                                msgs.work('Updating CRPIX')
-                                hdr1['CRPIX1'] = float(hdul[1].data.shape[2])/2.
-                                hdr1['CRPIX2'] = float(hdul[1].data.shape[1])/2.
-                                msgs.info('Updating CD1 and CD2')
-                                hdr1['CD1_1'] = 2.06E-06
-                                hdr1['CD2_2'] = 2.06E-06
-                                hdr1['CD1_2'] = 0.
-                                hdr1['CD2_1'] = 0.
-                                msgs.work('Updating RA, DEC')
-                                hdr0['RA'] = ra_obj
-                                hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
-                                hdr0['DEC'] = dec_obj
-                                hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
-                            else:
-                                msgs.warning('Object - Pointing separation is {}'.format(separation))
-                                msgs.warning('This is suspicious, CRVAL not updated')
-                    except name_resolve.NameResolveError:
-                        msgs.warning('Object {} not recognized'.format(str(hdr0['OBJECT']).strip()))
-                        msgs.warning('CRVAL not updated')
-
+                platescale_deg = get_platescale_deg(hdr0)
+                object_coordinate = get_object_coordinate(hdr0)
+                if object_coordinate is not None:
+                    ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
+                    msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
+                    msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
+                    hdr1['CRVAL1'] = ra_obj
+                    hdr1['CRVAL2'] = dec_obj
+                    msgs.work('Updating CUNIT')
+                    hdr1['CUNIT1'] = 'deg'
+                    hdr1['CUNIT2'] = 'deg'
+                    msgs.work('Updating CTYPE')
+                    hdr1['CTYPE1'] = 'RA---TAN'
+                    hdr1['CTYPE2'] = 'DEC--TAN'
+                    msgs.work('Updating CRPIX')
+                    hdr1['CRPIX1'] = float(hdul[1].data.shape[2])/2.
+                    hdr1['CRPIX2'] = float(hdul[1].data.shape[1])/2.
+                    msgs.info('Updating CD1 and CD2')
+                    hdr1['CD1_1'] = platescale_deg
+                    hdr1['CD2_2'] = platescale_deg
+                    hdr1['CD1_2'] = 0.
+                    hdr1['CD2_1'] = 0.
+                    msgs.work('Updating RA, DEC')
+                    hdr0['RA'] = ra_obj
+                    hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
+                    hdr0['DEC'] = dec_obj
+                    hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
+            
             # Updating file prodcatg
             msgs.work('Updating PRODCATG to SCIENCE.CUBE.IFS')
             hdr0['PRODCATG'] = str('SCIENCE.CUBE.IFS')
@@ -284,12 +334,19 @@ def main(args):
                     msgs.info('Deriving OBSTECH from HIERARCH ESO PRO TECH')
                     msgs.work('Updating OBSTECH to {}'.format(str(hdr0['HIERARCH ESO PRO TECH'])))
                     hdr0['OBSTECH'] = str(hdr0['HIERARCH ESO PRO TECH'])
-            if 'EXPTIME' not in hdr0.keys():
+            if 'EFF_ETIM' in hdr0.keys():
+                hdr0['TEXPTIME'] = hdr0['EFF_ETIM']
+                msgs.work('Updating TEXPTIME to {}'.format(str(hdr0['TEXPTIME'])))                    
+            if 'TETXPTIME' not in hdr0.keys():
                 msgs.warning('EXPTIME missing')
-                if 'ESO DET SEQ1 REALDIT' in hdr0.keys() and 'ESO DET NDIT' in hdr0.keys():
-                    msgs.info('Deriving EXPTIME and TEXPTIME as REALDIT * DIT')
-                    hdr0['EXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 REALDIT'] * hdr0['HIERARCH ESO DET NDIT']
-                    hdr0['TEXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 REALDIT'] * hdr0['HIERARCH ESO DET NDIT']
+                if 'ESO DET SEQ1 DIT' in hdr0.keys() and 'ESO DET NDIT' in hdr0.keys() and \
+                    'HIERARCH ESO TPL NEXP' in hdr0.keys():
+                    msgs.info('Deriving EXPTIME as DIT * NDIT.')
+                    msgs.info('Deriving TEXPTIME as DIT * NDIT * NEXP.')
+                    hdr0['EXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 DIT'] * \
+                        hdr0['HIERARCH ESO DET NDIT']
+                    hdr0['TEXPTIME'] = hdr0['HIERARCH ESO DET SEQ1 DIT'] * \
+                        hdr0['HIERARCH ESO DET NDIT'] * hdr0['HIERARCH ESO TPL NEXP']
                     msgs.work('Updating EXPTIME to {}'.format(str(hdr0['EXPTIME'])))
                     msgs.work('Updating TEXPTIME to {}'.format(str(hdr0['TEXPTIME'])))
             if 'WAVELMIN' not in hdr0.keys():
@@ -316,25 +373,43 @@ def main(args):
                         hdr0['SPEC_RES'] = 30.
                         msgs.work('Updating SPEC_RES to {}'.format(str(hdr0['SPEC_RES'])))
                     else:
-                        msgs.warning('WAVELMAX = {} is not in the expected ' /
-                                     + 'range of possible values'.format(str(hdr0['WAVELMAX'])))
+                        msgs.warning('WAVELMAX = {} is not'.format(str(hdr0['WAVELMAX'])) /
+                                     + ' in the expected range of possible values')
             if 'PROGID' not in hdr0.keys():
                 msgs.warning('PROG_ID missing')
                 if 'ESO OBS PROG ID' in hdr0.keys():
                     msgs.info('Deriving PROG_ID from HIERARCH ESO OBS PROG ID')
                     msgs.work('Updating PROG_ID to {}'.format(str(hdr0['HIERARCH ESO OBS PROG ID'])))
                     hdr0['PROG_ID'] = str(hdr0['HIERARCH ESO OBS PROG ID'])
-            if 'MJD-END' not in hdr0.keys():
-                msgs.warning('MJD-END missing')
+            if 'MJD-OBS' in hdr0.keys():
+                hdr0['MJD-MEAN'] = hdr0['MJD-OBS']
+                msgs.work('Setting MJD-MEAN to {}'.format(str(hdr0['MJD-MEAN'])))            
+            if 'OBS_STA' in hdr0.keys():
+                obs_start = Time(hdr0['OBS_STA'])
+                hdr0['MJD-OBS'] = obs_start.mjd
+                msgs.work('Setting MJD-OBS to {}'.format(str(hdr0['MJD-OBS'])))            
+            elif 'MJD-OBS' not in hdr0.keys():
+                msgs.warning('MJD-OBS missing')
+            else:
                 if 'TEXPTIME' in hdr0.keys():
-                    msgs.info('Deriving MJD-END from MJD-OBS and TEXPTIME')
-                    texptime_sec = float(hdr0['TEXPTIME'])
-                    texptime_day = texptime_sec / (60. * 60. * 24.)
-                    mjdend = float(hdr0['MJD-OBS']) + texptime_day
-                    fitsfiles.add_header_card(hdr0, 'MJD-END', mjdend, 'End of observation')
-                    msgs.work('MJD-OBS = {} and TEXPTIME = {} days'.format(str(hdr0['MJD-OBS']), str(texptime_day)))
-                    msgs.work('Updating MJD-END to {}'.format(str(hdr0['MJD-END'])))
+                    hdr0['MJD-OBS'] = hdr0['MJD-OBS'] - \
+                        hdr0['MJD-OBS']-hdr0['TEXPTIME']/ (60. * 60. * 24.)/2.
+                    msgs.work('Setting MJD-OBS to {}'.format(str(hdr0['MJD-OBS'])))            
+            if 'OBS_END' in hdr0.keys():
+                obs_end = Time(hdr0['OBS_END'])
+                hdr0['MJD-END'] = obs_end.mjd
+                msgs.work('Updating MJD-END to {}'.format(str(hdr0['MJD-END '])))
+            elif 'MJD-END' not in hdr0.keys():
+                if 'TEXPTIME' in hdr0.keys() and 'MJD-OBS' in hdr0.keys():
+                    hdr0['MJD-END'] = hdr0['MJD-OBS '] + \
+                        hdr0['TEXPTIME']/ (60. * 60. * 24.)
+                msgs.info('Deriving MJD-END from MJD-OBS and TEXPTIME')
+                msgs.warning('MJD-END is probably not accurate')
+            if 'REFERENC' not in hdr0.keys():
+                hdr0['REFERENC'] = ' 10.1051/0004-6361/201832973'
+                msgs.work('Updating REFERENC to  {}'.format(hdr0['REFERENC']))
 
+                
             # Remove not used values
             cards_to_be_removed_hdr0 = ['ERRDATA', 'QUALDATA', 'SCIDATA']
             for card_to_be_removed_hdr0 in cards_to_be_removed_hdr0:
@@ -401,12 +476,15 @@ def main(args):
             msgs.work('Fixing header for SPHERE/{} file {}'.format(instrument, fits_in))
             hdr = fitsfiles.header_from_fits_file(fits_in)
             if 'ESO DPR TECH' in hdr.keys():
-                if str(hdr['ESO DPR TECH']).strip() == 'IMAGE,DUAL,CORONOGRAPHY':
+                if str(hdr['ESO DPR TECH']).strip() == 'IMAGE,DUAL,CORONOGRAPHY' or \
+                   str(hdr['ESO DPR TECH']).strip() == 'IMAGE,CLASSICAL,CORONOGRAPHY':
+                    # IMAGE,DUAL,CORONOGRAPHY and IMAGE,CLASSICAL,CORONOGRAPHY are identical
+                    # one is in broad band one is in narrow band
                     msgs.work('Working with {} as observing technique'.format(str(hdr['ESO DPR TECH']).strip()))
-                elif 'DUAL' in str(hdr['ESO DPR TECH']).strip():
-                    msgs.error('{} needs to be tested'.format(str(hdr['ESO DPR TECH']).strip()))
+                # elif 'DUAL' in str(hdr['ESO DPR TECH']).strip():
+                #     msgs.error('{} needs to be tested'.format(str(hdr['ESO DPR TECH']).strip()))
                 else:
-                    msgs.error('Only DUAL imaging currently implemented')
+                    msgs.error('Only DUAL and CLASSICAL coronagraphic imaging currently implemented')
             else:
                 msgs.error('Cannot recognize the observing technique')
 
@@ -432,45 +510,33 @@ def main(args):
                 # Try to guess coordinates
                 if 'CRVAL1' not in hdr0.keys():
                     msgs.warning('CRVAL position keywords not preset')
-                    if 'OBJECT' in hdr0.keys():
-                        try:
-                            object_coordinate = SkyCoord.from_name(str(hdr0['OBJECT']).strip())
-                            ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
-                            if 'RA' in hdr0.keys() and 'DEC' in hdr0.keys():
-                                pointing_coordinate = SkyCoord(float(hdr0['RA']), float(hdr0['DEC']), unit='deg')
-                                msgs.work('Testing from separation from pointing position')
-                                separation = object_coordinate.separation(pointing_coordinate).arcsec
-                                if separation < 120.:
-                                    msgs.info('Object - Pointing separation is {}'.format(separation))
-                                    msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
-                                    msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
-                                    hdr0['CRVAL1'] = ra_obj
-                                    hdr0['CRVAL2'] = dec_obj
-                                    msgs.work('Updating CUNIT')
-                                    hdr0['CUNIT1'] = 'deg'
-                                    hdr0['CUNIT2'] = 'deg'
-                                    msgs.work('Updating CTYPE')
-                                    hdr0['CTYPE1'] = 'RA---TAN'
-                                    hdr0['CTYPE2'] = 'DEC--TAN'
-                                    msgs.work('Updating CRPIX')
-                                    hdr0['CRPIX1'] = float(hdul[0].data.shape[1]) / 2.
-                                    hdr0['CRPIX2'] = float(hdul[0].data.shape[0]) / 2.
-                                    msgs.info('Updating CD1 and CD2')
-                                    hdr0['CD1_1'] = hdr0['PIXSCAL'] * 2.778E-4 / 1000.
-                                    hdr0['CD2_2'] = hdr0['PIXSCAL'] * 2.778E-4 / 1000.
-                                    hdr0['CD1_2'] = 0.
-                                    hdr0['CD2_1'] = 0.
-                                    msgs.work('Updating RA, DEC')
-                                    hdr0['RA'] = ra_obj
-                                    hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
-                                    hdr0['DEC'] = dec_obj
-                                    hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
-                                else:
-                                    msgs.warning('Object - Pointing separation is {}'.format(separation))
-                                    msgs.warning('This is suspicious, CRVAL not updated')
-                        except name_resolve.NameResolveError:
-                            msgs.warning('Object {} not recognized'.format(str(hdr0['OBJECT']).strip()))
-                            msgs.warning('CRVAL not updated')
+                    platescale_deg = get_platescale_deg(hdr0)
+                    object_coordinate = get_object_coordinate(hdr0)
+                    if object_coordinate is not None:
+                        ra_obj, dec_obj = object_coordinate.ra.degree, object_coordinate.dec.degree
+                        msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
+                        msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
+                        hdr0['CRVAL1'] = ra_obj
+                        hdr0['CRVAL2'] = dec_obj
+                        msgs.work('Updating CUNIT')
+                        hdr0['CUNIT1'] = 'deg'
+                        hdr0['CUNIT2'] = 'deg'
+                        msgs.work('Updating CTYPE')
+                        hdr0['CTYPE1'] = 'RA---TAN'
+                        hdr0['CTYPE2'] = 'DEC--TAN'
+                        msgs.work('Updating CRPIX')
+                        hdr0['CRPIX1'] = float(hdul[0].data.shape[1]) / 2.
+                        hdr0['CRPIX2'] = float(hdul[0].data.shape[0]) / 2.
+                        msgs.info('Updating CD1 and CD2')
+                        hdr0['CD1_1'] = hdr0['PIXSCAL'] * platescale_deg
+                        hdr0['CD2_2'] = hdr0['PIXSCAL'] * platescale_deg
+                        hdr0['CD1_2'] = 0.
+                        hdr0['CD2_1'] = 0.
+                        msgs.work('Updating RA, DEC')
+                        hdr0['RA'] = ra_obj
+                        hdr0.comments['RA'] = object_coordinate.ra.to_string(u.hour)
+                        hdr0['DEC'] = dec_obj
+                        hdr0.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
 
                 # Updating file prodcatg
                 msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
@@ -499,9 +565,6 @@ def main(args):
         if abmaglim > 0.:
             msgs.work('Updating ABMAGLIM')
             hdr0['ABMAGLIM'] = abmaglim
-
-        msgs.work('Updating REFERENC')
-        hdr0['REFERENC'] = reference
 
         msgs.work('Updating PROVENANCE')
         prov_to_be_transfer = [hdr0_card for hdr0_card in hdr0 if hdr0_card.startswith('ESO PRO REC')
