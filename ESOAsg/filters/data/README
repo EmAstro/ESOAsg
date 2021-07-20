@@ -1,0 +1,45 @@
+Directory containing the transmission curves for different instruments.
+The format of the files is:
+<INSTRUMENT_NAME>_<INSTRUMENT_MODE>_<FILTER_NAME>.txt
+The complete list of files is in `all_filters.txt`. This is the file that it is queried by the code to check if a
+given filter is present.
+
+Updates:
+
+ - 2021.07.20 Ema
+   Added SPHERE/IRDIS filters listed in:
+   https://www.eso.org/sci/facilities/paranal/instruments/sphere/inst/filters.html
+   (page accessed on 2021.07.20)
+   filter name     Central Wavelength (nm)   Width (nm)
+   B_Y             1043                      140
+   B_J             1245                      240
+   B_H             1625                      290
+   B_Ks            2182                      300
+   D_Y23           1022,1076                 49,50
+   D_J23           1190,1273                 42,46
+   D_H23           1593,1667                 52,54
+   D_ND-H23        1593,1667                 52,54
+   D_H34           1667,1733                 54,57
+   D_K12           2110,2251                 102,109
+   N_HeI           1085                      14
+   N_CntJ          1213                      17
+   N_PaB           1283                      18
+   N_CntH          1573                      23
+   N_FeII          1642                      24
+   N_CntK1         2091                      34
+   N_H2            2124                      31
+   N_BrG           2170                      31
+   N_CntK2         2266                      32
+   N_CO            2290                      33
+   
+   # Create list of filters
+   FilterList="B_Y,B_J,B_H,B_Ks,D_Y23,D_J23,D_H23,D_ND-H23,D_H34,D_K12,N_HeI,N_CntJ,N_PaB,N_CntH,N_FeII,N_CntK1,N_H2,N_BrG,N_CntK2,N_CO"
+   Field_Separator=$IFS
+   # set comma as internal field separator for the string list
+   IFS=,
+   for filter in $FilterList; do
+       echo SPHERE_IRDIS_$filter.dat
+       wget https://www.eso.org/sci/facilities/paranal/instruments/sphere/inst/filters/SPHERE_IRDIS_$filter.dat
+   done
+   # bringing it back to original value
+   IFS=$Field_Separator

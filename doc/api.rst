@@ -96,4 +96,13 @@ cleaning_headers
 
 .. automodule:: ESOAsg.ancillary.cleaning_headers
    :members:
- 
+
+ESOASG.filters
+--------------
+
+The filter.Filters class
+++++++++++++++++++++++++
+
+.. automodule:: ESOAsg.filters.filter
+   :members:
+

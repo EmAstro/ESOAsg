@@ -97,13 +97,14 @@ def parser(options=None):
     return parser.parse_args()
 
 
-def get_object_coordinate(hdr):
+def get_object_coordinate(hdr, test_separation=120.):
     """
     Tries to resolve the object name and compare the RA/DEC to the telescope 
     pointing. In case of a match (<120arcsec), then returns the SkyCoord object
     ToDo for Ema: complete the docs ! 
     Input:
         hdr: the header containing the keyword OBJECT, RA and DEC
+        test_separation (float): ToDo needs to be converted to u.arcsec.
     Output:
         a SkyCoord object
     """
@@ -114,7 +115,7 @@ def get_object_coordinate(hdr):
                 pointing_coordinate = SkyCoord(float(hdr['RA']), float(hdr['DEC']), unit='deg')
                 msgs.work('Testing from separation from pointing position')
                 separation = object_coordinate.separation(pointing_coordinate).arcsec
-                if separation < 120.:
+                if separation < test_separation:
                     msgs.info('Object - Pointing separation is {0:.2f} arcsec'.format(separation))
                     object_coordinate = None
                 else:
@@ -340,7 +341,7 @@ def main(args):
             if 'EFF_ETIM' in hdr0.keys():
                 hdr0['TEXPTIME'] = hdr0['EFF_ETIM']
                 msgs.work('Updating TEXPTIME to {}'.format(str(hdr0['TEXPTIME'])))                    
-            if 'TETXPTIME' not in hdr0.keys():
+            if 'TEXPTIME' not in hdr0.keys():
                 msgs.warning('EXPTIME missing')
                 if 'ESO DET SEQ1 DIT' in hdr0.keys() and 'ESO DET NDIT' in hdr0.keys() and \
                     'HIERARCH ESO TPL NEXP' in hdr0.keys():

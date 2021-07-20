@@ -1,5 +1,6 @@
 import numpy as np
 from astropy.table import MaskedColumn, join
+from astropy import table
 
 from ESOAsg import msgs
 from ESOAsg.ancillary import cleaning_lists
@@ -32,7 +33,7 @@ def all_catalogues_info(all_versions=False, verbose=False):
         all_versions (bool): if set to `True` also obsolete versions of the catalogues are listed
 
     Returns:
-        :obj:`astropy.table`: table containing the information on all catalogues present in the ESO archive
+        `astropy.Table`_: table containing the information on all catalogues present in the ESO archive
 
     """
     return catalogues_info(all_versions=all_versions, collections=None, tables=None, verbose=verbose)
