@@ -96,10 +96,10 @@ def main(args):
                            array=[np.array(FLUX, dtype=col_dtype)])
         col3 = fits.Column(name='ERR', format=col_format, unit='adu',
                            array=[np.array(ERR, dtype=col_dtype)])
-        col3 = fits.Column(name='BGFLUX', format=col_format, unit='adu',
+        col4 = fits.Column(name='BGFLUX', format=col_format, unit='adu',
                            array=[np.array(BGFLUX, dtype=col_dtype)])
 
-        hdu1_out = fits.BinTableHDU.from_columns([col1, col2, col3], nrows=1)
+        hdu1_out = fits.BinTableHDU.from_columns([col1, col2, col3, col4], nrows=1)
         hdu1_out.header['EXTNAME'] = 'SPECTRUM'
         hdu1_out.header['TUCD1'] = 'em.wl'
         hdu1_out.header['TUCD2'] = 'phot.flux.density;em.wl;stat.uncalib'

@@ -96,6 +96,7 @@ def parser(options=None):
     parser.add_argument("-v", "--version", action="version", version=__version__)
     return parser.parse_args()
 
+
 def get_object_coordinate(hdr):
     """
     Tries to resolve the object name and compare the RA/DEC to the telescope 
@@ -127,7 +128,8 @@ def get_object_coordinate(hdr):
     else:
         object_coordinate = None
     return object_coordinate
-                    
+
+
 def get_platescale_deg(hdr):
     """
     Reads the plate scale from the header and returns the value in 
@@ -153,6 +155,7 @@ def get_platescale_deg(hdr):
         msgs.warning('PIXTOARC not found. Assuming a platescale '+\
                      'of {0:.2f} mas/px'.format(platescale_mas))
     return platescale_deg            
+
 
 def main(args):
     import numpy as np
