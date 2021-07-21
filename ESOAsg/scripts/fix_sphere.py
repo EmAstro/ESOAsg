@@ -165,8 +165,60 @@ def main(args):
     from astropy.io import fits
     from ESOAsg.ancillary import cleaning_lists
     from ESOAsg.ancillary import cleaning_headers
+    from ESOAsg.ancillary import astrometry
     from ESOAsg.core import fitsfiles
     from astropy.time import Time
+
+    def fix_astrometry_from_object_name(hdr_primary, hdr_astrometry, max_separation=120.):
+        r"""Attempt to fix astrometry information in header
+
+        Returns:
+
+        """
+
+        # Try to guess coordinates
+        if 'CRVAL1' not in hdr_astrometry.keys():
+            msgs.warning('CRVAL position keywords not preset')
+            if 'OBJECT' in hdr_primary.keys():
+                name_obj = str(hdr_primary['OBJECT'])
+                try:
+                    name_obj, ra_obj, dec_obj, coordinate_obj = astrometry.coordinates_from_object_name(name_obj)
+                    if 'RA' in hdr_primary.keys() and 'DEC' in hdr_primary.keys():
+                        coordinate_point = SkyCoord(float(hdr0['RA']), float(hdr0['DEC']), unit='deg')
+                        msgs.work('Testing from separation from pointing position')
+                        separation = coordinate_obj.separation(coordinate_point).arcsec
+                        if separation < max_separation:
+                            msgs.info('Object - Pointing separation is {}'.format(separation))
+                            msgs.info('Updating CRVAL1 = {}'.format(ra_obj))
+                            msgs.info('Updating CRVAL2 = {}'.format(dec_obj))
+                            hdr_astrometry['CRVAL1'] = ra_obj
+                            hdr_astrometry['CRVAL2'] = dec_obj
+                            msgs.work('Updating CUNIT')
+                            hdr_astrometry['CUNIT1'] = 'deg'
+                            hdr_astrometry['CUNIT2'] = 'deg'
+                            msgs.work('Updating CTYPE')
+                            hdr_astrometry['CTYPE1'] = 'RA--TAN'
+                            hdr_astrometry['CTYPE2'] = 'DEC--TAN'
+                            msgs.work('Updating CRPIX')
+                            hdr_astrometry['CRPIX1'] = float(hdul[1].data.shape[2]) / 2.
+                            hdr_astrometry['CRPIX2'] = float(hdul[1].data.shape[1]) / 2.
+                            msgs.info('Updating CD1 and CD2')
+                            hdr_astrometry['CD1_1'] = 2.06E-06
+                            hdr_astrometry['CD2_2'] = 2.06E-06
+                            hdr_astrometry['CD1_2'] = 0.
+                            hdr_astrometry['CD2_1'] = 0.
+                            msgs.work('Updating RA, DEC')
+                            hdr_primary['RA'] = ra_obj
+                            hdr_primary.comments['RA'] = object_coordinate.ra.to_string(u.hour)
+                            hdr_primary['DEC'] = dec_obj
+                            hdr_primary.comments['DEC'] = object_coordinate.dec.to_string(u.degree, alwayssign=True)
+                        else:
+                            msgs.warning('Object - Pointing separation is {}'.format(separation))
+                            msgs.warning('This is suspicious, CRVAL not updated')
+                except name_resolve.NameResolveError:
+                    msgs.warning('Object {} not recognized'.format(str(hdr_primary['OBJECT']).strip()))
+                    msgs.warning('CRVAL not updated')
+        return None
 
     # Cleaning input lists
     input_fits_files = cleaning_lists.make_list_of_fits_files(args.input_fits)
