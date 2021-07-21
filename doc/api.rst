@@ -82,8 +82,14 @@ science_cube_ifs
    :members:
 
 
-ESOASG.ancillary
+ESOAsg.ancillary
 ----------------
+
+astrometry
+++++++++++
+
+.. automodule:: ESOAsg.ancillary.astrometry
+   :members:
 
 checks
 ++++++

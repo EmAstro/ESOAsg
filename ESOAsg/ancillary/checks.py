@@ -207,10 +207,10 @@ def header_is_valid(input_header):
     r"""Check if an header is valid
 
     Args:
-        input_header (`fits.Header`_): header to be checked
+        input_header (`Header`_): header to be checked
 
     Returns:
-        bool: `True` if a valid instance of `fits.Header`_ and `False` and error raised if not.
+        bool: `True` if a valid instance of `Header`_ and `False` and error raised if not.
 
     """
     is_header = True
