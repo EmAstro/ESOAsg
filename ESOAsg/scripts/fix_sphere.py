@@ -410,7 +410,7 @@ def main(args):
                 z_wave = float(hdr1['CRVAL3']) + (z_pixel * float(hdr1['CD3_3']))
                 if str(hdr1['CUNIT3']).strip().upper() == 'MICRONS':
                     msgs.info('Deriving WAVELMIN and WAVELMAX from CRVAL1')
-                    z_wave = z_wave * 1000. # convert to nanometers
+                    z_wave = z_wave * 1000.  # convert to nanometers
                     hdr0['WAVELMIN'] = np.nanmin(z_wave)
                     hdr0['WAVELMAX'] = np.nanmax(z_wave)
                     msgs.work('Updating WAVELMIN to {}'.format(str(hdr0['WAVELMIN'])))
