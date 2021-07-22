@@ -17,6 +17,8 @@ import argparse
 from ESOAsg import __version__
 
 SUPPORTED_INSTRUMENT = ['IFS', 'IRDIS']
+SPHERE_DC_REFERENC = '10.1051/0004-6361/201832973'
+
 
 EXAMPLES = str(r"""EXAMPLES:""" + """\n""" + """\n""" +
                r"""Given a IFS file in input from the `SPHERE Data Center` transform it in a """ +
@@ -91,6 +93,12 @@ def parser(options=None):
     parser.add_argument("-s", "--suffix", nargs="+", type=str, default=None,
                         help=r"Suffix to be added to file names the will be used as output." +
                              r"If it is not set, the input files will be overwritten")
+    parser.add_argument("-r", "--referenc", nargs="+", type=str, default=SPHERE_DC_REFERENC,
+                        help=r"DOI of the related scientific publication." +
+                             r"It will overwrite the REFERENC keyword in the header" +
+                             r"but it will raise a warning in case this is happening." +
+                             r"By default it is set to the REFERENC of the SPHERE data center."
+                             r"To remove the option, it should be set to the string `None`.")
     parser.add_argument("-wl", "--whitelight", action="store_true", default=False,
                         help=r"Create the white light image for IFS cubes")
     parser.add_argument("-v", "--version", action="version", version=__version__)
@@ -158,6 +166,28 @@ def get_platescale_deg(hdr):
     return platescale_deg            
 
 
+def _insert_referenc_keyword_in_header(hdr, referenc):
+    """This insert the REFERENC keyword in a given header
+
+    If referenc=None nothing will happen, if the REFERENC keyword is already present the code will rise a warning and
+    overwrite the previous instance.
+
+    Args:
+        hdr (`fits.Header`_): the header in which the REFERENC keyword will be added
+        referenc (str): string of the REFERENC keyword
+
+    Returns:
+        None
+
+    """
+    if referenc is not None:
+        if 'REFERENC' in hdr.keys():
+            msgs.warning('The header already contains the keyword REFERENC = {}'.format(hdr['REFERENC']))
+        hdr['REFERENC'] = referenc
+        msgs.info('Updated header keyword REFERENC = {}'.format(hdr['REFERENC']))
+    return
+
+
 def main(args):
     import numpy as np
     import os
@@ -194,13 +224,16 @@ def main(args):
                                                                                            suffix=suffix_string + '_WL')
     else:
         output_whitelight_files = [None] * len(input_fits_files)
-    '''
-    # reference
-    if args.referenc is not None:
-        reference = str(args.referenc[0])
-    else:
-        reference = str(' ')
 
+    # Cleaning up referenc keyword list
+    input_referenc = cleaning_lists.make_list_of_strings(args.referenc)[0]
+    # ToDo
+    # this is a workaround to set None (string) as python None.
+    # It needs to be made more pythonic
+    if input_referenc == 'None':
+        input_referenc = None
+
+    '''
     # fluxcal
     if args.fluxcal == 'ABSOLUTE':
         fluxcal = 'ABSOLUTE'
@@ -409,11 +442,10 @@ def main(args):
                         hdr0['TEXPTIME']/ (60. * 60. * 24.)
                 msgs.info('Deriving MJD-END from MJD-OBS and TEXPTIME')
                 msgs.warning('MJD-END is probably not accurate')
-            if 'REFERENC' not in hdr0.keys():
-                hdr0['REFERENC'] = ' 10.1051/0004-6361/201832973'
-                msgs.work('Updating REFERENC to  {}'.format(hdr0['REFERENC']))
 
-                
+            # update reference keyword
+            _insert_referenc_keyword_in_header(hdr0, input_referenc)
+
             # Remove not used values
             cards_to_be_removed_hdr0 = ['ERRDATA', 'QUALDATA', 'SCIDATA']
             for card_to_be_removed_hdr0 in cards_to_be_removed_hdr0:
@@ -552,6 +584,9 @@ def main(args):
                         msgs.info('Deriving PROG_ID from HIERARCH ESO OBS PROG ID')
                         msgs.work('Updating PROG_ID to {}'.format(str(hdr0['HIERARCH ESO OBS PROG ID'])))
                         hdr0['PROG_ID'] = str(hdr0['HIERARCH ESO OBS PROG ID'])
+
+                # update reference keyword
+                _insert_referenc_keyword_in_header(hdr0, input_referenc)
 
                 # Update checksum and datasum
                 msgs.work('Updating checksum and datasum')
