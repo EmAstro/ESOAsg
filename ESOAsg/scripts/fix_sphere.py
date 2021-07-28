@@ -11,6 +11,7 @@ Script to make data produced by the `SPHERE Data Center <https://sphere.osug.fr>
 from astropy.coordinates import SkyCoord
 from astropy.coordinates import name_resolve
 from ESOAsg import msgs
+from ESOAsg.filters import filter_curves
 
 import argparse
 
@@ -577,6 +578,19 @@ def main(args):
                 # Updating file prodcatg
                 msgs.work('Updating PRODCATG to SCIENCE.IMAGE')
                 hdr0['PRODCATG'] = str('SCIENCE.IMAGE')
+
+                # Updating filter wavelength min max
+                msgs.work('Updating WAVELMIN, WAVELMAX')
+                # instanziate filter object
+                filter_name = hdr0['ESO INS1 FILT NAME']
+                sphere_filter = filter_curves.Filter(instrument='SPHERE', mode='IRDIS', filter_name=filter_name)
+                sphere_wavelmin, sphere_wavelmax = sphere_filter.get_wavelength_min_max()
+                if isinstance(sphere_wavelmin, list):
+                    hdr0['WAVELMIN'] = sphere_wavelmin[index]
+                    hdr0['WAVELMAX'] = sphere_wavelmax[index]
+                else:
+                    hdr0['WAVELMIN'] = sphere_wavelmin
+                    hdr0['WAVELMAX'] = sphere_wavelmax
 
                 if 'PROGID' not in hdr0.keys():
                     msgs.warning('PROG_ID missing')
