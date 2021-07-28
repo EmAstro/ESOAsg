@@ -70,9 +70,9 @@ if __name__ == '__main__':
 
     # values
     if args.values is None:
-        remove = np.bool(True)
+        remove = bool(True)
     else:
-        remove = np.bool(False)
+        remove = bool(False)
         if isinstance(args.values, list):
             input_values = args.values
         else:

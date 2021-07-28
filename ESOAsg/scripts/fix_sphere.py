@@ -349,7 +349,7 @@ def main(args):
                     hdr1['CRPIX1'] = float(hdul[1].data.shape[2])/2.
                     hdr1['CRPIX2'] = float(hdul[1].data.shape[1])/2.
                     msgs.info('Updating CD1 and CD2')
-                    hdr1['CD1_1'] = platescale_deg
+                    hdr1['CD1_1'] = -platescale_deg
                     hdr1['CD2_2'] = platescale_deg
                     hdr1['CD1_2'] = 0.
                     hdr1['CD2_1'] = 0.
@@ -564,7 +564,7 @@ def main(args):
                         hdr0['CRPIX1'] = float(hdul[0].data.shape[1]) / 2.
                         hdr0['CRPIX2'] = float(hdul[0].data.shape[0]) / 2.
                         msgs.info('Updating CD1 and CD2')
-                        hdr0['CD1_1'] = hdr0['PIXSCAL'] * platescale_deg
+                        hdr0['CD1_1'] = -hdr0['PIXSCAL'] * platescale_deg
                         hdr0['CD2_2'] = hdr0['PIXSCAL'] * platescale_deg
                         hdr0['CD1_2'] = 0.
                         hdr0['CD2_1'] = 0.
