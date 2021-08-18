@@ -756,3 +756,7 @@ def main(args):
         msgs.info('File {} produced.'.format(fits_out))
         msgs.info('Image {} produced.'.format(image_out))
     '''
+
+if __name__ == "__main__":
+    args = parser()
+    main(args)
