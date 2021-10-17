@@ -88,7 +88,7 @@ def parser(options=None):
 
     parser.add_argument("input_fits", nargs="+", type=str,
                         help=r"Input SPHERE fits file")
-    parser.add_argument("-s", "--suffix", nargs="+", type=str, default=None,
+    parser.add_argument("-s", "--suffix", type=str, default=None,
                         help=r"Suffix to be added to file names the will be used as output." +
                              r"If it is not set, the input files will be overwritten")
     parser.add_argument("-wl", "--whitelight", action="store_true", default=False,
