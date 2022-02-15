@@ -273,6 +273,15 @@ def main(args):
     msgs.start()
 
     for fits_in, fits_out, image_out in zip(input_fits_files, output_fits_files, output_whitelight_files):
+        if len(fits_out)>68:   
+            new_fits_out = fits_out[0:63]+'.fits'
+            msgs.warning('{0:s} exceeds 68 characters. The string was cut to {1:s}'.format(fits_out,new_fits_out))
+            fits_out = new_fits_out
+        if image_out is not None:
+            if len(image_out)>68:
+                new_image_out = image_out[0:63]+'.fits'
+                msgs.warning('{0:s} exceeds 68 characters. The string was cut to {1:s}'.format(image_out,new_image_out))
+                image_out = new_image_out
         if os.path.exists(fits_out):
             shutil.copy(fits_out, fits_out.replace('.fit', '_old.fit'))
             msgs.warning('{} already exists. Backup created as {}'.format(fits_out,
@@ -461,7 +470,7 @@ def main(args):
                 msgs.info('Deriving MJD-END from MJD-OBS and TEXPTIME')
                 msgs.warning('MJD-END is probably not accurate')
             if 'REFERENC' not in hdr0.keys():
-                hdr0['REFERENC'] = ' 10.1051/0004-6361/201832973'
+                hdr0['REFERENC'] = ' 2017sf2a.conf..347D' #'10.1051/0004-6361/201832973'
                 msgs.work('Updating REFERENC to  {}'.format(hdr0['REFERENC']))
 
                 
@@ -551,6 +560,7 @@ def main(args):
                 if os.path.exists(fits_out_file):
                     shutil.copy(fits_out_file, fits_out_file.replace('.fit', '_old.fit'))
                     msgs.warning('{} already exists. Backup created.'.format(fits_out))
+                
                 fitsfiles.new_fits_like(fits_in, [0], fits_out_file, overwrite=overwrite,
                                         fix_header=True, empty_primary_hdu=False)
                 fits_out_files.append(fits_out_file)
